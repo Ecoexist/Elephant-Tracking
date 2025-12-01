@@ -360,6 +360,14 @@
             border-radius: 4px;
             margin-bottom: 5px;
             font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tag-legend:hover {
+            background: #e9ecef;
+            transform: translateX(-2px);
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .tag-color {
@@ -598,6 +606,152 @@
                 justify-content: center;
             }
         }
+
+        /* Elephant Bio Panel Styles */
+        #elephantBioPanel {
+            display: none;
+            height: 600px;
+            border-radius: 0 0 10px 10px;
+            position: relative;
+            background: linear-gradient(135deg, #1a3a1c, #2c5530);
+            overflow: hidden;
+        }
+
+        .bio-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .bio-image-section {
+            width: 75%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bio-image-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bio-info-section {
+            width: 25%;
+            height: 100%;
+            background: linear-gradient(180deg, #2c5530, #1a3a1c);
+            padding: 25px 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: white;
+        }
+
+        .bio-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .bio-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .bio-elephant-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            margin-top: 50px;
+            color: #ffeaa7;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .bio-tag-id {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bio-description {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            overflow-y: auto;
+        }
+
+        .bio-description h4 {
+            color: #ffeaa7;
+            font-size: 16px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        .bio-description h4:first-child {
+            margin-top: 0;
+        }
+
+        .bio-description p {
+            margin-bottom: 12px;
+        }
+
+        .bio-color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 2px solid white;
+        }
+
+        /* Meet Us Link in Map Header */
+        .meet-us-link {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: help;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .meet-us-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .curved-arrow {
+            font-size: 24px;
+            margin-left: 5px;
+            display: inline-block;
+            animation: bounceArrow 2s infinite;
+        }
+
+        @keyframes bounceArrow {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -634,12 +788,36 @@
             <!-- Main Map Column -->
             <div class="col-lg-9">
                 <div class="card" id="map-container">
-                    <div class="card-header">
-                        <h5 class="mb-1">📍 Animal Movement Map</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" id="mapCardTitle">📍 Animal Movement Map</h5>
+                        <div class="meet-us-link" title="Click on an elephant's name to 'meet it'">
+                            Meet Us <span class="curved-arrow">↷</span>
+                        </div>
                     </div>
                     <!-- Map and Legend Container -->
                     <div class="d-flex">
                         <div id="map" style="flex: 1;"></div>
+                        
+                        <!-- Elephant Bio Panel (hidden by default, replaces map) -->
+                        <div id="elephantBioPanel" style="flex: 1;">
+                            <div class="bio-container">
+                                <div class="bio-image-section">
+                                    <img id="bioElephantImage" src="data/ele.png" alt="Elephant Photo">
+                                </div>
+                                <div class="bio-info-section">
+                                    <button class="bio-close-btn" onclick="closeBioPanel()" title="Back to Map">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                    <div class="bio-elephant-name">
+                                        <span id="bioElephantName">Elephant Name</span>
+                                    </div>
+                                    <div class="bio-description" id="bioDescription">
+                                        <!-- Bio content will be inserted here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Map Legend (right side of map) -->
                         <div class="bg-white border-start" style="width: 100px; padding: 10px;">
                             <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
@@ -648,7 +826,7 @@
                     </div>
 
                     <!-- Time Animation Slider (embedded in map) -->
-                    <div class="card-body border-top">
+                    <div class="card-body border-top" id="animationControls">
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <label class="form-label mb-1">⏱️ Date Range: <span id="animationDateRange">Loading...</span></label>
@@ -862,6 +1040,76 @@
             "8540": "Art",
             "8542": "Dream",
             "8543": "Queenie"
+        };
+
+        // Elephant bio information
+        const elephantBios = {
+            "3839": {
+                name: "Shorobe",
+                origin: "Named after the village of Shorobe in the Okavango Delta, where this elephant was first spotted and collared. Shorobe village sits at the edge of the delta, a crossing point between wilderness and community.",
+                description: "Shorobe is one of our most well-traveled elephants, regularly moving between the delta waters and the surrounding mopane woodlands. Known for a calm demeanor, Shorobe often leads small bachelor groups through the region.",
+                facts: "First collared in 2019, Shorobe has provided invaluable data about seasonal migration patterns and corridor usage in the eastern delta region."
+            },
+            "5588": {
+                name: "Larry",
+                origin: "Larry was named by a group of visiting researchers who thought his relaxed, ambling gait reminded them of their colleague Larry back home who was known for his easy-going nature.",
+                description: "True to his namesake, Larry is one of the most docile bulls we track. He tends to avoid conflict and often grazes peacefully at the edges of larger herds. Larry's movements have helped us understand how individual elephants navigate social dynamics.",
+                facts: "Larry has one of the most consistent home ranges in our study, rarely venturing more than 50km from his core territory."
+            },
+            "5589": {
+                name: "Mokolwane",
+                origin: "Named after the Mokolwane palm (Hyphaene petersiana), a tree species that this elephant was frequently seen feeding on during the initial observation period.",
+                description: "Mokolwane is a specialist forager who has shown a particular preference for palm fruits and riverine vegetation. This dietary preference shapes his movement patterns, keeping him close to water sources year-round.",
+                facts: "Mokolwane's tracking data has contributed to our understanding of elephant diet diversity and its impact on habitat use."
+            },
+            "5590": {
+                name: "Ebanaria",
+                origin: "This name combines 'Ebany' with 'Aria', the names of Ecoexist's founders' children.",
+                description: "Ebanaria was collared in the Chanoga area, home of Anna, Graham, Ebany, and Aria.",
+                facts: "Ebanaria is mother to two calves."
+            },
+            "5591": {
+                name: "Grand Grey",
+                origin: "Named for the distinctive light grey coloring and impressive size that made this elephant stand out from the very first sighting. The 'Grand' prefix acknowledges the elephant's commanding presence.",
+                description: "Grand Grey is one of the largest bulls in our tracking program. With tusks that sweep elegantly toward the ground, this elephant is often recognized by local communities and safari guides alike.",
+                facts: "At an estimated 45+ years old, Grand Grey is one of our oldest tracked individuals and provides crucial data on elder bull behavior."
+            },
+            "8537": {
+                name: "Brother",
+                origin: "Brother was collared alongside another male elephant at the same time, and the two were inseparable during the observation period. The research team named them Brother and Bruce, reflecting their apparent bond.",
+                description: "Brother and Bruce (Tag 8538) were frequently seen traveling together, sharing water holes, and even engaging in playful sparring. This close relationship inspired their paired names.",
+                facts: "The relationship between Brother and Bruce has helped researchers understand male elephant friendships and social bonds."
+            },
+            "8538": {
+                name: "Bruce",
+                origin: "Named alongside Brother, Bruce got his name from the research team's observation that he seemed to be the slightly more adventurous of the pair, always leading their explorations into new territory.",
+                description: "Bruce tends to be the first to investigate new areas, with Brother often following his lead. This pioneering behavior has taken the pair into agricultural areas, making their tracking data especially valuable for conflict prevention.",
+                facts: "Bruce's adventurous nature has provided key insights into how elephants discover and establish new routes."
+            },
+            "8539": {
+                name: "Raintree",
+                origin: "Named after the iconic Rain Tree (Philenoptera violacea) under which this elephant was first observed resting during a midday heat. The dappled shade created a memorable scene for the collaring team.",
+                description: "Raintree is a creature of habit, often returning to the same shaded rest spots during the heat of the day. This predictability has made Raintree an excellent subject for studying daily movement patterns.",
+                facts: "Raintree's consistent behavior patterns have helped establish baseline data for elephant thermoregulation studies."
+            },
+            "8540": {
+                name: "Art",
+                origin: "Art was named for the unique, almost artistic pattern of wrinkles and folds on the ears, which the collaring team thought resembled abstract art. Each elephant's ears are as unique as fingerprints.",
+                description: "Art is easily identifiable even from a distance thanks to those distinctive ears. A mid-sized bull, Art tends to maintain a moderate home range and has adapted well to areas with mixed land use.",
+                facts: "Art's ear patterns have been used to help train community scouts in individual elephant identification."
+            },
+            "8542": {
+                name: "Dream",
+                origin: "The collaring of this elephant was long-planned but kept getting delayed due to various circumstances. When the team finally succeeded, they said it was 'like a dream come true' – and the name stuck.",
+                description: "Dream moves with an almost ethereal grace, often appearing and disappearing into the bush with surprising stealth for such a large animal. Tracking Dream has revealed some of the more secluded corridors used by elephants.",
+                facts: "Dream's routes have helped identify previously unknown elephant pathways that are now priorities for conservation."
+            },
+            "8543": {
+                name: "Queenie",
+                origin: "Queenie earned her regal name due to her confident, commanding presence within the herd. When first observed, she was clearly a matriarch-in-training, showing leadership qualities from a young age.",
+                description: "As one of the few females in our tracking program, Queenie provides invaluable data on female elephant movement and herd dynamics. She is often seen leading a family group through the landscape.",
+                facts: "Queenie's data has been instrumental in understanding how female elephants choose routes for their families, prioritizing safety and resources."
+            }
         };
 
         // Animation variables
@@ -1250,6 +1498,10 @@
 
                 const item = document.createElement('div');
                 item.className = 'tag-legend';
+                item.style.cursor = 'pointer';
+                item.onclick = function() {
+                    showElephantBio(tagId);
+                };
 
                 item.innerHTML = `
                     <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
@@ -1258,6 +1510,67 @@
 
                 legend.appendChild(item);
             });
+        }
+
+        // Show elephant bio panel
+        function showElephantBio(tagId) {
+            const bioPanel = document.getElementById('elephantBioPanel');
+            const mapElement = document.getElementById('map');
+            const animationControls = document.getElementById('animationControls');
+            const cardTitle = document.getElementById('mapCardTitle');
+            
+            // Get bio data
+            const bio = elephantBios[tagId] || {
+                name: elephantNames[tagId] || `Elephant ${tagId}`,
+                origin: "This elephant is part of our tracking program, helping us understand elephant movement patterns in the region.",
+                description: "This individual contributes valuable data to our conservation efforts, allowing us to better protect elephant corridors and reduce human-elephant conflict.",
+                facts: "Every tracked elephant helps us build a more complete picture of how elephants use the landscape."
+            };
+            
+            // Update bio panel content
+            document.getElementById('bioElephantName').textContent = bio.name;
+            
+            // Build description HTML
+            const descriptionHTML = `
+                <h4>Origin of Name</h4>
+                <p>${bio.origin}</p>
+                
+                <h4>About ${bio.name}</h4>
+                <p>${bio.description}</p>
+                
+                <h4>Research Notes</h4>
+                <p>${bio.facts}</p>
+            `;
+            document.getElementById('bioDescription').innerHTML = descriptionHTML;
+            
+            // Update card title
+            cardTitle.innerHTML = `<img src="data/ele.png" alt="Elephant" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px; filter: brightness(0) invert(1);"> Meet ${bio.name}`;
+            
+            // Hide map, show bio panel
+            mapElement.style.display = 'none';
+            bioPanel.style.display = 'block';
+            animationControls.style.display = 'none';
+        }
+
+        // Close elephant bio panel
+        function closeBioPanel() {
+            const bioPanel = document.getElementById('elephantBioPanel');
+            const mapElement = document.getElementById('map');
+            const animationControls = document.getElementById('animationControls');
+            const cardTitle = document.getElementById('mapCardTitle');
+            
+            // Hide bio panel, show map
+            bioPanel.style.display = 'none';
+            mapElement.style.display = 'block';
+            animationControls.style.display = 'block';
+            
+            // Reset card title
+            cardTitle.innerHTML = '📍 Animal Movement Map';
+            
+            // Invalidate map size to fix any rendering issues
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
         }
 
         function setViewMode(mode) {
