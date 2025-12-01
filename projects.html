@@ -102,63 +102,67 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Dynamic hover priority system - scales shift based on what's hovered */
+        /* Dynamic hover system - highlights hovered item and its connections */
         
-        /* When hovering Level 3 (tertiary) item - it becomes Level 1 */
-        .sub-sub-item:hover {
-            width: 180px !important;
-            height: 180px !important;
-            font-size: 1.1em !important;
-            opacity: 1 !important;
-            z-index: 1000 !important;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+        /* Fade all items by default when any hover is active */
+        .main-categories:hover .main-circle,
+        .main-categories:hover .sub-item,
+        .main-categories:hover .sub-sub-item {
+            opacity: 0.3 !important;
         }
 
-        /* Parent of hovered tertiary becomes Level 2 */
-        .sub-item-container:has(.sub-sub-item:hover) .sub-item {
-            width: 140px !important;
-            height: 140px !important;
-            font-size: 0.9em !important;
-            opacity: 0.8 !important;
-            z-index: 900 !important;
-        }
-
-        /* Everything else becomes Level 3 when tertiary is hovered */
-        .sub-sub-item:hover ~ .sub-sub-item {
-            width: 110px !important;
-            height: 110px !important;
-            opacity: 0.6 !important;
-        }
-
-        /* When hovering Level 2 (secondary) item - it becomes Level 1 */
-        .sub-item:hover {
-            width: 180px !important;
-            height: 180px !important;
-            font-size: 1.1em !important;
-            opacity: 1 !important;
-            z-index: 500 !important;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
-        }
-
-        /* Children of hovered secondary become Level 2 */
-        .sub-item:hover ~ .sub-sub-items .sub-sub-item {
-            width: 140px !important;
-            height: 140px !important;
-            opacity: 0.8 !important;
-        }
-
-        /* When hovering main circle - stays Level 1, children become Level 2 */
+        /* Hovered item becomes fully visible and larger */
         .main-circle:hover {
             opacity: 1 !important;
-            z-index: 200 !important;
-            transform: scale(1.05);
+            transform: scale(1.1) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
         }
 
-        /* Other main categories become Level 2 when one is hovered */
-        .category-group:hover ~ .category-group .main-circle {
-            width: 140px !important;
-            height: 140px !important;
-            opacity: 0.8 !important;
+        .sub-item:hover {
+            opacity: 1 !important;
+            transform: scale(1.15) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .sub-sub-item:hover {
+            opacity: 1 !important;
+            transform: scale(1.2) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Direct connections become more visible when hovering */
+        /* When hovering main category, show its direct children */
+        .category-group:hover .sub-item {
+            opacity: 0.85 !important;
+        }
+
+        /* When hovering sub-item, show its children and parent */
+        .sub-item-container:hover .sub-item {
+            opacity: 1 !important;
+        }
+
+        .sub-item-container:hover .sub-sub-item {
+            opacity: 0.85 !important;
+        }
+
+        /* Highlight parent when hovering child */
+        .sub-item:hover {
+            opacity: 1 !important;
+        }
+
+        .sub-item-container:has(.sub-item:hover) ~ * .main-circle {
+            opacity: 0.85 !important;
+        }
+
+        .sub-sub-item:hover {
+            opacity: 1 !important;
+        }
+
+        .sub-item-container:has(.sub-sub-item:hover) .sub-item {
+            opacity: 0.85 !important;
         }
 
         .main-category {
@@ -316,15 +320,41 @@
             position: relative;
         }
 
+        /* Connection lines container */
+        .connection-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Base connection line style */
+        .connection-line {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+        }
+
         /* Connecting lines for sub-items */
         .sub-item::before {
             content: '';
             position: absolute;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.2);
             opacity: 1;
             visibility: visible;
             transition: all 0.4s ease;
             z-index: -1;
+        }
+
+        /* When hovering any item, highlight its connections */
+        .main-circle:hover ~ .sub-items .sub-item::before,
+        .sub-item:hover::before,
+        .sub-item:hover ~ .sub-sub-items .sub-sub-item::after {
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
         }
 
         /* Lines from Mitigation main category to its sub-items */
@@ -1066,6 +1096,10 @@
     <div class="container">
         <!-- Main Categories -->
         <div class="main-categories">
+            <!-- SVG Connection Lines Layer -->
+            <svg class="connection-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+                <!-- Lines will be drawn here dynamically -->
+            </svg>
             <!-- Mitigation Measures -->
             <div class="category-group">
                 <div class="sub-items left">
@@ -1239,6 +1273,103 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Draw connection lines between all nodes
+        function drawConnectionLines() {
+            const svg = document.querySelector('.connection-svg');
+            if (!svg) return;
+            
+            svg.innerHTML = ''; // Clear existing lines
+            
+            const mainCategories = document.querySelectorAll('.main-circle');
+            const subItems = document.querySelectorAll('.sub-item');
+            const tertiaryItems = document.querySelectorAll('.sub-sub-item');
+            
+            // Helper function to get center position of element
+            function getCenter(elem) {
+                const rect = elem.getBoundingClientRect();
+                const container = document.querySelector('.main-categories').getBoundingClientRect();
+                return {
+                    x: rect.left + rect.width / 2 - container.left,
+                    y: rect.top + rect.height / 2 - container.top
+                };
+            }
+            
+            // Draw lines from main categories to sub-items
+            mainCategories.forEach(mainCat => {
+                const mainPos = getCenter(mainCat);
+                const categoryGroup = mainCat.closest('.category-group');
+                const subItemsInCategory = categoryGroup.querySelectorAll('.sub-item');
+                
+                subItemsInCategory.forEach(subItem => {
+                    const subPos = getCenter(subItem);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', mainPos.x);
+                    line.setAttribute('y1', mainPos.y);
+                    line.setAttribute('x2', subPos.x);
+                    line.setAttribute('y2', subPos.y);
+                    line.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
+                    line.setAttribute('stroke-width', '2');
+                    line.classList.add('connection-line');
+                    line.dataset.from = mainCat.parentElement.querySelector('.main-circle').textContent.trim();
+                    line.dataset.to = subItem.textContent.trim();
+                    svg.appendChild(line);
+                });
+            });
+            
+            // Draw lines from sub-items to tertiary items
+            subItems.forEach(subItem => {
+                const subPos = getCenter(subItem);
+                const container = subItem.closest('.sub-item-container');
+                const tertiaryInContainer = container.querySelectorAll('.sub-sub-item');
+                
+                tertiaryInContainer.forEach(tertiary => {
+                    const tertPos = getCenter(tertiary);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', subPos.x);
+                    line.setAttribute('y1', subPos.y);
+                    line.setAttribute('x2', tertPos.x);
+                    line.setAttribute('y2', tertPos.y);
+                    line.setAttribute('stroke', 'rgba(0, 0, 0, 0.15)');
+                    line.setAttribute('stroke-width', '1.5');
+                    line.classList.add('connection-line');
+                    svg.appendChild(line);
+                });
+            });
+        }
+        
+        // Redraw lines on load and resize
+        window.addEventListener('load', drawConnectionLines);
+        window.addEventListener('resize', drawConnectionLines);
+        
+        // Add hover effects to highlight connections
+        document.addEventListener('DOMContentLoaded', function() {
+            const allNodes = document.querySelectorAll('.main-circle, .sub-item, .sub-sub-item');
+            
+            allNodes.forEach(node => {
+                node.addEventListener('mouseenter', function() {
+                    // Highlight this node's connections
+                    const categoryGroup = this.closest('.category-group');
+                    if (categoryGroup) {
+                        const connectedElements = categoryGroup.querySelectorAll('.main-circle, .sub-item, .sub-sub-item');
+                        connectedElements.forEach(el => {
+                            el.style.opacity = '0.9';
+                        });
+                    }
+                    
+                    // Highlight connection lines
+                    const lines = document.querySelectorAll('.connection-line');
+                    lines.forEach(line => {
+                        line.setAttribute('stroke', 'rgba(0, 0, 0, 0.5)');
+                        line.setAttribute('stroke-width', '3');
+                    });
+                });
+                
+                node.addEventListener('mouseleave', function() {
+                    drawConnectionLines(); // Reset lines
+                });
+            });
+        });
+
         function showInfo(type) {
             const messages = {
                 'long-term': 'Long-term Mitigation: Strategic approaches to sustainable coexistence with elephants over extended periods.',
