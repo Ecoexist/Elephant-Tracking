@@ -86,17 +86,25 @@
             justify-content: center;
             align-items: center;
             transition: all 0.4s ease;
+            opacity: 1;
+            visibility: visible;
         }
 
         /* Hide categories when another is being hovered */
         .main-categories:hover .category-group {
-            opacity: 0.3;
-            transform: scale(0.95);
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.8);
         }
 
         .category-group:hover {
             opacity: 1 !important;
-            transform: scale(1) !important;
+            visibility: visible !important;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            z-index: 10;
         }
 
         .main-category {
@@ -205,15 +213,30 @@
             position: relative;
         }
 
-        .sub-items.left .sub-item-container .sub-item::after {
+        /* Connecting lines for sub-items - now radial from center */
+        .sub-items.left .sub-item-container:nth-child(1) .sub-item::after {
             content: '';
             position: absolute;
-            right: -170px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 170px;
-            height: 2px;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to top, #ff6b35, #f7931e);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .sub-items.left .sub-item-container:nth-child(2) .sub-item::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to bottom, #ff6b35, #f7931e);
             opacity: 0;
             visibility: hidden;
             transition: all 0.4s ease;
@@ -404,7 +427,27 @@
         }
 
         .sub-items.left {
-            right: 400px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+        }
+
+        /* Position sub-items in a circle around the main icon */
+        .sub-items.left .sub-item-container:nth-child(1) {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .sub-items.left .sub-item-container:nth-child(2) {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%, 50%);
         }
 
         .sub-items.right {
@@ -518,6 +561,21 @@
             .main-categories {
                 gap: 40px;
                 padding: 30px 20px;
+                position: relative;
+            }
+
+            .category-group {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+            }
+
+            .category-group:hover {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
             }
 
             .main-circle {
@@ -535,6 +593,17 @@
                 gap: 20px;
                 position: static !important;
                 margin-top: 20px;
+                width: auto !important;
+                height: auto !important;
+            }
+
+            .sub-items .sub-item-container {
+                position: static !important;
+                transform: none !important;
+            }
+
+            .sub-items .sub-item-container .sub-item::after {
+                display: none !important;
             }
 
             .category-group:hover .sub-items {
