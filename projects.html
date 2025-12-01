@@ -91,69 +91,76 @@
             pointer-events: auto;
         }
 
-        /* Position main categories at left and right thirds */
+        /* Position main categories - Mitigation left, Elephant Aware Economy right */
         .category-group:nth-child(1) {
-            top: 50%;
-            left: 25%;
+            top: 45%;
+            left: 30%;
             transform: translate(-50%, -50%);
         }
 
         .category-group:nth-child(2) {
-            top: 50%;
-            left: 75%;
-            transform: translate(-50%, -50%);
+            top: 55%;
+            right: 20%;
+            transform: translate(50%, -50%);
         }
 
-        /* Hover priority system */
-        /* When hovering sub-sub-item (level 3) */
+        /* Dynamic hover priority system - scales shift based on what's hovered */
+        
+        /* When hovering Level 3 (tertiary) item - it becomes Level 1 */
         .sub-sub-item:hover {
-            width: 200px !important;
-            height: 200px !important;
-            font-size: 1.3em !important;
+            width: 180px !important;
+            height: 180px !important;
+            font-size: 1.1em !important;
             opacity: 1 !important;
-            z-index: 1000;
+            z-index: 1000 !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
         }
 
-        .sub-sub-item:hover ~ .sub-sub-item,
-        .sub-item-container:not(:hover) .sub-sub-item {
-            width: 160px !important;
-            height: 160px !important;
-            font-size: 1em !important;
-            opacity: 0.7 !important;
+        /* Parent of hovered tertiary becomes Level 2 */
+        .sub-item-container:has(.sub-sub-item:hover) .sub-item {
+            width: 140px !important;
+            height: 140px !important;
+            font-size: 0.9em !important;
+            opacity: 0.8 !important;
+            z-index: 900 !important;
         }
 
-        /* Hide non-hovered sub-items when sub-sub-item is hovered */
-        .sub-sub-item:hover {
-            width: 200px !important;
-            height: 200px !important;
-            opacity: 1 !important;
+        /* Everything else becomes Level 3 when tertiary is hovered */
+        .sub-sub-item:hover ~ .sub-sub-item {
+            width: 110px !important;
+            height: 110px !important;
+            opacity: 0.6 !important;
         }
 
-        /* When hovering sub-item (level 2) */
+        /* When hovering Level 2 (secondary) item - it becomes Level 1 */
         .sub-item:hover {
-            width: 200px !important;
-            height: 200px !important;
-            font-size: 1.3em !important;
+            width: 180px !important;
+            height: 180px !important;
+            font-size: 1.1em !important;
             opacity: 1 !important;
-            z-index: 500;
+            z-index: 500 !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
         }
 
-        .sub-item:hover ~ .sub-item-container .sub-item,
-        .sub-item-container:not(:hover) .sub-item {
-            width: 160px !important;
-            height: 160px !important;
-            opacity: 0.7 !important;
+        /* Children of hovered secondary become Level 2 */
+        .sub-item:hover ~ .sub-sub-items .sub-sub-item {
+            width: 140px !important;
+            height: 140px !important;
+            opacity: 0.8 !important;
         }
 
-        /* When hovering main circle (level 1) */
+        /* When hovering main circle - stays Level 1, children become Level 2 */
         .main-circle:hover {
             opacity: 1 !important;
-            z-index: 200;
+            z-index: 200 !important;
+            transform: scale(1.05);
         }
 
-        .main-circle:hover ~ .category-group .main-circle,
-        .category-group:not(:hover) .main-circle {
-            opacity: 0.7 !important;
+        /* Other main categories become Level 2 when one is hovered */
+        .category-group:hover ~ .category-group .main-circle {
+            width: 140px !important;
+            height: 140px !important;
+            opacity: 0.8 !important;
         }
 
         .main-category {
@@ -161,10 +168,10 @@
             z-index: 2;
         }
 
-        /* Main level icons - largest */
+        /* Level 1 icons - largest, fully opaque */
         .main-circle {
-            width: 200px;
-            height: 200px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
             background: linear-gradient(135deg, #2c5530, #4a7c59);
             color: white;
@@ -172,21 +179,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 1.3em;
+            font-size: 1.1em;
             font-weight: bold;
             margin: 0 auto;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             transition: all 0.4s ease;
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             opacity: 1;
+            z-index: 100;
         }
 
-        /* Secondary level icons - medium size, semi-transparent */
+        /* Level 2 icons - slightly smaller and more transparent */
         .sub-item {
-            width: 160px;
-            height: 160px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             color: white;
@@ -194,21 +202,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
             cursor: pointer;
             transition: all 0.4s ease;
             text-align: center;
-            padding: 15px;
+            padding: 12px;
             text-decoration: none;
-            opacity: 0.7;
+            opacity: 0.8;
+            z-index: 90;
         }
 
-        /* Tertiary level icons - smallest, most transparent */
+        /* Level 3 icons - smallest and most transparent */
         .sub-sub-item {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             border-radius: 50%;
             background: linear-gradient(135deg, #4CAF50, #2E7D32);
             color: white;
@@ -216,7 +225,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.8em;
+            font-size: 0.75em;
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             cursor: pointer;
@@ -225,7 +234,8 @@
             padding: 10px;
             text-decoration: none;
             position: relative;
-            opacity: 0.5;
+            opacity: 0.6;
+            z-index: 80;
         }
 
         .main-circle i {
@@ -308,44 +318,44 @@
             position: relative;
         }
 
-        /* Connecting lines for sub-items - now radial from main category */
-        .sub-items.left .sub-item-container:nth-child(1) .sub-item::after {
+        /* Connecting lines for sub-items */
+        .sub-item::after {
             content: '';
             position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: 60px;
-            background: linear-gradient(to top, #ff6b35, #f7931e);
+            background: rgba(0, 0, 0, 0.3);
             opacity: 1;
             visibility: visible;
             transition: all 0.4s ease;
         }
 
-        .sub-items.left .sub-item-container:nth-child(2) .sub-item::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: 60px;
-            background: linear-gradient(to bottom, #ff6b35, #f7931e);
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.4s ease;
+        /* Lines from Mitigation main category to its sub-items */
+        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-item::after {
+            bottom: 50%;
+            right: 100%;
+            width: 80px;
+            height: 2px;
         }
 
-        .category-group:hover .sub-items.left .sub-item-container .sub-item::after {
-            opacity: 1;
-            visibility: visible;
+        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-item::after {
+            top: 50%;
+            right: 100%;
+            width: 80px;
+            height: 2px;
         }
 
-        /* Hide connecting lines when sub-item is being hovered */
-        .sub-item-container:hover .sub-item::after {
-            opacity: 0 !important;
-            visibility: hidden !important;
+        /* Lines from Elephant Aware Economy to its sub-items */
+        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-item::after {
+            bottom: 50%;
+            left: 100%;
+            width: 80px;
+            height: 2px;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-item::after {
+            top: 50%;
+            left: 100%;
+            width: 80px;
+            height: 2px;
         }
 
         /* Sub-sub-items are always visible in mind map style */
@@ -371,52 +381,133 @@
 
         /* Sub-sub-items are always visible now */
 
-        /* Position sub-sub-items in a small circle around their parent sub-item */
-        .sub-sub-items .sub-sub-item:nth-child(1) {
+        /* Position sub-sub-items in strategic locations to avoid overlaps */
+        /* Spread them out in different directions from their parent */
+        
+        /* Long-term Mitigation children (top-left area) */
+        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            top: -60px;
+            top: -80px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
         }
 
-        .sub-sub-items .sub-sub-item:nth-child(2) {
+        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            top: -30px;
-            right: -60px;
-            transform: translate(0, -50%);
+            top: 0;
+            left: -100px;
             pointer-events: auto;
         }
 
-        .sub-sub-items .sub-sub-item:nth-child(3) {
+        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            bottom: -30px;
-            right: -60px;
-            transform: translate(0, 50%);
+            top: 0;
+            right: -100px;
             pointer-events: auto;
         }
 
-        .sub-sub-items .sub-sub-item:nth-child(4) {
+        /* Short-term Mitigation children (bottom-left area) */
+        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            bottom: -60px;
+            bottom: -80px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
         }
 
-        .sub-sub-items .sub-sub-item:nth-child(5) {
+        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            bottom: -30px;
-            left: -60px;
-            transform: translate(0, 50%);
+            bottom: 0;
+            left: -100px;
             pointer-events: auto;
         }
 
-        .sub-sub-items .sub-sub-item:nth-child(6) {
+        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            top: -30px;
-            left: -60px;
-            transform: translate(0, -50%);
+            bottom: 20px;
+            left: -180px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
+            position: absolute;
+            bottom: 80px;
+            left: -180px;
+            pointer-events: auto;
+        }
+
+        /* Elephant Aware Farming children (top-right area) */
+        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
+            position: absolute;
+            top: 0;
+            right: -100px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
+            position: absolute;
+            top: 60px;
+            right: -100px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(4) {
+            position: absolute;
+            top: 0;
+            left: -100px;
+            pointer-events: auto;
+        }
+
+        /* SMEs children (bottom-right area) */
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
+            position: absolute;
+            bottom: 0;
+            right: -100px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
+            position: absolute;
+            bottom: 20px;
+            right: -180px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
+            position: absolute;
+            bottom: 80px;
+            right: -180px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(5) {
+            position: absolute;
+            bottom: 140px;
+            right: -180px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(6) {
+            position: absolute;
+            bottom: 200px;
+            right: -180px;
             pointer-events: auto;
         }
 
@@ -467,53 +558,50 @@
             visibility: visible;
         }
 
-        /* Position connecting lines based on sub-sub-item position */
+        /* Connecting lines for tertiary items - connect to their parent sub-item */
+        .sub-sub-item::before {
+            content: '';
+            position: absolute;
+            background: rgba(0, 0, 0, 0.25);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* All connecting lines point toward center of parent */
+        .sub-sub-items .sub-sub-item::before {
+            width: 80px;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Adjust direction based on position */
         .sub-sub-items .sub-sub-item:nth-child(1)::before {
+            width: 2px;
+            height: 80px;
             top: 100%;
             left: 50%;
-            transform: translate(-50%, 0);
-            width: 2px;
-            height: 30px;
+            transform: translateX(-50%);
         }
 
         .sub-sub-items .sub-sub-item:nth-child(2)::before {
-            top: 50%;
-            left: 100%;
-            transform: translate(0, -50%);
-            width: 30px;
-            height: 2px;
+            right: 100%;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(3)::before {
-            bottom: 50%;
-            left: 100%;
-            transform: translate(0, 50%);
-            width: 30px;
-            height: 2px;
+            right: 100%;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(4)::before {
-            bottom: 100%;
-            left: 50%;
-            transform: translate(-50%, 0);
-            width: 2px;
-            height: 30px;
+            right: 100%;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(5)::before {
-            bottom: 50%;
-            right: 100%;
-            transform: translate(0, 50%);
-            width: 30px;
-            height: 2px;
+            left: 100%;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(6)::before {
-            top: 50%;
-            right: 100%;
-            transform: translate(0, -50%);
-            width: 30px;
-            height: 2px;
+            left: 100%;
         }
 
         .sub-items.left {
@@ -536,20 +624,34 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Position sub-items in a smaller circle around their main icon */
-        .sub-items.left .sub-item-container:nth-child(1) {
+        /* Position sub-items strategically to avoid overlaps */
+        /* For Mitigation (left side) - position sub-items on left side */
+        .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(1) {
             position: absolute;
-            top: -120px;
-            left: 50%;
-            transform: translate(-50%, 0);
+            top: -100px;
+            left: -80px;
             pointer-events: auto;
         }
 
-        .sub-items.left .sub-item-container:nth-child(2) {
+        .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(2) {
             position: absolute;
-            bottom: -120px;
-            left: 50%;
-            transform: translate(-50%, 0);
+            bottom: -100px;
+            left: -80px;
+            pointer-events: auto;
+        }
+
+        /* For Elephant Aware Economy (right side) - position sub-items on right side */
+        .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(1) {
+            position: absolute;
+            top: -100px;
+            right: -80px;
+            pointer-events: auto;
+        }
+
+        .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(2) {
+            position: absolute;
+            bottom: -100px;
+            right: -80px;
             pointer-events: auto;
         }
 
