@@ -14,21 +14,36 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-color: #f8f9fa;
             min-height: 100vh;
         }
 
         .navbar {
             background: linear-gradient(135deg, #2c5530, #4a7c59);
             border-bottom: 3px solid #1a4a2e;
-            padding: 15px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .navbar-brand {
             font-weight: bold;
             color: white !important;
-            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
         .hero-section {
@@ -56,12 +71,15 @@
         .donation-card {
             background: white;
             border-radius: 15px;
-            padding: 30px;
+            padding: 40px 30px;
             margin-bottom: 30px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             border: 2px solid transparent;
             height: 100%;
+            cursor: pointer;
+            position: relative;
+            perspective: 1000px;
         }
 
         .donation-card:hover {
@@ -70,10 +88,36 @@
             border-color: #4a7c59;
         }
 
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .donation-card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            padding: 20px;
+        }
+
         .donation-icon {
-            font-size: 4em;
+            font-size: 5em;
             color: #2c5530;
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .donation-title {
@@ -81,12 +125,14 @@
             font-weight: bold;
             color: #2c5530;
             margin-bottom: 15px;
+            text-align: center;
         }
 
         .donation-description {
             color: #666;
             margin-bottom: 20px;
             line-height: 1.6;
+            text-align: center;
         }
 
         .donation-price {
@@ -94,6 +140,7 @@
             font-weight: bold;
             color: #ff6b35;
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .donation-price-label {
@@ -122,75 +169,35 @@
             color: white;
         }
 
-        .adopt-elephant-card {
-            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-            border: 3px solid #ffc107;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .adopt-elephant-card::before {
-            content: "⭐ POPULAR";
-            position: absolute;
-            top: 15px;
-            right: -35px;
-            background: #ff6b35;
-            color: white;
-            padding: 5px 50px;
-            transform: rotate(45deg);
-            font-weight: bold;
-            font-size: 0.9em;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .benefits-list {
-            text-align: left;
-            margin: 20px 0;
-        }
-
-        .benefits-list li {
-            margin-bottom: 10px;
+        .more-info-text {
             color: #555;
-        }
-
-        .benefits-list i {
-            color: #2c5530;
-            margin-right: 10px;
-        }
-
-        .info-section {
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            margin: 50px 0;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .info-section h3 {
-            color: #2c5530;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .info-section p {
-            color: #666;
             line-height: 1.8;
+            margin-bottom: 20px;
+            text-align: left;
         }
 
-        .footer {
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
+        .more-info-text ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .more-info-text li {
+            margin-bottom: 8px;
+        }
+
+        .btn-back-to-front {
+            background: #6c757d;
+            border: none;
             color: white;
-            padding: 40px 0;
-            margin-top: 50px;
+            padding: 10px 30px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
         }
 
-        .footer a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
+        .btn-back-to-front:hover {
+            background: #5a6268;
         }
 
         .custom-amount-section {
@@ -212,17 +219,173 @@
             margin: 20px auto;
         }
 
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-section h3 {
+            color: #2c5530;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .impact-stat {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .impact-icon {
+            font-size: 4em;
+            color: #2c5530;
+            margin-bottom: 15px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .impact-stat:hover .impact-icon {
+            transform: scale(1.2);
+        }
+
+        .impact-stat h5 {
+            color: #2c5530;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .impact-stat p {
+            color: #666;
+        }
+
+        /* Footer ribbon styling */
+        .footer-ribbon {
+            background: linear-gradient(135deg, #3d5a3f, #4a6b4f);
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+            border-top: 3px solid #2c5530;
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-logo {
+            height: 140px;
+            width: auto;
+            margin-right: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .footer-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .footer-quote {
+            flex: 1;
+            font-size: 24px;
+            font-weight: 300;
+            line-height: 1.4;
+            font-style: italic;
+            margin: 0 30px;
+        }
+
+        .footer-contact {
+            text-align: right;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer-contact h6 {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .footer-contact p {
+            margin: 5px 0;
+        }
+
+        .footer-contact a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer-contact a:hover {
+            text-decoration: underline;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: flex-end;
+        }
+
+        .social-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-icons a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
         @media (max-width: 768px) {
             .hero-section h1 {
                 font-size: 2em;
             }
             
             .donation-icon {
-                font-size: 3em;
+                font-size: 3.5em;
             }
             
             .donation-price {
                 font-size: 2em;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-logo {
+                margin: 0 0 20px 0;
+                height: 100px;
+            }
+
+            .footer-quote {
+                margin: 20px 0;
+                font-size: 18px;
+            }
+
+            .footer-contact {
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .social-icons {
+                justify-content: center;
             }
         }
     </style>
@@ -231,13 +394,14 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                🐘 Ecoexist Trust
+            <a class="navbar-brand" href="https://www.ecoexisttrust.org/" target="_blank">
+                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" height="40" class="me-2">
+                Ecoexist Trust
             </a>
             <div class="ms-auto">
-                <span class="navbar-text text-white">
-                    Support Elephant Conservation
-                </span>
+                <a href="https://ecoexist.github.io/Elephant-Tracking/dashboard_public_working_V2.html" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
             </div>
         </div>
     </nav>
@@ -253,133 +417,243 @@
     <div class="container">
         <!-- Donation Options -->
         <div class="row">
-            <!-- Adopt an Elephant - Featured -->
+            <!-- Adopt an Elephant -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card adopt-elephant-card">
-                    <div class="donation-icon">
-                        🐘
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="donation-title">Adopt an Elephant</div>
+                            <div class="donation-description">
+                                Become a guardian of one of our tracked elephants.
+                            </div>
+                            <div class="donation-price">
+                                $5,000<span class="donation-price-label"> / year</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">Complete Elephant Sponsorship</h5>
+                                <p>Your adoption covers all costs for one year of elephant monitoring including:</p>
+                                <ul>
+                                    <li>GPS collar and deployment</li>
+                                    <li>Year of satellite tracking</li>
+                                    <li>Personalized certificate</li>
+                                    <li>Monthly updates with photos</li>
+                                    <li>Option to name the elephant</li>
+                                    <li>Exclusive dashboard access</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('adopt-elephant', 5000)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">Adopt an Elephant</div>
-                    <div class="donation-description">
-                        Become a guardian of one of our tracked elephants. Your adoption covers all costs for collaring, monitoring, and conservation efforts.
-                    </div>
-                    <div class="donation-price">
-                        $5,000<span class="donation-price-label"> / year</span>
-                    </div>
-                    <ul class="benefits-list">
-                        <li><i class="fas fa-check-circle"></i> GPS collar and deployment</li>
-                        <li><i class="fas fa-check-circle"></i> Year of satellite tracking</li>
-                        <li><i class="fas fa-check-circle"></i> Personalized certificate</li>
-                        <li><i class="fas fa-check-circle"></i> Monthly photo & location updates</li>
-                        <li><i class="fas fa-check-circle"></i> Name the elephant</li>
-                        <li><i class="fas fa-check-circle"></i> Exclusive dashboard access</li>
-                    </ul>
-                    <button class="btn btn-donate" onclick="donate('adopt-elephant', 5000)">
-                        🎁 Adopt Now
-                    </button>
                 </div>
             </div>
 
             <!-- Helicopter -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card">
-                    <div class="donation-icon">
-                        <i class="fas fa-helicopter"></i>
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-helicopter"></i>
+                            </div>
+                            <div class="donation-title">Helicopter for Collaring</div>
+                            <div class="donation-description">
+                                Fund helicopter rental for our next collaring operation.
+                            </div>
+                            <div class="donation-price">
+                                $3,000<span class="donation-price-label"> / operation</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">Helicopter Operations</h5>
+                                <p>Essential for safely accessing and collaring elephants in remote areas. Helicopter operations include:</p>
+                                <ul>
+                                    <li>Helicopter rental and pilot</li>
+                                    <li>Safety equipment and crew</li>
+                                    <li>Veterinary support during operation</li>
+                                    <li>Typically enables collaring 2-3 elephants per day</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('helicopter', 3000)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">Helicopter for Collaring</div>
-                    <div class="donation-description">
-                        Fund helicopter rental for our next collaring operation. Essential for safely accessing and collaring elephants in remote areas.
-                    </div>
-                    <div class="donation-price">
-                        $3,000<span class="donation-price-label"> / operation</span>
-                    </div>
-                    <button class="btn btn-donate" onclick="donate('helicopter', 3000)">
-                        🚁 Fund Helicopter
-                    </button>
                 </div>
             </div>
 
             <!-- GPS Collar -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card">
-                    <div class="donation-icon">
-                        <i class="fas fa-satellite-dish"></i>
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+                            <div class="donation-title">GPS Tracking Collar</div>
+                            <div class="donation-description">
+                                Provide a state-of-the-art GPS collar to track elephant movements.
+                            </div>
+                            <div class="donation-price">
+                                $2,500<span class="donation-price-label"> / collar</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">GPS Collar Technology</h5>
+                                <p>Each collar provides critical tracking data including:</p>
+                                <ul>
+                                    <li>Real-time GPS coordinates (hourly updates)</li>
+                                    <li>Battery life: 12-18 months</li>
+                                    <li>Satellite communication system</li>
+                                    <li>Activity sensors and health monitoring</li>
+                                    <li>Helps prevent human-wildlife conflict</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('gps-collar', 2500)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">GPS Tracking Collar</div>
-                    <div class="donation-description">
-                        Provide a state-of-the-art GPS collar to track elephant movements and help prevent human-wildlife conflict.
-                    </div>
-                    <div class="donation-price">
-                        $2,500<span class="donation-price-label"> / collar</span>
-                    </div>
-                    <button class="btn btn-donate" onclick="donate('gps-collar', 2500)">
-                        📡 Buy Collar
-                    </button>
                 </div>
             </div>
 
             <!-- Fixed Wing Plane -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card">
-                    <div class="donation-icon">
-                        <i class="fas fa-plane"></i>
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-plane"></i>
+                            </div>
+                            <div class="donation-title">Fixed Wing Aircraft</div>
+                            <div class="donation-description">
+                                Support aerial surveys and monitoring flights across the landscape.
+                            </div>
+                            <div class="donation-price">
+                                $1,500<span class="donation-price-label"> / day</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">Aerial Survey Operations</h5>
+                                <p>Fixed-wing aircraft enable us to:</p>
+                                <ul>
+                                    <li>Monitor elephant herds across vast territories</li>
+                                    <li>Conduct population surveys</li>
+                                    <li>Assess habitat conditions</li>
+                                    <li>Cover 1,000+ km² per flight</li>
+                                    <li>Verify GPS collar functionality</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('fixed-wing', 1500)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">Fixed Wing Aircraft</div>
-                    <div class="donation-description">
-                        Support aerial surveys and monitoring flights to track elephant herds and assess movement patterns across the landscape.
-                    </div>
-                    <div class="donation-price">
-                        $1,500<span class="donation-price-label"> / day</span>
-                    </div>
-                    <button class="btn btn-donate" onclick="donate('fixed-wing', 1500)">
-                        ✈️ Fund Aircraft
-                    </button>
                 </div>
             </div>
 
             <!-- Helicopter Fuel -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card">
-                    <div class="donation-icon">
-                        <i class="fas fa-gas-pump"></i>
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-gas-pump"></i>
+                            </div>
+                            <div class="donation-title">Helicopter Fuel</div>
+                            <div class="donation-description">
+                                Fuel costs for helicopter operations during collaring missions.
+                            </div>
+                            <div class="donation-price">
+                                $800<span class="donation-price-label"> / tank</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">Helicopter Fuel Support</h5>
+                                <p>Helicopter fuel is one of our biggest operational costs. Your support helps:</p>
+                                <ul>
+                                    <li>Enable collaring operations in remote areas</li>
+                                    <li>Reach elephants quickly and safely</li>
+                                    <li>Minimize animal stress with shorter operation times</li>
+                                    <li>Each tank provides approximately 2-3 hours of flight time</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('helicopter-fuel', 800)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">Helicopter Fuel</div>
-                    <div class="donation-description">
-                        Fuel costs for helicopter operations during collaring missions. Every gallon helps us reach more elephants.
-                    </div>
-                    <div class="donation-price">
-                        $800<span class="donation-price-label"> / tank</span>
-                    </div>
-                    <button class="btn btn-donate" onclick="donate('helicopter-fuel', 800)">
-                        ⛽ Fund Fuel
-                    </button>
                 </div>
             </div>
 
             <!-- Plane Fuel -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card">
-                    <div class="donation-icon">
-                        <i class="fas fa-fill-drip"></i>
+                <div class="donation-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="donation-icon">
+                                <i class="fas fa-fill-drip"></i>
+                            </div>
+                            <div class="donation-title">Aircraft Fuel</div>
+                            <div class="donation-description">
+                                Support fixed-wing aircraft fuel costs for survey flights.
+                            </div>
+                            <div class="donation-price">
+                                $500<span class="donation-price-label"> / tank</span>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <button class="btn-back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.donation-card'))">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="more-info-text">
+                                <h5 style="color: #2c5530; margin-bottom: 15px;">Aircraft Fuel Support</h5>
+                                <p>Fixed-wing aircraft fuel enables:</p>
+                                <ul>
+                                    <li>Extended survey flights over large territories</li>
+                                    <li>Cost-effective monitoring compared to helicopters</li>
+                                    <li>4-6 hours of flight time per tank</li>
+                                    <li>Population counts and habitat assessment</li>
+                                    <li>Regular monitoring of elephant movements</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-donate" onclick="event.stopPropagation(); donate('plane-fuel', 500)">
+                                Proceed to Payment
+                            </button>
+                        </div>
                     </div>
-                    <div class="donation-title">Aircraft Fuel</div>
-                    <div class="donation-description">
-                        Support fixed-wing aircraft fuel costs for survey flights and monitoring operations over large territories.
-                    </div>
-                    <div class="donation-price">
-                        $500<span class="donation-price-label"> / tank</span>
-                    </div>
-                    <button class="btn btn-donate" onclick="donate('plane-fuel', 500)">
-                        ⛽ Fund Fuel
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Custom Amount Section -->
         <div class="custom-amount-section">
-            <h3 style="color: #2c5530; font-weight: bold;">💝 Choose Your Own Amount</h3>
-            <p style="color: #666;">Every donation makes a difference, no matter the size.</p>
+            <p style="color: #666; font-size: 1.1em; margin-bottom: 20px;">Every donation makes a difference, no matter the size.</p>
             <input type="number" class="form-control custom-amount-input" id="customAmount" placeholder="Enter amount ($)" min="1">
             <button class="btn btn-donate mt-3" style="max-width: 300px;" onclick="donateCustom()">
                 💚 Donate Custom Amount
@@ -390,81 +664,65 @@
         <div class="info-section">
             <h3>🌍 Your Impact</h3>
             <div class="row">
-                <div class="col-md-4 text-center mb-4">
-                    <div style="font-size: 3em; color: #2c5530;">11</div>
+                <div class="col-md-4 impact-stat">
+                    <div class="impact-icon"><strong>11</strong></div>
                     <h5>Elephants Tracked</h5>
                     <p>Currently monitoring 11 elephants across Botswana</p>
                 </div>
-                <div class="col-md-4 text-center mb-4">
-                    <div style="font-size: 3em; color: #2c5530;">100K+</div>
+                <div class="col-md-4 impact-stat">
+                    <div class="impact-icon"><strong>100K+</strong></div>
                     <h5>GPS Data Points</h5>
                     <p>Over 100,000 location records collected</p>
                 </div>
-                <div class="col-md-4 text-center mb-4">
-                    <div style="font-size: 3em; color: #2c5530;">24/7</div>
+                <div class="col-md-4 impact-stat">
+                    <div class="impact-icon"><strong>24/7</strong></div>
                     <h5>Real-Time Monitoring</h5>
                     <p>Continuous tracking to prevent human-wildlife conflict</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- About Section -->
-        <div class="info-section">
-            <h3>📖 About Ecoexist Trust</h3>
-            <p>
-                Ecoexist Trust is dedicated to promoting coexistence between humans and wildlife in Botswana. 
-                Through GPS tracking, community engagement, and research, we work to reduce human-elephant conflict 
-                while protecting these magnificent animals for future generations.
-            </p>
-            <p>
-                Your donations directly support our field operations, including elephant collaring, aerial surveys, 
-                data analysis, and community outreach programs. 100% of your donation goes directly to conservation work.
-            </p>
-            <p style="margin-top: 20px;">
-                <strong>Tax Information:</strong> Ecoexist Trust is a registered non-profit organization. 
-                Donations may be tax-deductible. Please consult your tax advisor.
-            </p>
-        </div>
-
-        <!-- Contact Section -->
-        <div class="info-section text-center">
-            <h3>📞 Get in Touch</h3>
-            <p style="font-size: 1.1em;">
-                <strong>Email:</strong> <a href="mailto:info@ecoexisttrust.org" style="color: #2c5530;">info@ecoexisttrust.org</a><br>
-                <strong>Phone:</strong> +267 6865083<br>
-                <strong>Website:</strong> <a href="https://www.ecoexisttrust.org/" target="_blank" style="color: #2c5530;">www.ecoexisttrust.org</a>
-            </p>
-            <div class="mt-4">
-                <a href="https://www.facebook.com/ecoexistproject" target="_blank" class="btn btn-outline-primary btn-lg me-2">
-                    <i class="fab fa-facebook-f"></i> Facebook
-                </a>
-                <a href="https://www.instagram.com/ecoexisttrust/?hl=en" target="_blank" class="btn btn-outline-danger btn-lg">
-                    <i class="fab fa-instagram"></i> Instagram
-                </a>
+    <!-- Footer Ribbon -->
+    <footer class="footer-ribbon">
+        <div class="footer-content">
+            <a href="https://www.ecoexisttrust.org/" target="_blank">
+                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" class="footer-logo">
+            </a>
+            <div class="footer-quote">
+                "Our mission is to support the lives and livelihoods of people who share space with elephants while considering the needs of elephants and their habitats"
+            </div>
+            <div class="footer-contact">
+                <h6>Contact us</h6>
+                <p><strong>Email:</strong> <a href="mailto:info@ecoexisttrust.org">info@ecoexisttrust.org</a></p>
+                <p><strong>Ecoexist Trust</strong></p>
+                <p>P.O.Box 1755, Plot 1278,<br>
+                Sennonori Ward, Maun<br>
+                <strong>Tel:</strong> +267 6865083</p>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/ecoexistproject" target="_blank" title="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://www.instagram.com/ecoexisttrust/?hl=en" target="_blank" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/company/ecoexist-trust/posts/?feedView=all" target="_blank" title="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <div class="container text-center">
-            <p style="font-size: 1.2em; margin-bottom: 10px;">
-                <strong>Ecoexist Trust</strong> - Promoting coexistence between humans and wildlife
-            </p>
-            <p>
-                P.O.Box 1755, Plot 1278, Sennonori Ward, Maun, Botswana<br>
-                Tel: +267 6865083 | Email: info@ecoexisttrust.org
-            </p>
-            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
-                © 2025 Ecoexist Trust. All rights reserved.
-            </p>
-        </div>
-    </div>
+    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Card flip functionality
+        function flipCard(card) {
+            card.classList.toggle('flipped');
+        }
+
         // Donation handler
         function donate(item, amount) {
             // Build donation details
@@ -480,9 +738,9 @@
             const itemName = itemNames[item] || item;
             
             // Show confirmation
-            if (confirm(`Thank you for your generous donation!\n\nItem: ${itemName}\nAmount: $${amount.toLocaleString()}\n\nClick OK to proceed to payment (placeholder - integrate with your payment system)`)) {
+            if (confirm(`Thank you for your generous donation!\n\nItem: ${itemName}\nAmount: $${amount.toLocaleString()}\n\nClick OK to proceed to payment`)) {
                 // Here you would integrate with your payment processor
-                // For now, we'll show contact info
+                // For now, redirect to contact
                 alert(`To complete your donation:\n\n1. Email: info@ecoexisttrust.org\n2. Subject: "Donation - ${itemName}"\n3. We'll send you payment details\n\nOr call +267 6865083\n\nThank you for supporting elephant conservation! 🐘`);
             }
         }
@@ -496,7 +754,7 @@
                 return;
             }
 
-            if (confirm(`Thank you for your generous donation of $${parseFloat(amount).toLocaleString()}!\n\nClick OK to proceed to payment (placeholder - integrate with your payment system)`)) {
+            if (confirm(`Thank you for your generous donation of $${parseFloat(amount).toLocaleString()}!\n\nClick OK to proceed to payment`)) {
                 alert(`To complete your donation:\n\n1. Email: info@ecoexisttrust.org\n2. Subject: "Donation - $${amount}"\n3. We'll send you payment details\n\nOr call +267 6865083\n\nThank you for supporting elephant conservation! 🐘`);
                 document.getElementById('customAmount').value = '';
             }
@@ -511,4 +769,3 @@
     </script>
 </body>
 </html>
-
