@@ -720,6 +720,38 @@
             vertical-align: middle;
             border: 2px solid white;
         }
+
+        /* Meet Us Link in Map Header */
+        .meet-us-link {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: help;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .meet-us-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .curved-arrow {
+            font-size: 24px;
+            margin-left: 5px;
+            display: inline-block;
+            animation: bounceArrow 2s infinite;
+        }
+
+        @keyframes bounceArrow {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -756,8 +788,11 @@
             <!-- Main Map Column -->
             <div class="col-lg-9">
                 <div class="card" id="map-container">
-                    <div class="card-header">
-                        <h5 class="mb-1" id="mapCardTitle">📍 Animal Movement Map</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" id="mapCardTitle">📍 Animal Movement Map</h5>
+                        <div class="meet-us-link" title="Click on an elephant's name to 'meet it'">
+                            Meet Us <span class="curved-arrow">↷</span>
+                        </div>
                     </div>
                     <!-- Map and Legend Container -->
                     <div class="d-flex">
@@ -776,7 +811,6 @@
                                     <div class="bio-elephant-name">
                                         <span id="bioElephantName">Elephant Name</span>
                                     </div>
-                                    <div class="bio-tag-id" id="bioTagId">Tag ID: XXXX</div>
                                     <div class="bio-description" id="bioDescription">
                                         <!-- Bio content will be inserted here -->
                                     </div>
@@ -1495,7 +1529,6 @@
             
             // Update bio panel content
             document.getElementById('bioElephantName').textContent = bio.name;
-            document.getElementById('bioTagId').textContent = `Tag ID: ${tagId}`;
             
             // Build description HTML
             const descriptionHTML = `
@@ -1511,7 +1544,7 @@
             document.getElementById('bioDescription').innerHTML = descriptionHTML;
             
             // Update card title
-            cardTitle.innerHTML = `<img src="data/ele.png" alt="Elephant" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px;"> Meet ${bio.name}`;
+            cardTitle.innerHTML = `<img src="data/ele.png" alt="Elephant" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px; filter: brightness(0) invert(1);"> Meet ${bio.name}`;
             
             // Hide map, show bio panel
             mapElement.style.display = 'none';
