@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Road Crossings Analysis - Ecoexist</title>
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Support Our Work - Ecoexist Trust</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
         }
 
         .navbar {
             background: linear-gradient(135deg, #2c5530, #4a7c59);
             border-bottom: 3px solid #1a4a2e;
             padding: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .navbar-brand {
@@ -31,121 +31,199 @@
             font-size: 1.5em;
         }
 
-        .container-fluid {
-            padding: 20px;
+        .hero-section {
+            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 50px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .hero-section h1 {
+            font-size: 3em;
+            font-weight: bold;
             margin-bottom: 20px;
         }
 
-        .card-header {
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
-            color: white;
-            border-radius: 10px 10px 0 0 !important;
-            font-weight: bold;
+        .hero-section p {
+            font-size: 1.3em;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.95;
         }
 
-        #map {
-            height: 700px;
-            border-radius: 0 0 10px 10px;
+        .donation-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            height: 100%;
         }
 
-        .stats-card {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            border-left: 4px solid #ff6b35;
+        .donation-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            border-color: #4a7c59;
         }
 
-        .stats-number {
-            font-size: 2.5em;
+        .donation-icon {
+            font-size: 4em;
+            color: #2c5530;
+            margin-bottom: 20px;
+        }
+
+        .donation-title {
+            font-size: 1.5em;
             font-weight: bold;
             color: #2c5530;
+            margin-bottom: 15px;
         }
 
-        .stats-label {
-            font-size: 0.9em;
+        .donation-description {
             color: #666;
-            text-transform: uppercase;
+            margin-bottom: 20px;
+            line-height: 1.6;
         }
 
-        .legend {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .donation-price {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-bottom: 20px;
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
+        .donation-price-label {
+            font-size: 0.5em;
+            color: #666;
+            font-weight: normal;
         }
 
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
-            border: 2px solid white;
+        .btn-donate {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-donate:hover {
+            background: linear-gradient(135deg, #e55a25, #e88315);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .adopt-elephant-card {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 3px solid #ffc107;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .adopt-elephant-card::before {
+            content: "⭐ POPULAR";
+            position: absolute;
+            top: 15px;
+            right: -35px;
+            background: #ff6b35;
+            color: white;
+            padding: 5px 50px;
+            transform: rotate(45deg);
+            font-weight: bold;
+            font-size: 0.9em;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 400px;
-            flex-direction: column;
+        .benefits-list {
+            text-align: left;
+            margin: 20px 0;
         }
 
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2c5530;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        .benefits-list li {
+            margin-bottom: 10px;
+            color: #555;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .benefits-list i {
+            color: #2c5530;
+            margin-right: 10px;
         }
 
-        .btn-custom {
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-custom:hover {
-            background: linear-gradient(135deg, #1a4a2e, #2c5530);
-            color: white;
-        }
-
-        .info-box {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 15px;
-            border-radius: 8px;
+        .info-section h3 {
+            color: #2c5530;
+            font-weight: bold;
             margin-bottom: 20px;
         }
 
-        .info-box h6 {
-            color: #856404;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .info-section p {
+            color: #666;
+            line-height: 1.8;
         }
 
-        .info-box p {
-            color: #856404;
-            margin: 0;
-            font-size: 0.9em;
+        .footer {
+            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            color: white;
+            padding: 40px 0;
+            margin-top: 50px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .custom-amount-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .custom-amount-input {
+            font-size: 1.5em;
+            text-align: center;
+            border: 2px solid #4a7c59;
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 300px;
+            margin: 20px auto;
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2em;
+            }
+            
+            .donation-icon {
+                font-size: 3em;
+            }
+            
+            .donation-price {
+                font-size: 2em;
+            }
         }
     </style>
 </head>
@@ -154,501 +232,281 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                🐘 Road Crossings Analysis - Ecoexist
+                🐘 Ecoexist Trust
             </a>
+            <div class="ms-auto">
+                <span class="navbar-text text-white">
+                    Support Elephant Conservation
+                </span>
+            </div>
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <!-- Info Box -->
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <h1>💚 Support Our Mission</h1>
+            <p>Help us protect elephants and promote human-wildlife coexistence in Botswana. Your donation directly funds critical conservation work.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Donation Options -->
         <div class="row">
-            <div class="col-12">
-                <div class="info-box">
-                    <h6>📍 Road Crossing Hotspot Analysis</h6>
-                    <p>This map shows where elephants cross roads most frequently. Heat map intensity indicates crossing frequency. Red areas = high crossing activity.</p>
+            <!-- Adopt an Elephant - Featured -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card adopt-elephant-card">
+                    <div class="donation-icon">
+                        🐘
+                    </div>
+                    <div class="donation-title">Adopt an Elephant</div>
+                    <div class="donation-description">
+                        Become a guardian of one of our tracked elephants. Your adoption covers all costs for collaring, monitoring, and conservation efforts.
+                    </div>
+                    <div class="donation-price">
+                        $5,000<span class="donation-price-label"> / year</span>
+                    </div>
+                    <ul class="benefits-list">
+                        <li><i class="fas fa-check-circle"></i> GPS collar and deployment</li>
+                        <li><i class="fas fa-check-circle"></i> Year of satellite tracking</li>
+                        <li><i class="fas fa-check-circle"></i> Personalized certificate</li>
+                        <li><i class="fas fa-check-circle"></i> Monthly photo & location updates</li>
+                        <li><i class="fas fa-check-circle"></i> Name the elephant</li>
+                        <li><i class="fas fa-check-circle"></i> Exclusive dashboard access</li>
+                    </ul>
+                    <button class="btn btn-donate" onclick="donate('adopt-elephant', 5000)">
+                        🎁 Adopt Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Helicopter -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card">
+                    <div class="donation-icon">
+                        <i class="fas fa-helicopter"></i>
+                    </div>
+                    <div class="donation-title">Helicopter for Collaring</div>
+                    <div class="donation-description">
+                        Fund helicopter rental for our next collaring operation. Essential for safely accessing and collaring elephants in remote areas.
+                    </div>
+                    <div class="donation-price">
+                        $3,000<span class="donation-price-label"> / operation</span>
+                    </div>
+                    <button class="btn btn-donate" onclick="donate('helicopter', 3000)">
+                        🚁 Fund Helicopter
+                    </button>
+                </div>
+            </div>
+
+            <!-- GPS Collar -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card">
+                    <div class="donation-icon">
+                        <i class="fas fa-satellite-dish"></i>
+                    </div>
+                    <div class="donation-title">GPS Tracking Collar</div>
+                    <div class="donation-description">
+                        Provide a state-of-the-art GPS collar to track elephant movements and help prevent human-wildlife conflict.
+                    </div>
+                    <div class="donation-price">
+                        $2,500<span class="donation-price-label"> / collar</span>
+                    </div>
+                    <button class="btn btn-donate" onclick="donate('gps-collar', 2500)">
+                        📡 Buy Collar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fixed Wing Plane -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card">
+                    <div class="donation-icon">
+                        <i class="fas fa-plane"></i>
+                    </div>
+                    <div class="donation-title">Fixed Wing Aircraft</div>
+                    <div class="donation-description">
+                        Support aerial surveys and monitoring flights to track elephant herds and assess movement patterns across the landscape.
+                    </div>
+                    <div class="donation-price">
+                        $1,500<span class="donation-price-label"> / day</span>
+                    </div>
+                    <button class="btn btn-donate" onclick="donate('fixed-wing', 1500)">
+                        ✈️ Fund Aircraft
+                    </button>
+                </div>
+            </div>
+
+            <!-- Helicopter Fuel -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card">
+                    <div class="donation-icon">
+                        <i class="fas fa-gas-pump"></i>
+                    </div>
+                    <div class="donation-title">Helicopter Fuel</div>
+                    <div class="donation-description">
+                        Fuel costs for helicopter operations during collaring missions. Every gallon helps us reach more elephants.
+                    </div>
+                    <div class="donation-price">
+                        $800<span class="donation-price-label"> / tank</span>
+                    </div>
+                    <button class="btn btn-donate" onclick="donate('helicopter-fuel', 800)">
+                        ⛽ Fund Fuel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Plane Fuel -->
+            <div class="col-md-6 col-lg-4">
+                <div class="donation-card">
+                    <div class="donation-icon">
+                        <i class="fas fa-fill-drip"></i>
+                    </div>
+                    <div class="donation-title">Aircraft Fuel</div>
+                    <div class="donation-description">
+                        Support fixed-wing aircraft fuel costs for survey flights and monitoring operations over large territories.
+                    </div>
+                    <div class="donation-price">
+                        $500<span class="donation-price-label"> / tank</span>
+                    </div>
+                    <button class="btn btn-donate" onclick="donate('plane-fuel', 500)">
+                        ⛽ Fund Fuel
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Statistics Row -->
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stats-number" id="totalCrossings">-</div>
-                        <div class="stats-label">Total Crossings</div>
-                    </div>
+        <!-- Custom Amount Section -->
+        <div class="custom-amount-section">
+            <h3 style="color: #2c5530; font-weight: bold;">💝 Choose Your Own Amount</h3>
+            <p style="color: #666;">Every donation makes a difference, no matter the size.</p>
+            <input type="number" class="form-control custom-amount-input" id="customAmount" placeholder="Enter amount ($)" min="1">
+            <button class="btn btn-donate mt-3" style="max-width: 300px;" onclick="donateCustom()">
+                💚 Donate Custom Amount
+            </button>
+        </div>
+
+        <!-- Impact Information -->
+        <div class="info-section">
+            <h3>🌍 Your Impact</h3>
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div style="font-size: 3em; color: #2c5530;">11</div>
+                    <h5>Elephants Tracked</h5>
+                    <p>Currently monitoring 11 elephants across Botswana</p>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stats-number" id="uniqueLocations">-</div>
-                        <div class="stats-label">Unique Locations</div>
-                    </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div style="font-size: 3em; color: #2c5530;">100K+</div>
+                    <h5>GPS Data Points</h5>
+                    <p>Over 100,000 location records collected</p>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stats-number" id="elephantsTracked">-</div>
-                        <div class="stats-label">Elephants Tracked</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stats-number" id="hotspotCount">-</div>
-                        <div class="stats-label">Hotspots</div>
-                    </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div style="font-size: 3em; color: #2c5530;">24/7</div>
+                    <h5>Real-Time Monitoring</h5>
+                    <p>Continuous tracking to prevent human-wildlife conflict</p>
                 </div>
             </div>
         </div>
 
-        <!-- Map Row -->
-        <div class="row">
-            <div class="col-lg-10">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">🗺️ Road Crossing Locations & Heat Map</h5>
-                    </div>
-                    <div id="map"></div>
-                </div>
-            </div>
+        <!-- About Section -->
+        <div class="info-section">
+            <h3>📖 About Ecoexist Trust</h3>
+            <p>
+                Ecoexist Trust is dedicated to promoting coexistence between humans and wildlife in Botswana. 
+                Through GPS tracking, community engagement, and research, we work to reduce human-elephant conflict 
+                while protecting these magnificent animals for future generations.
+            </p>
+            <p>
+                Your donations directly support our field operations, including elephant collaring, aerial surveys, 
+                data analysis, and community outreach programs. 100% of your donation goes directly to conservation work.
+            </p>
+            <p style="margin-top: 20px;">
+                <strong>Tax Information:</strong> Ecoexist Trust is a registered non-profit organization. 
+                Donations may be tax-deductible. Please consult your tax advisor.
+            </p>
+        </div>
 
-            <!-- Legend -->
-            <div class="col-lg-2">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Legend</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ff0000;"></div>
-                                <span>High Activity</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ffa500;"></div>
-                                <span>Medium Activity</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ffff00;"></div>
-                                <span>Low Activity</span>
-                            </div>
-                            <hr>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ff6b35; border: 2px solid white;"></div>
-                                <span>Crossing Point</span>
-                            </div>
-                            <div class="legend-item">
-                                <div style="width: 20px; height: 2px; background: #666; margin-right: 10px; margin-left: 2px;"></div>
-                                <span>Roads</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="btn btn-custom w-100 mt-3" onclick="exportData()">
-                    📊 Export Data
-                </button>
+        <!-- Contact Section -->
+        <div class="info-section text-center">
+            <h3>📞 Get in Touch</h3>
+            <p style="font-size: 1.1em;">
+                <strong>Email:</strong> <a href="mailto:info@ecoexisttrust.org" style="color: #2c5530;">info@ecoexisttrust.org</a><br>
+                <strong>Phone:</strong> +267 6865083<br>
+                <strong>Website:</strong> <a href="https://www.ecoexisttrust.org/" target="_blank" style="color: #2c5530;">www.ecoexisttrust.org</a>
+            </p>
+            <div class="mt-4">
+                <a href="https://www.facebook.com/ecoexistproject" target="_blank" class="btn btn-outline-primary btn-lg me-2">
+                    <i class="fab fa-facebook-f"></i> Facebook
+                </a>
+                <a href="https://www.instagram.com/ecoexisttrust/?hl=en" target="_blank" class="btn btn-outline-danger btn-lg">
+                    <i class="fab fa-instagram"></i> Instagram
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999;">
-        <div class="spinner"></div>
-        <p class="mt-3">Analyzing road crossings...</p>
+    <!-- Footer -->
+    <div class="footer">
+        <div class="container text-center">
+            <p style="font-size: 1.2em; margin-bottom: 10px;">
+                <strong>Ecoexist Trust</strong> - Promoting coexistence between humans and wildlife
+            </p>
+            <p>
+                P.O.Box 1755, Plot 1278, Sennonori Ward, Maun, Botswana<br>
+                Tel: +267 6865083 | Email: info@ecoexisttrust.org
+            </p>
+            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
+                © 2025 Ecoexist Trust. All rights reserved.
+            </p>
+        </div>
     </div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Leaflet.heat plugin for heatmap -->
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-
-    <!-- Turf.js for geometric calculations -->
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        let map;
-        let allData = [];
-        let roadsData = null;
-        let crossingPoints = [];
-        let heatmapLayer = null;
-        let crossingMarkers = [];
+        // Donation handler
+        function donate(item, amount) {
+            // Build donation details
+            const itemNames = {
+                'adopt-elephant': 'Adopt an Elephant',
+                'helicopter': 'Helicopter for Collaring',
+                'gps-collar': 'GPS Tracking Collar',
+                'fixed-wing': 'Fixed Wing Aircraft',
+                'helicopter-fuel': 'Helicopter Fuel',
+                'plane-fuel': 'Aircraft Fuel'
+            };
 
-        // Elephant names
-        const elephantNames = {
-            "3839": "Shorobe",
-            "5588": "Larry",
-            "5589": "Mokolwane",
-            "5590": "Ebanaria",
-            "5591": "Grand Grey",
-            "8537": "Brother",
-            "8538": "Bruce",
-            "8539": "Raintree",
-            "8540": "Art",
-            "8542": "Dream",
-            "8543": "Queenie"
-        };
-
-        // Initialize map
-        function initMap() {
-            map = L.map('map').setView([-19.5, 23.5], 8);
-
-            // Satellite imagery background
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri',
-                maxZoom: 18,
-                opacity: 0.7
-            }).addTo(map);
-
-            // Add scale
-            L.control.scale({
-                position: 'bottomleft',
-                metric: true,
-                imperial: false
-            }).addTo(map);
-
-            console.log('✓ Map initialized');
-        }
-
-        // Load data
-        async function loadData() {
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            loadingOverlay.style.display = 'flex';
-
-            try {
-                // Load elephant movement data from API
-                console.log('Loading elephant movement data from API...');
-                const response = await fetch('https://ecoexist-api.vercel.app/api/awt-data-public');
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to load movement data: ${response.status} - ${response.statusText}`);
-                }
-                
-                allData = await response.json();
-                console.log(`✓ Loaded ${allData.length} movement records`);
-
-                // Load roads data - try multiple possible paths
-                console.log('Loading roads data...');
-                let roadsLoaded = false;
-                const roadsPaths = [
-                    'data/Roads.geojson',
-                    './data/Roads.geojson',
-                    '../data/Roads.geojson',
-                    'Roads.geojson'
-                ];
-
-                for (const path of roadsPaths) {
-                    try {
-                        console.log(`Trying to load roads from: ${path}`);
-                        const roadsResponse = await fetch(path);
-                        if (roadsResponse.ok) {
-                            roadsData = await roadsResponse.json();
-                            console.log(`✓ Loaded ${roadsData.features.length} road segments from ${path}`);
-                            roadsLoaded = true;
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`Failed to load from ${path}: ${e.message}`);
-                    }
-                }
-
-                if (!roadsLoaded) {
-                    throw new Error('Could not load Roads.geojson file. Please ensure the file exists in the data/ folder and you are running this from a web server (not file://).');
-                }
-
-                // Calculate road crossings
-                calculateRoadCrossings();
-
-                // Display on map
-                displayRoads();
-                displayCrossings();
-
-                // Update statistics
-                updateStatistics();
-
-            } catch (error) {
-                console.error('Error loading data:', error);
-                
-                let errorMessage = 'Failed to load data:\n\n' + error.message;
-                
-                if (error.message.includes('Roads.geojson')) {
-                    errorMessage += '\n\n💡 Solution: You need to run this from a web server, not by opening the file directly.\n\nQuick fix:\n1. Open terminal in this folder\n2. Run: python3 -m http.server 8000\n3. Open: http://localhost:8000/road_crossings.html';
-                }
-                
-                alert(errorMessage);
-            } finally {
-                loadingOverlay.style.display = 'none';
+            const itemName = itemNames[item] || item;
+            
+            // Show confirmation
+            if (confirm(`Thank you for your generous donation!\n\nItem: ${itemName}\nAmount: $${amount.toLocaleString()}\n\nClick OK to proceed to payment (placeholder - integrate with your payment system)`)) {
+                // Here you would integrate with your payment processor
+                // For now, we'll show contact info
+                alert(`To complete your donation:\n\n1. Email: info@ecoexisttrust.org\n2. Subject: "Donation - ${itemName}"\n3. We'll send you payment details\n\nOr call +267 6865083\n\nThank you for supporting elephant conservation! 🐘`);
             }
         }
 
-        // Calculate road crossings
-        function calculateRoadCrossings() {
-            console.log('Calculating road crossings...');
-            crossingPoints = [];
-
-            // Group movement data by tag
-            const dataByTag = {};
-            allData.forEach(item => {
-                const tagId = item.tagId || item.tag_id;
-                if (!dataByTag[tagId]) {
-                    dataByTag[tagId] = [];
-                }
-                dataByTag[tagId].push(item);
-            });
-
-            // For each elephant, create line segments between consecutive points
-            Object.keys(dataByTag).forEach(tagId => {
-                const tagData = dataByTag[tagId].sort((a, b) => a.timestamp - b.timestamp);
-                
-                // Create line segments between consecutive points
-                for (let i = 0; i < tagData.length - 1; i++) {
-                    const point1 = tagData[i];
-                    const point2 = tagData[i + 1];
-                    
-                    const movementLine = turf.lineString([
-                        [point1.longitude, point1.latitude],
-                        [point2.longitude, point2.latitude]
-                    ]);
-
-                    // Check intersection with each road
-                    roadsData.features.forEach(road => {
-                        try {
-                            const roadGeometry = road.geometry;
-                            
-                            // Check if road and movement line intersect
-                            const intersection = turf.lineIntersect(movementLine, roadGeometry);
-                            
-                            if (intersection.features.length > 0) {
-                                // Found crossing point(s)
-                                intersection.features.forEach(point => {
-                                    const coords = point.geometry.coordinates;
-                                    crossingPoints.push({
-                                        lat: coords[1],
-                                        lng: coords[0],
-                                        tagId: tagId,
-                                        elephantName: elephantNames[tagId] || `Tag ${tagId}`,
-                                        timestamp: point1.timestamp,
-                                        roadName: road.properties.name || 'Unnamed Road'
-                                    });
-                                });
-                            }
-                        } catch (error) {
-                            // Skip invalid geometries
-                        }
-                    });
-                }
-            });
-
-            console.log(`✓ Found ${crossingPoints.length} road crossings`);
-        }
-
-        // Display roads on map
-        function displayRoads() {
-            L.geoJSON(roadsData, {
-                style: {
-                    color: '#666',
-                    weight: 2,
-                    opacity: 0.7
-                },
-                onEachFeature: function(feature, layer) {
-                    if (feature.properties && feature.properties.name) {
-                        layer.bindPopup(`<strong>Road:</strong> ${feature.properties.name}`);
-                    }
-                }
-            }).addTo(map);
-
-            console.log('✓ Roads displayed');
-        }
-
-        // Display crossings with heatmap and points
-        function displayCrossings() {
-            if (crossingPoints.length === 0) {
-                console.warn('No crossing points to display');
+        // Custom amount donation
+        function donateCustom() {
+            const amount = document.getElementById('customAmount').value;
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid donation amount');
                 return;
             }
 
-            // Prepare data for heatmap [lat, lng, intensity]
-            const heatmapData = crossingPoints.map(point => [
-                point.lat,
-                point.lng,
-                1.0 // Intensity
-            ]);
-
-            // Create heatmap layer
-            heatmapLayer = L.heatLayer(heatmapData, {
-                radius: 25,
-                blur: 15,
-                maxZoom: 17,
-                max: 1.0,
-                gradient: {
-                    0.0: 'blue',
-                    0.2: 'cyan',
-                    0.4: 'lime',
-                    0.6: 'yellow',
-                    0.8: 'orange',
-                    1.0: 'red'
-                }
-            }).addTo(map);
-
-            console.log('✓ Heatmap created');
-
-            // Add individual crossing point markers
-            crossingPoints.forEach(point => {
-                const marker = L.circleMarker([point.lat, point.lng], {
-                    radius: 6,
-                    fillColor: '#ff6b35',
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                });
-
-                marker.bindPopup(`
-                    <strong>Road Crossing</strong><br>
-                    <strong>Elephant:</strong> ${point.elephantName}<br>
-                    <strong>Road:</strong> ${point.roadName}<br>
-                    <strong>Date:</strong> ${new Date(point.timestamp * 1000).toLocaleDateString()}<br>
-                    <strong>Location:</strong> ${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}
-                `);
-
-                marker.addTo(map);
-                crossingMarkers.push(marker);
-            });
-
-            console.log(`✓ ${crossingPoints.length} crossing markers added`);
-
-            // Fit map to crossing points
-            if (crossingPoints.length > 0) {
-                const bounds = L.latLngBounds(crossingPoints.map(p => [p.lat, p.lng]));
-                map.fitBounds(bounds.pad(0.1));
+            if (confirm(`Thank you for your generous donation of $${parseFloat(amount).toLocaleString()}!\n\nClick OK to proceed to payment (placeholder - integrate with your payment system)`)) {
+                alert(`To complete your donation:\n\n1. Email: info@ecoexisttrust.org\n2. Subject: "Donation - $${amount}"\n3. We'll send you payment details\n\nOr call +267 6865083\n\nThank you for supporting elephant conservation! 🐘`);
+                document.getElementById('customAmount').value = '';
             }
         }
 
-        // Update statistics
-        function updateStatistics() {
-            // Total crossings
-            document.getElementById('totalCrossings').textContent = crossingPoints.length.toLocaleString();
-
-            // Unique locations (within 100m radius)
-            const uniqueLocations = getUniqueCrossingLocations(crossingPoints, 0.001); // ~100m
-            document.getElementById('uniqueLocations').textContent = uniqueLocations;
-
-            // Elephants tracked
-            const uniqueElephants = [...new Set(crossingPoints.map(p => p.tagId))];
-            document.getElementById('elephantsTracked').textContent = uniqueElephants.length;
-
-            // Hotspots (locations with 5+ crossings)
-            const hotspots = identifyHotspots(crossingPoints, 0.001, 5);
-            document.getElementById('hotspotCount').textContent = hotspots;
-        }
-
-        // Get unique crossing locations (cluster nearby points)
-        function getUniqueCrossingLocations(points, threshold) {
-            const clusters = [];
-            const used = new Set();
-
-            points.forEach((point, index) => {
-                if (used.has(index)) return;
-
-                const cluster = [index];
-                used.add(index);
-
-                points.forEach((otherPoint, otherIndex) => {
-                    if (used.has(otherIndex)) return;
-
-                    const distance = Math.sqrt(
-                        Math.pow(point.lat - otherPoint.lat, 2) +
-                        Math.pow(point.lng - otherPoint.lng, 2)
-                    );
-
-                    if (distance < threshold) {
-                        cluster.push(otherIndex);
-                        used.add(otherIndex);
-                    }
-                });
-
-                clusters.push(cluster);
-            });
-
-            return clusters.length;
-        }
-
-        // Identify hotspots
-        function identifyHotspots(points, threshold, minCrossings) {
-            const clusters = [];
-            const used = new Set();
-
-            points.forEach((point, index) => {
-                if (used.has(index)) return;
-
-                const cluster = [index];
-                used.add(index);
-
-                points.forEach((otherPoint, otherIndex) => {
-                    if (used.has(otherIndex)) return;
-
-                    const distance = Math.sqrt(
-                        Math.pow(point.lat - otherPoint.lat, 2) +
-                        Math.pow(point.lng - otherPoint.lng, 2)
-                    );
-
-                    if (distance < threshold) {
-                        cluster.push(otherIndex);
-                        used.add(otherIndex);
-                    }
-                });
-
-                if (cluster.length >= minCrossings) {
-                    clusters.push(cluster);
-                }
-            });
-
-            return clusters.length;
-        }
-
-        // Export data to CSV
-        function exportData() {
-            if (crossingPoints.length === 0) {
-                alert('No data to export');
-                return;
+        // Allow Enter key to submit custom amount
+        document.getElementById('customAmount').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                donateCustom();
             }
-
-            // Create CSV content
-            const header = 'Elephant Name,Tag ID,Road Name,Latitude,Longitude,Date,Time\n';
-            const rows = crossingPoints.map(point => {
-                const date = new Date(point.timestamp * 1000);
-                return `${point.elephantName},${point.tagId},${point.roadName},${point.lat.toFixed(6)},${point.lng.toFixed(6)},${date.toLocaleDateString()},${date.toLocaleTimeString()}`;
-            }).join('\n');
-
-            const csv = header + rows;
-
-            // Download CSV
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `road_crossings_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-
-            console.log('✓ Data exported');
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            loadData();
         });
     </script>
 </body>
