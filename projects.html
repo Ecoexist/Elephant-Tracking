@@ -103,14 +103,11 @@
             opacity: 1 !important;
             visibility: visible !important;
             transform: scale(1);
-        }
-
-        /* Center the main circle when its category is hovered */
-        .category-group:hover .main-category {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            z-index: 100;
         }
 
         .main-category {
@@ -266,9 +263,9 @@
             visibility: hidden !important;
         }
 
-        /* Second-level sub-items - Circular positioning */
+        /* Second-level sub-items - Circular positioning - constrained to viewport */
         .sub-sub-items {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -276,8 +273,9 @@
             visibility: hidden;
             transition: all 0.4s ease;
             z-index: 4;
-            width: 400px;
-            height: 400px;
+            width: 600px;
+            height: 600px;
+            pointer-events: none;
         }
 
         .sub-item-container:hover .sub-sub-items {
@@ -285,47 +283,53 @@
             visibility: visible;
         }
 
-        /* Position sub-sub-items in a circle */
+        /* Position sub-sub-items in a constrained circle around center */
         .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            top: 0;
+            top: -80px;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            top: 25%;
-            right: 0;
-            transform: translate(50%, -50%);
+            top: -40px;
+            right: -80px;
+            transform: translate(0, -50%);
+            pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            bottom: 25%;
-            right: 0;
-            transform: translate(50%, 50%);
+            bottom: -40px;
+            right: -80px;
+            transform: translate(0, 50%);
+            pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(4) {
             position: absolute;
-            bottom: 0;
+            bottom: -80px;
             left: 50%;
-            transform: translate(-50%, 50%);
+            transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(5) {
             position: absolute;
-            bottom: 25%;
-            left: 0;
-            transform: translate(-50%, 50%);
+            bottom: -40px;
+            left: -80px;
+            transform: translate(0, 50%);
+            pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(6) {
             position: absolute;
-            top: 25%;
-            left: 0;
-            transform: translate(-50%, -50%);
+            top: -40px;
+            left: -80px;
+            transform: translate(0, -50%);
+            pointer-events: auto;
         }
 
         .sub-sub-item {
@@ -360,12 +364,10 @@
             color: white;
         }
 
-        /* Connecting lines for sub-sub-items */
+        /* Connecting lines for sub-sub-items - adjusted for constrained positioning */
         .sub-sub-item::before {
             content: '';
             position: absolute;
-            width: 60px;
-            height: 2px;
             background: linear-gradient(135deg, #4CAF50, #2E7D32);
             opacity: 0;
             visibility: hidden;
@@ -379,81 +381,78 @@
 
         /* Position connecting lines based on sub-sub-item position */
         .sub-sub-items .sub-sub-item:nth-child(1)::before {
-            top: 50%;
+            top: 100%;
             left: 50%;
-            transform: translate(0, -50%);
-            width: 0;
-            height: 60px;
-            transform-origin: center top;
+            transform: translate(-50%, 0);
+            width: 2px;
+            height: 40px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(2)::before {
             top: 50%;
-            left: 0;
-            transform: translate(0, -50%) rotate(90deg);
-            transform-origin: right center;
-            width: 60px;
+            left: 100%;
+            transform: translate(0, -50%);
+            width: 40px;
             height: 2px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(3)::before {
             bottom: 50%;
-            left: 0;
-            transform: translate(0, 50%) rotate(90deg);
-            transform-origin: right center;
-            width: 60px;
+            left: 100%;
+            transform: translate(0, 50%);
+            width: 40px;
             height: 2px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(4)::before {
-            bottom: 0;
+            bottom: 100%;
             left: 50%;
             transform: translate(-50%, 0);
-            width: 0;
-            height: 60px;
-            transform-origin: center bottom;
+            width: 2px;
+            height: 40px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(5)::before {
             bottom: 50%;
             right: 100%;
-            transform: translate(0, 50%) rotate(-90deg);
-            transform-origin: left center;
-            width: 60px;
+            transform: translate(0, 50%);
+            width: 40px;
             height: 2px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(6)::before {
             top: 50%;
             right: 100%;
-            transform: translate(0, -50%) rotate(-90deg);
-            transform-origin: left center;
-            width: 60px;
+            transform: translate(0, -50%);
+            width: 40px;
             height: 2px;
         }
 
         .sub-items.left {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
+            width: 800px;
             height: 600px;
+            pointer-events: none;
         }
 
-        /* Position sub-items in a circle around the main icon */
+        /* Position sub-items in a circle around the main icon - constrained to viewport */
         .sub-items.left .sub-item-container:nth-child(1) {
             position: absolute;
-            top: 0;
+            top: -150px;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sub-items.left .sub-item-container:nth-child(2) {
             position: absolute;
-            bottom: 0;
+            bottom: -150px;
             left: 50%;
-            transform: translate(-50%, 50%);
+            transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sub-items.right {
@@ -576,10 +575,39 @@
                 width: 100%;
             }
 
+            .category-group:hover {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+            }
+
             .category-group:hover .main-category {
                 position: relative !important;
                 top: auto !important;
                 left: auto !important;
+                transform: none !important;
+            }
+
+            .sub-items.left {
+                position: static !important;
+                width: auto !important;
+                height: auto !important;
+            }
+
+            .sub-items.left .sub-item-container {
+                position: static !important;
+                transform: none !important;
+            }
+
+            .sub-sub-items {
+                position: static !important;
+                width: auto !important;
+                height: auto !important;
+            }
+
+            .sub-sub-items .sub-sub-item {
+                position: static !important;
                 transform: none !important;
             }
 
