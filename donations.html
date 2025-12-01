@@ -76,7 +76,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             border: 2px solid transparent;
-            height: 100%;
+            min-height: 450px;
             cursor: pointer;
             position: relative;
             perspective: 1000px;
@@ -91,7 +91,7 @@
         .card-inner {
             position: relative;
             width: 100%;
-            height: 100%;
+            min-height: 370px;
             text-align: center;
             transition: transform 0.6s;
             transform-style: preserve-3d;
@@ -104,13 +104,15 @@
         .card-front, .card-back {
             position: absolute;
             width: 100%;
+            height: 100%;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+            top: 0;
+            left: 0;
         }
 
         .card-back {
             transform: rotateY(180deg);
-            padding: 20px;
         }
 
         .donation-icon {
@@ -171,18 +173,24 @@
 
         .more-info-text {
             color: #555;
-            line-height: 1.8;
+            line-height: 1.6;
             margin-bottom: 20px;
             text-align: left;
+            font-size: 0.9em;
+        }
+
+        .more-info-text h5 {
+            font-size: 1.2em;
         }
 
         .more-info-text ul {
-            margin: 15px 0;
+            margin: 10px 0;
             padding-left: 20px;
         }
 
         .more-info-text li {
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+            font-size: 0.95em;
         }
 
         .btn-back-to-front {
@@ -203,10 +211,11 @@
         .custom-amount-section {
             background: white;
             border-radius: 15px;
-            padding: 30px;
-            margin: 30px 0;
+            padding: 40px;
+            margin: 50px 0;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
+            clear: both;
         }
 
         .custom-amount-input {
@@ -223,8 +232,9 @@
             background: white;
             border-radius: 15px;
             padding: 40px;
-            margin: 50px 0;
+            margin: 60px 0 40px 0;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            clear: both;
         }
 
         .info-section h3 {
@@ -351,6 +361,10 @@
             transform: translateY(-3px);
         }
 
+        .col-md-6, .col-lg-4 {
+            margin-bottom: 30px;
+        }
+
         @media (max-width: 768px) {
             .hero-section h1 {
                 font-size: 2em;
@@ -362,6 +376,14 @@
             
             .donation-price {
                 font-size: 2em;
+            }
+
+            .donation-card {
+                min-height: 400px;
+            }
+
+            .card-inner {
+                min-height: 320px;
             }
 
             .footer-content {
@@ -416,7 +438,7 @@
 
     <div class="container">
         <!-- Donation Options -->
-        <div class="row">
+        <div class="row g-4">
             <!-- Adopt an Elephant -->
             <div class="col-md-6 col-lg-4">
                 <div class="donation-card" onclick="flipCard(this)">
