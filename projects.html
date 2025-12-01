@@ -70,18 +70,20 @@
 
         .main-categories {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
             align-items: center;
-            gap: 60px;
+            gap: 100px;
             margin: 50px auto;
-            max-width: 1000px;
+            max-width: 1200px;
             padding: 50px 20px;
             position: relative;
+            min-height: 400px;
         }
 
         .category-group {
             position: relative;
-            width: 100%;
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -100,11 +102,15 @@
         .category-group:hover {
             opacity: 1 !important;
             visibility: visible !important;
+            transform: scale(1);
+        }
+
+        /* Center the main circle when its category is hovered */
+        .category-group:hover .main-category {
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(1);
-            z-index: 10;
+            transform: translate(-50%, -50%);
         }
 
         .main-category {
@@ -559,19 +565,18 @@
             }
 
             .main-categories {
+                flex-direction: column;
                 gap: 40px;
                 padding: 30px 20px;
                 position: relative;
             }
 
             .category-group {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
+                flex: none;
+                width: 100%;
             }
 
-            .category-group:hover {
+            .category-group:hover .main-category {
                 position: relative !important;
                 top: auto !important;
                 left: auto !important;
