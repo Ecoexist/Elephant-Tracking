@@ -774,7 +774,6 @@
                                         <i class="fas fa-arrow-right"></i>
                                     </button>
                                     <div class="bio-elephant-name">
-                                        <span class="bio-color-indicator" id="bioColorIndicator"></span>
                                         <span id="bioElephantName">Elephant Name</span>
                                     </div>
                                     <div class="bio-tag-id" id="bioTagId">Tag ID: XXXX</div>
@@ -1031,9 +1030,9 @@
             },
             "5590": {
                 name: "Ebanaria",
-                origin: "This name combines 'Ebana' (a local term for strength) with 'aria' (meaning song), reflecting the powerful trumpeting calls this elephant was known to make when first encountered.",
-                description: "Ebanaria is one of our more vocal elephants, often communicating with infrasound that can travel for kilometers. Researchers have recorded some of the most distinctive calls from this individual.",
-                facts: "Ebanaria's vocalizations have been featured in acoustic studies of elephant communication patterns."
+                origin: "This name combines 'Ebany' with 'Aria', the names of Ecoexist's founders' children.",
+                description: "Ebanaria was collared in the Chanoga area, home of Anna, Graham, Ebany, and Aria.",
+                facts: "Ebanaria is mother to two calves."
             },
             "5591": {
                 name: "Grand Grey",
@@ -1497,23 +1496,22 @@
             // Update bio panel content
             document.getElementById('bioElephantName').textContent = bio.name;
             document.getElementById('bioTagId').textContent = `Tag ID: ${tagId}`;
-            document.getElementById('bioColorIndicator').style.backgroundColor = tagColors[tagId] || '#2c5530';
             
             // Build description HTML
             const descriptionHTML = `
-                <h4>🌍 Origin of Name</h4>
+                <h4>Origin of Name</h4>
                 <p>${bio.origin}</p>
                 
-                <h4>🐘 About ${bio.name}</h4>
+                <h4>About ${bio.name}</h4>
                 <p>${bio.description}</p>
                 
-                <h4>📊 Research Notes</h4>
+                <h4>Research Notes</h4>
                 <p>${bio.facts}</p>
             `;
             document.getElementById('bioDescription').innerHTML = descriptionHTML;
             
             // Update card title
-            cardTitle.innerHTML = `🐘 Meet ${bio.name}`;
+            cardTitle.innerHTML = `<img src="data/ele.png" alt="Elephant" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px;"> Meet ${bio.name}`;
             
             // Hide map, show bio panel
             mapElement.style.display = 'none';
