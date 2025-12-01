@@ -80,6 +80,7 @@
             cursor: pointer;
             position: relative;
             perspective: 1000px;
+            overflow: hidden;
         }
 
         .donation-card:hover {
@@ -100,19 +101,21 @@
 
         .popular-banner {
             position: absolute;
-            top: 25px;
-            right: -50px;
+            top: 30px;
+            right: -30px;
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             color: white;
-            padding: 12px 80px;
+            padding: 10px 50px;
             font-weight: bold;
-            font-size: 0.8em;
+            font-size: 0.75em;
             transform: rotate(45deg);
             z-index: 10;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             white-space: nowrap;
+            width: 200px;
+            text-align: center;
         }
 
         .card-inner {
@@ -147,11 +150,6 @@
             color: #2c5530;
             margin-bottom: 20px;
             text-align: center;
-        }
-
-        .donation-card.popular .donation-icon {
-            font-size: 7em;
-            filter: drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3));
         }
 
         .donation-title {
@@ -395,7 +393,6 @@
 
         .col-md-6, .col-lg-4 {
             margin-bottom: 30px;
-            overflow: visible;
         }
 
         @media (max-width: 768px) {
@@ -479,7 +476,7 @@
                     <div class="card-inner">
                         <div class="card-front">
                             <div class="donation-icon">
-                                🐘
+                                <i class="fas fa-paw"></i>
                             </div>
                             <div class="donation-title">Adopt an Elephant</div>
                             <div class="donation-description">
