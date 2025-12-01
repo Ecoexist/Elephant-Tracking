@@ -71,9 +71,9 @@
         .main-categories {
             position: relative;
             width: 100%;
-            max-width: 1400px;
-            height: 800px;
-            margin: 100px auto;
+            max-width: 1600px;
+            height: 900px;
+            margin: 50px auto 100px;
             pointer-events: none;
         }
 
@@ -89,17 +89,17 @@
             pointer-events: auto;
         }
 
-        /* Position main categories - Mitigation left, Elephant Aware Economy right */
+        /* Position main categories - Mitigation bottom-center, Elephant Aware Economy left-center */
         .category-group:nth-child(1) {
-            top: 50%;
-            left: 30%;
-            transform: translate(-50%, -50%);
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .category-group:nth-child(2) {
             top: 50%;
-            left: 70%;
-            transform: translate(-50%, -50%);
+            left: 200px;
+            transform: translateY(-50%);
         }
 
         /* Dynamic hover system - highlights hovered item and its connections */
@@ -170,33 +170,33 @@
             z-index: 2;
         }
 
-        /* Level 1 icons - largest, fully opaque */
+        /* Level 1 icons - Main categories (green) */
         .main-circle {
-            width: 180px;
-            height: 180px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            background: linear-gradient(135deg, #3d5a3f, #4a6b4f);
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 1.1em;
+            font-size: 0.95em;
             font-weight: bold;
             margin: 0 auto;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             transition: all 0.4s ease;
             text-align: center;
-            padding: 15px;
+            padding: 12px;
             opacity: 1;
             z-index: 100;
         }
 
-        /* Level 2 icons - slightly smaller and more transparent */
+        /* Level 2 icons - Sub-categories (orange) */
         .sub-item {
-            width: 140px;
-            height: 140px;
+            width: 130px;
+            height: 130px;
             border-radius: 50%;
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             color: white;
@@ -204,39 +204,39 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.9em;
+            font-size: 0.85em;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            text-align: center;
-            padding: 12px;
-            text-decoration: none;
-            opacity: 0.8;
-            z-index: 90;
-        }
-
-        /* Level 3 icons - smallest and most transparent */
-        .sub-sub-item {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75em;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
             cursor: pointer;
             transition: all 0.4s ease;
             text-align: center;
             padding: 10px;
             text-decoration: none;
+            opacity: 0.85;
+            z-index: 90;
+        }
+
+        /* Level 3 icons - Tertiary projects (green) */
+        .sub-sub-item {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a6b4f, #5c7d5f);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-align: center;
+            padding: 8px;
+            text-decoration: none;
             position: relative;
-            opacity: 0.6;
+            opacity: 0.7;
             z-index: 80;
         }
 
@@ -410,13 +410,12 @@
 
         /* Sub-sub-items are always visible now */
 
-        /* Position sub-sub-items in strategic locations to avoid overlaps */
-        /* Spread them out in different directions from their parent */
+        /* Position tertiary items with proper spacing to avoid overlaps */
         
-        /* Long-term Mitigation children (top-left area) */
+        /* Long-term Mitigation children (3 items) - spread upward and to sides */
         .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            top: -80px;
+            top: -130px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
@@ -424,119 +423,116 @@
 
         .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            top: 0;
-            left: -100px;
+            top: -60px;
+            left: -140px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            top: 0;
-            right: -100px;
+            top: -60px;
+            right: -140px;
             pointer-events: auto;
         }
 
-        /* Short-term Mitigation children (bottom-left area) */
+        /* Short-term Mitigation children (4 items) - spread far left and downward */
         .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            bottom: -80px;
-            left: 50%;
-            transform: translate(-50%, 0);
+            top: -80px;
+            left: -160px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            bottom: 0;
-            left: -100px;
+            top: 0;
+            left: -160px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            bottom: 20px;
-            left: -180px;
+            top: 80px;
+            left: -160px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
             position: absolute;
-            bottom: 80px;
-            left: -180px;
+            top: 160px;
+            left: -160px;
             pointer-events: auto;
         }
 
-        /* Elephant Aware Farming children (top-right area) */
+        /* Elephant Aware Farming children (4 items) - spread upward and right */
         .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            top: -80px;
-            left: 50%;
-            transform: translate(-50%, 0);
+            top: -130px;
+            left: 30px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            top: 0;
-            right: -100px;
+            top: -60px;
+            left: 140px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            top: 60px;
-            right: -100px;
+            top: 20px;
+            left: 140px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(4) {
             position: absolute;
-            top: 0;
-            left: -100px;
+            top: 100px;
+            left: 140px;
             pointer-events: auto;
         }
 
-        /* SMEs children (bottom-right area) */
+        /* SMEs children (6 items) - vertical stack far left */
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            bottom: -80px;
-            left: 50%;
-            transform: translate(-50%, 0);
+            top: -100px;
+            left: -170px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            bottom: 0;
-            right: -100px;
+            top: -30px;
+            left: -170px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            bottom: 20px;
-            right: -180px;
+            top: 40px;
+            left: -170px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
             position: absolute;
-            bottom: 80px;
-            right: -180px;
+            top: 110px;
+            left: -170px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(5) {
             position: absolute;
-            bottom: 140px;
-            right: -180px;
+            top: 180px;
+            left: -170px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(6) {
             position: absolute;
-            bottom: 200px;
-            right: -180px;
+            top: 250px;
+            left: -170px;
             pointer-events: auto;
         }
 
@@ -747,34 +743,34 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Position sub-items strategically to avoid overlaps */
-        /* For Mitigation (left side) - position sub-items on left side */
+        /* Position sub-items with more space */
+        /* Mitigation (bottom-center) - Long-term upper-right, Short-term left */
         .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(1) {
             position: absolute;
-            top: -100px;
-            left: -80px;
+            top: -250px;
+            right: 150px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(2) {
             position: absolute;
-            bottom: -100px;
-            left: -80px;
+            top: -50px;
+            left: -250px;
             pointer-events: auto;
         }
 
-        /* For Elephant Aware Economy (right side) - position sub-items on right side */
+        /* Elephant Aware Economy (left-center) - Farming above, SMEs below */
         .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(1) {
             position: absolute;
-            top: -100px;
-            right: -80px;
+            top: -200px;
+            left: 100px;
             pointer-events: auto;
         }
 
         .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(2) {
             position: absolute;
-            bottom: -100px;
-            right: -80px;
+            top: 130px;
+            left: 120px;
             pointer-events: auto;
         }
 
