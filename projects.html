@@ -69,23 +69,18 @@
         }
 
         .main-categories {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            gap: 100px;
-            margin: 50px auto;
-            max-width: 1200px;
-            padding: 50px 20px;
-            position: relative;
-            min-height: 400px;
-        }
-
-        .category-group {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            width: 100vw;
+            height: 70vh; /* Leave space for header/footer */
+            margin-top: -50px; /* Account for header */
+            pointer-events: none;
+        }
+
+        .category-group {
+            position: absolute;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -93,15 +88,20 @@
             opacity: 1;
             visibility: visible;
             z-index: 10;
+            pointer-events: auto;
         }
 
-        /* Offset the two main categories from center */
+        /* Position main categories at left and right thirds */
         .category-group:nth-child(1) {
-            transform: translate(-50%, -50%) translateX(-200px);
+            top: 50%;
+            left: 25%;
+            transform: translate(-50%, -50%);
         }
 
         .category-group:nth-child(2) {
-            transform: translate(-50%, -50%) translateX(200px);
+            top: 50%;
+            left: 75%;
+            transform: translate(-50%, -50%);
         }
 
         /* Hover priority system */
@@ -308,7 +308,7 @@
             position: relative;
         }
 
-        /* Connecting lines for sub-items - now radial from center */
+        /* Connecting lines for sub-items - now radial from main category */
         .sub-items.left .sub-item-container:nth-child(1) .sub-item::after {
             content: '';
             position: absolute;
@@ -316,10 +316,10 @@
             left: 50%;
             transform: translateX(-50%);
             width: 2px;
-            height: 80px;
+            height: 60px;
             background: linear-gradient(to top, #ff6b35, #f7931e);
-            opacity: 0;
-            visibility: hidden;
+            opacity: 1;
+            visibility: visible;
             transition: all 0.4s ease;
         }
 
@@ -330,10 +330,10 @@
             left: 50%;
             transform: translateX(-50%);
             width: 2px;
-            height: 80px;
+            height: 60px;
             background: linear-gradient(to bottom, #ff6b35, #f7931e);
-            opacity: 0;
-            visibility: hidden;
+            opacity: 1;
+            visibility: visible;
             transition: all 0.4s ease;
         }
 
@@ -352,25 +352,29 @@
 
         /* Second-level sub-items - Circular positioning - constrained to viewport */
         .sub-sub-items {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: absolute;
             opacity: 1;
             visibility: visible;
             transition: all 0.4s ease;
             z-index: 4;
-            width: 600px;
-            height: 600px;
+            width: 300px;
+            height: 300px;
             pointer-events: none;
+        }
+
+        /* Position sub-sub-items relative to their parent sub-item */
+        .sub-item-container .sub-sub-items {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         /* Sub-sub-items are always visible now */
 
-        /* Position sub-sub-items in a constrained circle around center */
+        /* Position sub-sub-items in a small circle around their parent sub-item */
         .sub-sub-items .sub-sub-item:nth-child(1) {
             position: absolute;
-            top: -80px;
+            top: -60px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
@@ -378,23 +382,23 @@
 
         .sub-sub-items .sub-sub-item:nth-child(2) {
             position: absolute;
-            top: -40px;
-            right: -80px;
+            top: -30px;
+            right: -60px;
             transform: translate(0, -50%);
             pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(3) {
             position: absolute;
-            bottom: -40px;
-            right: -80px;
+            bottom: -30px;
+            right: -60px;
             transform: translate(0, 50%);
             pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(4) {
             position: absolute;
-            bottom: -80px;
+            bottom: -60px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
@@ -402,16 +406,16 @@
 
         .sub-sub-items .sub-sub-item:nth-child(5) {
             position: absolute;
-            bottom: -40px;
-            left: -80px;
+            bottom: -30px;
+            left: -60px;
             transform: translate(0, 50%);
             pointer-events: auto;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(6) {
             position: absolute;
-            top: -40px;
-            left: -80px;
+            top: -30px;
+            left: -60px;
             transform: translate(0, -50%);
             pointer-events: auto;
         }
@@ -469,14 +473,14 @@
             left: 50%;
             transform: translate(-50%, 0);
             width: 2px;
-            height: 40px;
+            height: 30px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(2)::before {
             top: 50%;
             left: 100%;
             transform: translate(0, -50%);
-            width: 40px;
+            width: 30px;
             height: 2px;
         }
 
@@ -484,7 +488,7 @@
             bottom: 50%;
             left: 100%;
             transform: translate(0, 50%);
-            width: 40px;
+            width: 30px;
             height: 2px;
         }
 
@@ -493,14 +497,14 @@
             left: 50%;
             transform: translate(-50%, 0);
             width: 2px;
-            height: 40px;
+            height: 30px;
         }
 
         .sub-sub-items .sub-sub-item:nth-child(5)::before {
             bottom: 50%;
             right: 100%;
             transform: translate(0, 50%);
-            width: 40px;
+            width: 30px;
             height: 2px;
         }
 
@@ -508,24 +512,34 @@
             top: 50%;
             right: 100%;
             transform: translate(0, -50%);
-            width: 40px;
+            width: 30px;
             height: 2px;
         }
 
         .sub-items.left {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 800px;
-            height: 600px;
+            position: absolute;
+            width: 400px;
+            height: 400px;
             pointer-events: none;
         }
 
-        /* Position sub-items in a circle around the main icon - constrained to viewport */
+        /* Position sub-items relative to their parent main category */
+        .category-group:nth-child(1) .sub-items.left {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .category-group:nth-child(2) .sub-items.left {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Position sub-items in a smaller circle around their main icon */
         .sub-items.left .sub-item-container:nth-child(1) {
             position: absolute;
-            top: -150px;
+            top: -120px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
@@ -533,7 +547,7 @@
 
         .sub-items.left .sub-item-container:nth-child(2) {
             position: absolute;
-            bottom: -150px;
+            bottom: -120px;
             left: 50%;
             transform: translate(-50%, 0);
             pointer-events: auto;
@@ -648,13 +662,23 @@
             }
 
             .main-categories {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+                width: 100% !important;
+                height: auto !important;
+                margin-top: 0 !important;
                 flex-direction: column;
                 gap: 40px;
                 padding: 30px 20px;
-                position: relative;
             }
 
             .category-group {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
                 flex: none;
                 width: 100%;
             }
