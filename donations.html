@@ -278,6 +278,11 @@
             text-align: center;
         }
 
+        .info-section h3 i {
+            color: #ff6b35;
+            margin-right: 10px;
+        }
+
         .impact-stat {
             text-align: center;
             margin-bottom: 30px;
@@ -290,7 +295,15 @@
             transition: all 0.3s ease;
         }
 
+        .impact-icon img {
+            transition: all 0.3s ease;
+        }
+
         .impact-stat:hover .impact-icon {
+            transform: scale(1.2);
+        }
+
+        .impact-stat:hover .impact-icon img {
             transform: scale(1.2);
         }
 
@@ -718,11 +731,11 @@
 
         <!-- Impact Information -->
         <div class="info-section">
-            <h3>Your Impact</h3>
+            <h3><i class="fas fa-chart-line"></i> Your Impact</h3>
             <div class="row">
                 <div class="col-md-4 impact-stat">
                     <div class="impact-icon">
-                        <i class="fas fa-globe-africa"></i>
+                        <img src="data/ele.png" alt="Elephant" style="width: 100px; height: 100px; object-fit: contain;">
                     </div>
                     <h5>11 Elephants Tracked</h5>
                     <p>Currently monitoring 11 elephants across Botswana</p>
