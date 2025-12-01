@@ -68,182 +68,120 @@
             opacity: 0.95;
         }
 
-        .iceberg-container {
-            position: relative;
-            max-width: 900px;
+        .main-categories {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
             margin: 50px auto;
+            max-width: 1000px;
             padding: 50px 20px;
         }
 
-        .water-line {
-            position: absolute;
+        .category-group {
+            position: relative;
             width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #4a90e2, #4a90e2, #4a90e2, transparent);
-            left: 0;
-            top: 45%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-category {
+            position: relative;
             z-index: 2;
         }
 
-        .water-line::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: rgba(74, 144, 226, 0.3);
-            top: 10px;
-        }
-
-        .water-line::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: rgba(74, 144, 226, 0.3);
-            bottom: 10px;
-        }
-
-        .iceberg {
-            position: relative;
-            margin: 0 auto;
-            width: 300px;
-        }
-
-        .iceberg-top {
-            width: 0;
-            height: 0;
-            border-left: 150px solid transparent;
-            border-right: 150px solid transparent;
-            border-bottom: 200px solid #b8d8f0;
-            position: relative;
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
-        }
-
-        .iceberg-bottom {
-            width: 0;
-            height: 0;
-            border-left: 200px solid transparent;
-            border-right: 200px solid transparent;
-            border-bottom: 300px solid #7fb3d5;
-            margin: 0 auto;
-            position: relative;
-            left: -50px;
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
-        }
-
-        .label-box {
-            background: white;
-            border: 3px solid #2c5530;
-            border-radius: 10px;
-            padding: 15px 30px;
-            font-weight: bold;
-            color: #2c5530;
-            font-size: 1.2em;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            position: absolute;
-            white-space: nowrap;
-            z-index: 5;
-        }
-
-        .label-top {
-            top: 15%;
-            left: -250px;
-        }
-
-        .label-bottom {
-            bottom: 15%;
-            left: -200px;
-        }
-
-        .connector-line {
-            position: absolute;
-            height: 3px;
-            background: #2c5530;
-            z-index: 1;
-        }
-
-        .line-top {
-            width: 150px;
-            top: 20%;
-            left: -100px;
-        }
-
-        .line-bottom {
-            width: 120px;
-            bottom: 25%;
-            left: -50px;
-        }
-
-        .project-icons {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            margin-top: 80px;
-            flex-wrap: wrap;
-            gap: 30px;
-        }
-
-        .project-icon-item {
-            text-align: center;
-            max-width: 250px;
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .project-icon-circle {
-            width: 120px;
-            height: 120px;
+        .main-circle {
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
             background: linear-gradient(135deg, #2c5530, #4a7c59);
             color: white;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 3em;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .project-icon-item:hover .project-icon-circle {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .project-icon-title {
             font-size: 1.3em;
             font-weight: bold;
-            color: #2c5530;
+            margin: 0 auto;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .main-circle i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .main-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .sub-items {
+            position: absolute;
+            display: flex;
+            gap: 40px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+
+        .category-group:hover .sub-items {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sub-item {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            padding: 15px;
+            text-decoration: none;
+        }
+
+        .sub-item i {
+            font-size: 2em;
             margin-bottom: 10px;
         }
 
-        .project-icon-desc {
+        .sub-item:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .sub-items.left {
+            right: 250px;
+        }
+
+        .sub-items.right {
+            left: 250px;
+        }
+
+        .info-text {
+            text-align: center;
             color: #666;
-            font-size: 1em;
-            line-height: 1.5;
-        }
-
-        .arrow-to-iceberg {
-            position: absolute;
-            width: 2px;
-            height: 80px;
-            background: #2c5530;
-            top: -80px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .arrow-to-iceberg::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 12px solid #2c5530;
+            font-size: 1.2em;
+            margin-top: 30px;
+            padding: 0 20px;
+            font-style: italic;
         }
 
         /* Footer ribbon styling */
@@ -341,32 +279,37 @@
                 font-size: 2em;
             }
 
-            .iceberg-container {
-                padding: 20px;
+            .main-categories {
+                gap: 40px;
+                padding: 30px 20px;
             }
 
-            .label-box {
-                font-size: 0.9em;
-                padding: 10px 20px;
+            .main-circle {
+                width: 160px;
+                height: 160px;
+                font-size: 1.1em;
             }
 
-            .label-top {
-                left: 10px;
-                top: 5%;
+            .main-circle i {
+                font-size: 2em;
             }
 
-            .label-bottom {
-                left: 10px;
-                bottom: 5%;
-            }
-
-            .line-top, .line-bottom {
-                display: none;
-            }
-
-            .project-icons {
+            .sub-items {
                 flex-direction: column;
-                align-items: center;
+                gap: 20px;
+                position: static !important;
+                margin-top: 20px;
+            }
+
+            .category-group:hover .sub-items {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .sub-item {
+                width: 140px;
+                height: 140px;
+                font-size: 0.9em;
             }
 
             .footer-content {
@@ -420,63 +363,60 @@
     </div>
 
     <div class="container">
-        <!-- Iceberg Infographic -->
-        <div class="iceberg-container">
-            <!-- Top Label -->
-            <div class="label-box label-top">
-                Non-Lethal Mitigation Measures
-            </div>
-            <div class="connector-line line-top"></div>
-
-            <!-- Iceberg Visual -->
-            <div class="iceberg">
-                <div class="iceberg-top"></div>
-                <div class="water-line"></div>
-                <div class="iceberg-bottom"></div>
-            </div>
-
-            <!-- Bottom Label -->
-            <div class="label-box label-bottom">
-                LUCIS
-            </div>
-            <div class="connector-line line-bottom"></div>
-        </div>
-
-        <!-- Project Icons -->
-        <div class="project-icons">
-            <div class="project-icon-item">
-                <div class="arrow-to-iceberg"></div>
-                <div class="project-icon-circle">
-                    <i class="fas fa-globe-africa"></i>
+        <!-- Main Categories -->
+        <div class="main-categories">
+            <!-- Mitigation Measures -->
+            <div class="category-group">
+                <div class="sub-items left">
+                    <a href="#" class="sub-item" onclick="showInfo('long-term'); return false;">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Long-term Mitigation</span>
+                    </a>
+                    <a href="#" class="sub-item" onclick="showInfo('short-term'); return false;">
+                        <i class="fas fa-clock"></i>
+                        <span>Short-term Mitigation</span>
+                    </a>
                 </div>
-                <div class="project-icon-title">Elephant Aware Economy</div>
-                <div class="project-icon-desc">
-                    Building economic systems that recognize and value elephant presence in the landscape
+                
+                <div class="main-category">
+                    <div class="main-circle">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Mitigation Measures</span>
+                    </div>
+                </div>
+
+                <div class="sub-items right" style="opacity: 0; visibility: hidden;">
+                    <!-- Placeholder for symmetry -->
                 </div>
             </div>
 
-            <div class="project-icon-item">
-                <div class="arrow-to-iceberg"></div>
-                <div class="project-icon-circle">
-                    <i class="fas fa-store"></i>
+            <!-- Elephant Aware Economy -->
+            <div class="category-group">
+                <div class="sub-items left">
+                    <a href="#" class="sub-item" onclick="showInfo('farming'); return false;">
+                        <i class="fas fa-tractor"></i>
+                        <span>Elephant Aware Farming</span>
+                    </a>
+                    <a href="#" class="sub-item" onclick="showInfo('sme'); return false;">
+                        <i class="fas fa-store"></i>
+                        <span>SMEs</span>
+                    </a>
                 </div>
-                <div class="project-icon-title">SME</div>
-                <div class="project-icon-desc">
-                    Supporting small and medium enterprises that promote coexistence with wildlife
+                
+                <div class="main-category">
+                    <div class="main-circle">
+                        <i class="fas fa-globe-africa"></i>
+                        <span>Elephant Aware Economy</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="project-icon-item">
-                <div class="arrow-to-iceberg"></div>
-                <div class="project-icon-circle">
-                    <i class="fas fa-tractor"></i>
-                </div>
-                <div class="project-icon-title">Elephant Aware Farming</div>
-                <div class="project-icon-desc">
-                    Agricultural practices designed to minimize human-elephant conflict while maximizing productivity
+                <div class="sub-items right" style="opacity: 0; visibility: hidden;">
+                    <!-- Placeholder for symmetry -->
                 </div>
             </div>
         </div>
+
+        <p class="info-text">Hover over each circle to explore our project areas</p>
     </div>
 
     <!-- Footer Ribbon -->
@@ -512,6 +452,19 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showInfo(type) {
+            const messages = {
+                'long-term': 'Long-term Mitigation: Strategic approaches to sustainable coexistence with elephants over extended periods.',
+                'short-term': 'Short-term Mitigation: Immediate response measures to address urgent human-elephant conflict situations.',
+                'farming': 'Elephant Aware Farming: Agricultural practices designed to minimize human-elephant conflict while maximizing productivity.',
+                'sme': 'SMEs: Supporting small and medium enterprises that promote coexistence with wildlife and benefit local communities.'
+            };
+            
+            alert(messages[type] || 'More information coming soon!');
+        }
+    </script>
 </body>
 </html>
 
