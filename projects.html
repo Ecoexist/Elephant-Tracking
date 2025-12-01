@@ -82,32 +82,78 @@
         }
 
         .category-group {
-            position: relative;
-            flex: 1;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: flex;
             justify-content: center;
             align-items: center;
             transition: all 0.4s ease;
             opacity: 1;
             visibility: visible;
+            z-index: 10;
         }
 
-        /* Hide categories when another is being hovered */
-        .main-categories:hover .category-group {
-            opacity: 0;
-            visibility: hidden;
-            transform: scale(0.8);
+        /* Offset the two main categories from center */
+        .category-group:nth-child(1) {
+            transform: translate(-50%, -50%) translateX(-200px);
         }
 
-        .category-group:hover {
+        .category-group:nth-child(2) {
+            transform: translate(-50%, -50%) translateX(200px);
+        }
+
+        /* Hover priority system */
+        /* When hovering sub-sub-item (level 3) */
+        .sub-sub-item:hover {
+            width: 200px !important;
+            height: 200px !important;
+            font-size: 1.3em !important;
             opacity: 1 !important;
-            visibility: visible !important;
-            transform: scale(1);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
+            z-index: 1000;
+        }
+
+        .sub-sub-item:hover ~ .sub-sub-item,
+        .sub-item-container:not(:hover) .sub-sub-item {
+            width: 160px !important;
+            height: 160px !important;
+            font-size: 1em !important;
+            opacity: 0.7 !important;
+        }
+
+        /* Hide non-hovered sub-items when sub-sub-item is hovered */
+        .sub-sub-item:hover {
+            width: 200px !important;
+            height: 200px !important;
+            opacity: 1 !important;
+        }
+
+        /* When hovering sub-item (level 2) */
+        .sub-item:hover {
+            width: 200px !important;
+            height: 200px !important;
+            font-size: 1.3em !important;
+            opacity: 1 !important;
+            z-index: 500;
+        }
+
+        .sub-item:hover ~ .sub-item-container .sub-item,
+        .sub-item-container:not(:hover) .sub-item {
+            width: 160px !important;
+            height: 160px !important;
+            opacity: 0.7 !important;
+        }
+
+        /* When hovering main circle (level 1) */
+        .main-circle:hover {
+            opacity: 1 !important;
+            z-index: 200;
+        }
+
+        .main-circle:hover ~ .category-group .main-circle,
+        .category-group:not(:hover) .main-circle {
+            opacity: 0.7 !important;
         }
 
         .main-category {
@@ -115,6 +161,7 @@
             z-index: 2;
         }
 
+        /* Main level icons - largest */
         .main-circle {
             width: 200px;
             height: 200px;
@@ -133,6 +180,52 @@
             transition: all 0.4s ease;
             text-align: center;
             padding: 20px;
+            opacity: 1;
+        }
+
+        /* Secondary level icons - medium size, semi-transparent */
+        .sub-item {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-align: center;
+            padding: 15px;
+            text-decoration: none;
+            opacity: 0.7;
+        }
+
+        /* Tertiary level icons - smallest, most transparent */
+        .sub-sub-item {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-align: center;
+            padding: 10px;
+            text-decoration: none;
+            position: relative;
+            opacity: 0.5;
         }
 
         .main-circle i {
@@ -146,18 +239,17 @@
         }
 
         .sub-items {
-            position: absolute;
-            display: flex;
-            gap: 40px;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s ease;
-            z-index: 3;
-        }
-
-        .category-group:hover .sub-items {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 600px;
             opacity: 1;
             visibility: visible;
+            transition: all 0.4s ease;
+            z-index: 3;
+            pointer-events: none;
         }
 
         .sub-item {
@@ -256,12 +348,7 @@
             visibility: hidden !important;
         }
 
-        /* Ensure sub-sub-items are hidden when category is not hovered */
-        .main-categories:not(:hover) .sub-sub-items,
-        .category-group:not(:hover) .sub-sub-items {
-            opacity: 0 !important;
-            visibility: hidden !important;
-        }
+        /* Sub-sub-items are always visible in mind map style */
 
         /* Second-level sub-items - Circular positioning - constrained to viewport */
         .sub-sub-items {
@@ -269,8 +356,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            opacity: 0;
-            visibility: hidden;
+            opacity: 1;
+            visibility: visible;
             transition: all 0.4s ease;
             z-index: 4;
             width: 600px;
@@ -278,10 +365,7 @@
             pointer-events: none;
         }
 
-        .sub-item-container:hover .sub-sub-items {
-            opacity: 1;
-            visibility: visible;
-        }
+        /* Sub-sub-items are always visible now */
 
         /* Position sub-sub-items in a constrained circle around center */
         .sub-sub-items .sub-sub-item:nth-child(1) {
@@ -621,6 +705,21 @@
                 font-size: 2em;
             }
 
+            .category-group {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+            }
+
+            .category-group:nth-child(1) {
+                transform: none !important;
+            }
+
+            .category-group:nth-child(2) {
+                transform: none !important;
+            }
+
             .sub-items {
                 flex-direction: column;
                 gap: 20px;
@@ -639,9 +738,23 @@
                 display: none !important;
             }
 
-            .category-group:hover .sub-items {
-                opacity: 1;
-                visibility: visible;
+            .sub-sub-items {
+                position: static !important;
+                width: auto !important;
+                height: auto !important;
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .sub-sub-items .sub-sub-item {
+                position: static !important;
+                transform: none !important;
+                margin: 5px;
+            }
+
+            .sub-sub-items .sub-sub-item::before {
+                display: none !important;
             }
 
             .sub-item {
