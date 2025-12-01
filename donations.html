@@ -80,12 +80,39 @@
             cursor: pointer;
             position: relative;
             perspective: 1000px;
+            overflow: hidden;
         }
 
         .donation-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
             border-color: #4a7c59;
+        }
+
+        .donation-card.popular {
+            border: 3px solid #ff6b35;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .donation-card.popular:hover {
+            border-color: #ff6b35;
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+        }
+
+        .popular-banner {
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 8px 50px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transform: rotate(45deg);
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .card-inner {
@@ -441,7 +468,8 @@
         <div class="row g-4">
             <!-- Adopt an Elephant -->
             <div class="col-md-6 col-lg-4">
-                <div class="donation-card" onclick="flipCard(this)">
+                <div class="donation-card popular" onclick="flipCard(this)">
+                    <div class="popular-banner">Most Popular</div>
                     <div class="card-inner">
                         <div class="card-front">
                             <div class="donation-icon">
