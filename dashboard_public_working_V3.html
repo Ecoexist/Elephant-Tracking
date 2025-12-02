@@ -767,7 +767,7 @@
                     Privacy-Protected Animal Movement Data
                 </span>
                 <a href="donations.html" class="btn-donate-nav">
-                    💚 Support Our Work
+                    Support Our Work
                 </a>
             </div>
         </div>
@@ -1040,6 +1040,21 @@
             "8540": "Art",
             "8542": "Dream",
             "8543": "Queenie"
+        };
+
+        // Elephant image mapping
+        const elephantImages = {
+            "3839": "data/ele.png", // Placeholder - no image available yet
+            "5588": "data/ele.png", // Placeholder - no image available yet
+            "5589": "data/ele.png", // Placeholder - no image available yet
+            "5590": "data/ele.png", // Placeholder - no image available yet
+            "5591": "data/ele.png", // Placeholder - no image available yet
+            "8537": "data/ele.png", // Placeholder - no image available yet
+            "8538": "data/ele.png", // Placeholder - no image available yet
+            "8539": "data/ele.png", // Placeholder - no image available yet
+            "8540": "data/ele.png", // Placeholder - no image available yet
+            "8542": "data/Elephant Bios/Dream.jpg",
+            "8543": "data/ele.png"  // Placeholder - no image available yet
         };
 
         // Elephant bio information
@@ -1529,7 +1544,11 @@
             
             // Update bio panel content
             document.getElementById('bioElephantName').textContent = bio.name;
-            
+
+            // Update elephant image
+            const elephantImage = elephantImages[tagId] || "data/ele.png";
+            document.getElementById('bioElephantImage').src = elephantImage;
+
             // Build description HTML
             const descriptionHTML = `
                 <h4>Origin of Name</h4>
