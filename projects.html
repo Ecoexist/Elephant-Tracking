@@ -15,7 +15,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
-            min-height: 100vh;
         }
 
         .navbar {
@@ -68,259 +67,14 @@
             opacity: 0.95;
         }
 
-        .main-categories {
+        .mindmap-container {
             position: relative;
             width: 100%;
-            max-width: 1600px;
-            height: 900px;
-            margin: 50px auto 100px;
-            pointer-events: none;
-        }
-
-        .category-group {
-            position: absolute;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.4s ease;
-            opacity: 1;
-            visibility: visible;
-            z-index: 10;
-            pointer-events: auto;
-        }
-
-        /* Position main categories - Mitigation bottom-center, Elephant Aware Economy left-center */
-        .category-group:nth-child(1) {
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .category-group:nth-child(2) {
-            top: 50%;
-            left: 200px;
-            transform: translateY(-50%);
-        }
-
-        /* Dynamic hover system - highlights hovered item and its connections */
-        
-        /* Fade all items by default when any hover is active */
-        .main-categories:hover .main-circle,
-        .main-categories:hover .sub-item,
-        .main-categories:hover .sub-sub-item {
-            opacity: 0.3 !important;
-        }
-
-        /* Hovered item becomes fully visible and larger */
-        .main-circle:hover {
-            opacity: 1 !important;
-            transform: scale(1.1) !important;
-            z-index: 1000 !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        .sub-item:hover {
-            opacity: 1 !important;
-            transform: scale(1.15) !important;
-            z-index: 1000 !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        .sub-sub-item:hover {
-            opacity: 1 !important;
-            transform: scale(1.2) !important;
-            z-index: 1000 !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        /* Direct connections become more visible when hovering */
-        /* When hovering main category, show its direct children */
-        .category-group:hover .sub-item {
-            opacity: 0.85 !important;
-        }
-
-        /* When hovering sub-item, show its children and parent */
-        .sub-item-container:hover .sub-item {
-            opacity: 1 !important;
-        }
-
-        .sub-item-container:hover .sub-sub-item {
-            opacity: 0.85 !important;
-        }
-
-        /* Highlight parent when hovering child */
-        .sub-item:hover {
-            opacity: 1 !important;
-        }
-
-        .sub-item-container:has(.sub-item:hover) ~ * .main-circle {
-            opacity: 0.85 !important;
-        }
-
-        .sub-sub-item:hover {
-            opacity: 1 !important;
-        }
-
-        .sub-item-container:has(.sub-sub-item:hover) .sub-item {
-            opacity: 0.85 !important;
-        }
-
-        .main-category {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Level 1 icons - Main categories (green) */
-        .main-circle {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3d5a3f, #4a6b4f);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.95em;
-            font-weight: bold;
+            height: 800px;
             margin: 0 auto;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            text-align: center;
-            padding: 12px;
-            opacity: 1;
-            z-index: 100;
+            padding: 60px;
         }
 
-        /* Level 2 icons - Sub-categories (orange) */
-        .sub-item {
-            width: 130px;
-            height: 130px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85em;
-            font-weight: bold;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            text-align: center;
-            padding: 10px;
-            text-decoration: none;
-            opacity: 0.85;
-            z-index: 90;
-        }
-
-        /* Level 3 icons - Tertiary projects (green) */
-        .sub-sub-item {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4a6b4f, #5c7d5f);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7em;
-            font-weight: bold;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            text-align: center;
-            padding: 8px;
-            text-decoration: none;
-            position: relative;
-            opacity: 0.7;
-            z-index: 80;
-        }
-
-        .main-circle i {
-            font-size: 2.5em;
-            margin-bottom: 15px;
-        }
-
-        .main-circle:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .sub-items {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 800px;
-            height: 600px;
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.4s ease;
-            z-index: 3;
-            pointer-events: none;
-        }
-
-        .sub-item {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 1em;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            padding: 15px;
-            text-decoration: none;
-        }
-
-        .sub-item i {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .sub-item:hover {
-            transform: scale(1.15);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-            color: white;
-        }
-
-        /* Sub-item containers */
-        .sub-item-container {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.4s ease;
-        }
-
-        /* Hide other sub-items when one is hovered */
-        .sub-items:hover .sub-item-container {
-            opacity: 0.3;
-            transform: scale(0.9);
-        }
-
-        .sub-item-container:hover {
-            opacity: 1 !important;
-            transform: scale(1) !important;
-        }
-
-        /* Connecting lines for sub-items */
-        .sub-item-container .sub-item {
-            position: relative;
-        }
-
-        /* Connection lines container */
         .connection-lines {
             position: absolute;
             top: 0;
@@ -328,1076 +82,1837 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1;
+            z-index: 0; /* Behind tiles */
         }
 
-        /* Base connection line style */
-        .connection-line {
+        .project-card {
             position: absolute;
-            background: rgba(0, 0, 0, 0.2);
-            transition: all 0.4s ease;
-        }
-
-        /* Connecting lines for sub-items */
-        .sub-item::before {
-            content: '';
-            position: absolute;
-            background: rgba(0, 0, 0, 0.2);
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.4s ease;
-            z-index: -1;
-        }
-
-        /* When hovering any item, highlight its connections */
-        .main-circle:hover ~ .sub-items .sub-item::before,
-        .sub-item:hover::before,
-        .sub-item:hover ~ .sub-sub-items .sub-sub-item::after {
-            background: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Lines from Mitigation main category to its sub-items */
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-item::before {
-            top: 50%;
-            right: calc(100% - 10px);
-            width: 90px;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-item::before {
-            top: 50%;
-            right: calc(100% - 10px);
-            width: 90px;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-
-        /* Lines from Elephant Aware Economy to its sub-items */
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-item::before {
-            top: 50%;
-            left: calc(100% - 10px);
-            width: 90px;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-item::before {
-            top: 50%;
-            left: calc(100% - 10px);
-            width: 90px;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-
-        /* Sub-sub-items are always visible in mind map style */
-
-        /* Second-level sub-items - Circular positioning - constrained to viewport */
-        .sub-sub-items {
-            position: absolute;
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.4s ease;
-            z-index: 4;
-            width: 400px;
-            height: 400px;
-            pointer-events: none;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Sub-sub-items are always visible now */
-
-        /* Position tertiary items with proper spacing to avoid overlaps */
-        
-        /* Long-term Mitigation children (3 items) - spread upward and to sides */
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
-            position: absolute;
-            top: -130px;
-            left: 50%;
-            transform: translate(-50%, 0);
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
-            position: absolute;
-            top: -60px;
-            left: -140px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
-            position: absolute;
-            top: -60px;
-            right: -140px;
-            pointer-events: auto;
-        }
-
-        /* Short-term Mitigation children (4 items) - spread far left and downward */
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
-            position: absolute;
-            top: -80px;
-            left: -160px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
-            position: absolute;
-            top: 0;
-            left: -160px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
-            position: absolute;
-            top: 80px;
-            left: -160px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
-            position: absolute;
-            top: 160px;
-            left: -160px;
-            pointer-events: auto;
-        }
-
-        /* Elephant Aware Farming children (4 items) - spread upward and right */
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(1) {
-            position: absolute;
-            top: -130px;
-            left: 30px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(2) {
-            position: absolute;
-            top: -60px;
-            left: 140px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(3) {
-            position: absolute;
-            top: 20px;
-            left: 140px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-items .sub-sub-item:nth-child(4) {
-            position: absolute;
-            top: 100px;
-            left: 140px;
-            pointer-events: auto;
-        }
-
-        /* SMEs children (6 items) - vertical stack far left */
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(1) {
-            position: absolute;
-            top: -100px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(2) {
-            position: absolute;
-            top: -30px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(3) {
-            position: absolute;
-            top: 40px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(4) {
-            position: absolute;
-            top: 110px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(5) {
-            position: absolute;
-            top: 180px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-items .sub-sub-item:nth-child(6) {
-            position: absolute;
-            top: 250px;
-            left: -170px;
-            pointer-events: auto;
-        }
-
-        .sub-sub-item {
+            background: white;
+            border-radius: 50%;
             width: 120px;
             height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-align: center;
+            padding: 20px;
+            border: 3px solid transparent;
+            transform-origin: center center;
+        }
+
+        /* Mind Map Hierarchy Styles - Half Size */
+        .mitigation-center {
+            background: linear-gradient(135deg, #4a7c59, #2c5530);
+            color: white;
+            border: 4px solid #1a4a2e;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            width: 120px;
+            height: 120px;
+            z-index: 10;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mitigation-center .project-icon {
+            color: white;
+        }
+
+        .mitigation-center .project-title {
+            color: white;
+            font-weight: bold;
+        }
+
+        .primary-branch {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 3px solid #4a7c59;
+            width: 120px;
+            height: 120px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .secondary-branch {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border: 2px solid #6c757d;
+            width: 120px;
+            height: 120px;
+            opacity: 0.3; /* 70% transparent by default */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tertiary-branch {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            border: 2px solid #adb5bd;
+            width: 120px;
+            height: 120px;
+            opacity: 0.3; /* 70% transparent by default */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Special opacity for key tiles */
+        .mitigation-center,
+        #elephant-aware-economy {
+            opacity: 1.0; /* Fully opaque */
+        }
+
+        /* Connection line opacity */
+        .connection-line {
+            opacity: 0.8; /* 20% transparent (80% visible) by default */
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            border-color: #4a7c59;
+        }
+
+        .project-icon {
+            font-size: 1em;
+            color: #2c5530;
+            margin-bottom: 4px;
+        }
+
+        .project-title {
             font-size: 0.8em;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            padding: 10px;
-            text-decoration: none;
-            position: relative;
+            color: #2c5530;
+            line-height: 1.1;
+            margin: 0;
         }
 
-        .sub-sub-item i {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-
-        .sub-sub-item:hover {
+        .project-card:hover .project-icon {
+            color: #4a7c59;
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-            color: white;
         }
 
-        /* Connecting lines for sub-sub-items - adjusted for constrained positioning */
-        .sub-sub-item::before {
-            content: '';
-            position: absolute;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s ease;
-        }
-
-        .sub-item-container:hover .sub-sub-item::before {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Connecting lines for tertiary items - connect to their parent sub-item */
-        .sub-sub-item::after {
-            content: '';
-            position: absolute;
-            background: rgba(0, 0, 0, 0.3);
-            opacity: 1;
-            visibility: visible;
-            z-index: -1;
-        }
-
-        /* Lines from Long-term Mitigation to its children */
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(1)::after {
-            width: 2px;
-            height: 80px;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(2)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            right: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(3)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        /* Lines from Short-term Mitigation to its children */
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(1)::after {
-            width: 2px;
-            height: 80px;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(2)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            right: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(3)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            right: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(1) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(4)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            right: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        /* Lines from Elephant Aware Farming to its children */
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(1)::after {
-            width: 2px;
-            height: 80px;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(2)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(3)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(1) .sub-sub-item:nth-child(4)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            right: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        /* Lines from SMEs to its children */
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(1)::after {
-            width: 2px;
-            height: 80px;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(2)::after {
-            width: 100px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(3)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(4)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(5)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .category-group:nth-child(2) .sub-item-container:nth-child(2) .sub-sub-item:nth-child(6)::after {
-            width: 80px;
-            height: 2px;
-            top: 50%;
-            left: calc(100% - 10px);
-            transform: translateY(-50%);
-        }
-
-        .sub-items.left {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            pointer-events: none;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Position sub-items with more space */
-        /* Mitigation (bottom-center) - Long-term upper-right, Short-term left */
-        .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(1) {
-            position: absolute;
-            top: -250px;
-            right: 150px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(1) .sub-items.left .sub-item-container:nth-child(2) {
-            position: absolute;
-            top: -50px;
-            left: -250px;
-            pointer-events: auto;
-        }
-
-        /* Elephant Aware Economy (left-center) - Farming above, SMEs below */
-        .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(1) {
-            position: absolute;
-            top: -200px;
-            left: 100px;
-            pointer-events: auto;
-        }
-
-        .category-group:nth-child(2) .sub-items.left .sub-item-container:nth-child(2) {
-            position: absolute;
-            top: 130px;
-            left: 120px;
-            pointer-events: auto;
-        }
-
-        .sub-items.right {
-            left: 250px;
-        }
-
-        .info-text {
-            text-align: center;
-            color: #666;
-            font-size: 1.2em;
-            margin-top: 30px;
-            padding: 0 20px;
-            font-style: italic;
-        }
-
-        /* Footer ribbon styling */
-        .footer-ribbon {
-            background: linear-gradient(135deg, #3d5a3f, #4a6b4f);
-            color: white;
-            padding: 20px 0;
-            margin-top: 100px;
-            border-top: 3px solid #2c5530;
-        }
-
-        .footer-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            flex-wrap: wrap;
-        }
-
-        .footer-logo {
-            height: 140px;
-            width: auto;
-            margin-right: 30px;
-            transition: transform 0.3s ease;
-        }
-
-        .footer-logo:hover {
-            transform: scale(1.05);
-        }
-
-        .footer-quote {
-            flex: 1;
-            font-size: 24px;
-            font-weight: 300;
-            line-height: 1.4;
-            font-style: italic;
-            margin: 0 30px;
-        }
-
-        .footer-contact {
-            text-align: right;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .footer-contact h6 {
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .footer-contact p {
-            margin: 5px 0;
-        }
-
-        .footer-contact a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .footer-contact a:hover {
-            text-decoration: underline;
-        }
-
-        .social-icons {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            justify-content: flex-end;
-        }
-
-        .social-icons a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            color: white;
-            font-size: 20px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .social-icons a:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px);
+        .project-card:hover .project-title {
+            color: #4a7c59;
         }
 
         @media (max-width: 768px) {
+            .mindmap-container {
+                height: 600px;
+                padding: 30px;
+            }
+
+            .project-card {
+                width: 80px;
+                height: 80px;
+                padding: 6px;
+            }
+
+            .mitigation-center,
+            .primary-branch,
+            .secondary-branch,
+            .tertiary-branch {
+                width: 80px;
+                height: 80px;
+            }
+
+            .project-icon {
+                font-size: 1em;
+                margin-bottom: 4px;
+            }
+
+            .project-title {
+                font-size: 0.8em;
+                line-height: 1.1;
+            }
+
             .hero-section h1 {
-                font-size: 2em;
+                font-size: 2.5em;
             }
 
-            .main-categories {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-                width: 100% !important;
-                height: auto !important;
-                margin-top: 0 !important;
-                flex-direction: column;
-                gap: 40px;
-                padding: 30px 20px;
-            }
-
-            .category-group {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-                flex: none;
-                width: 100%;
-            }
-
-            .category-group:hover {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-            }
-
-            .category-group:hover .main-category {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-            }
-
-            .sub-items.left {
-                position: static !important;
-                width: auto !important;
-                height: auto !important;
-            }
-
-            .sub-items.left .sub-item-container {
-                position: static !important;
-                transform: none !important;
-            }
-
-            .sub-sub-items {
-                position: static !important;
-                width: auto !important;
-                height: auto !important;
-            }
-
-            .sub-sub-items .sub-sub-item {
-                position: static !important;
-                transform: none !important;
-            }
-
-            .main-circle {
-                width: 160px;
-                height: 160px;
+            .hero-section p {
                 font-size: 1.1em;
-            }
-
-            .main-circle i {
-                font-size: 2em;
-            }
-
-            .category-group {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-            }
-
-            .category-group:nth-child(1) {
-                transform: none !important;
-            }
-
-            .category-group:nth-child(2) {
-                transform: none !important;
-            }
-
-            .sub-items {
-                flex-direction: column;
-                gap: 20px;
-                position: static !important;
-                margin-top: 20px;
-                width: auto !important;
-                height: auto !important;
-            }
-
-            .sub-items .sub-item-container {
-                position: static !important;
-                transform: none !important;
-            }
-
-            .sub-items .sub-item-container .sub-item::after {
-                display: none !important;
-            }
-
-            .sub-sub-items {
-                position: static !important;
-                width: auto !important;
-                height: auto !important;
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .sub-sub-items .sub-sub-item {
-                position: static !important;
-                transform: none !important;
-                margin: 5px;
-            }
-
-            .sub-sub-items .sub-sub-item::before {
-                display: none !important;
-            }
-
-            .sub-item {
-                width: 140px;
-                height: 140px;
-                font-size: 0.9em;
-            }
-
-            .sub-sub-items {
-                position: static !important;
-                margin-top: 15px;
-                width: auto !important;
-                height: auto !important;
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                justify-content: center;
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
-
-            .sub-sub-item {
-                position: static !important;
-                width: 100px;
-                height: 100px;
-                font-size: 0.7em;
-                margin: 5px;
-                transform: none !important;
-            }
-
-            .sub-sub-item::before {
-                display: none !important;
-            }
-
-            /* Hide/show behavior still works on mobile */
-            .sub-item-container:hover .sub-sub-items {
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .footer-logo {
-                margin: 0 0 20px 0;
-                height: 100px;
-            }
-
-            .footer-quote {
-                margin: 20px 0;
-                font-size: 18px;
-            }
-
-            .footer-contact {
-                text-align: center;
-                margin-top: 20px;
-            }
-
-            .social-icons {
-                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="https://www.ecoexisttrust.org/" target="_blank">
-                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" height="40" class="me-2">
+            <a class="navbar-brand" href="#">
+                <img src="data/ecoexist logo white.png" alt="Ecoexist" style="height: 32px; width: auto; margin-right: 8px;">
                 Ecoexist Trust
             </a>
-            <div class="ms-auto">
-                <a href="https://ecoexist.github.io/Elephant-Tracking/dashboard_public_working_V2.html" class="btn-back">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+            <div class="d-flex">
+                <a href="donations.html" class="btn-back me-2">
+                    <i class="fas fa-arrow-left me-1"></i>Donations
+                </a>
+                <a href="dashboard_public_working_V3.html" class="btn-back">
+                    <i class="fas fa-chart-line me-1"></i>Dashboard
                 </a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <div class="hero-section">
+    <section class="hero-section">
         <div class="container">
             <h1>Our Projects</h1>
-            <p>Understanding the full scope of human-elephant coexistence through comprehensive, multi-layered approaches</p>
+            <p>Discover the diverse initiatives and programs that drive our mission to protect wildlife and promote sustainable development in the Okavango Delta.</p>
         </div>
-    </div>
+    </section>
 
-    <div class="container">
-        <!-- Main Categories -->
-        <div class="main-categories">
-            <!-- SVG Connection Lines Layer -->
-            <svg class="connection-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
-                <!-- Lines will be drawn here dynamically -->
+    <!-- Projects Mind Map -->
+    <div class="container-fluid">
+        <div class="mindmap-container">
+            <!-- Central Node - Mitigation Measures -->
+            <div class="project-card mitigation-center" id="mitigation-center" style="left: 50%; top: 45%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="project-title">Mitigation Measures</h3>
+            </div>
+
+            <!-- Primary Branches - Direct Mitigation -->
+            <div class="project-card short-term primary-branch" id="short-term" style="left: 75%; top: 35%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="project-title">Short Term Mitigation</h3>
+            </div>
+
+            <div class="project-card long-term primary-branch" id="long-term" style="left: 75%; top: 55%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3 class="project-title">Long Term Mitigation</h3>
+            </div>
+
+            <!-- Secondary Branches - Related Projects -->
+            <div class="project-card secondary-branch" id="elephant-aware-economy" style="left: 25%; top: 25%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/certified_elephant_aware_white.png" alt="Elephant Aware Economy" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(1) sepia(100%) saturate(1000%) hue-rotate(90deg);">
+                </div>
+            </div>
+
+            <div class="project-card secondary-branch" id="okavango-brewing-company" style="left: 15%; top: 45%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/Okavango_Brewing_company.png" alt="Okavango Brewing Company" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div class="project-card secondary-branch" style="left: 25%; top: 65%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3 class="project-title">Corridor Identification</h3>
+            </div>
+
+            <!-- Tertiary Branches - Supporting Projects -->
+            <div class="project-card tertiary-branch" id="land-use-planning" style="left: 60%; top: 15%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h3 class="project-title">Land Use Planning</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="corridor-monitoring" style="left: 60%; top: 75%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-binoculars"></i>
+                </div>
+                <h3 class="project-title">Corridor Monitoring</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="corridor-identification" style="left: 35%; top: 80%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3 class="project-title">Corridor Identification</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="shandrika-cooperative" style="left: 85%; top: 45%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/Shandirika_farming_cooperative.png" alt="Shandrika Cooperative" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <!-- New Tertiary Branch - Seronga Craft Shop -->
+            <div class="project-card tertiary-branch" id="seronga-craft-shop" style="left: 10%; top: 25%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/seronga_craft_shop.png" alt="Seronga Craft Shop" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <!-- SMEs and Related Projects -->
+            <div class="project-card secondary-branch" id="smes" style="left: 35%; top: 35%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3 class="project-title">SMEs</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="yikote-elephants" style="left: 45%; top: 20%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/yikota.png" alt="Yikote Elephants" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div class="project-card tertiary-branch" id="beetsha-basket-weavers" style="left: 55%; top: 25%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/Beetsha_Basket_weavers.png" alt="Beetsha Basket Weavers" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div class="project-card tertiary-branch" id="kaputura-xoa-crafts" style="left: 40%; top: 50%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/Kaputura_Xoa_Crafts.png" alt="Kaputura ≠xoa Crafts" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div class="project-card tertiary-branch" id="diyoveya-honey" style="left: 50%; top: 55%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/dioveya_honey.png" alt="Diyoveya Honey" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div class="project-card tertiary-branch" id="life-with-elephants-tour" style="left: 30%; top: 50%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <img src="data/projects/Life_with_elephants_tour.png" alt="Life With Elephants Tour" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <!-- Additional Economy Projects -->
+            <div class="project-card secondary-branch" id="elephant-aware-farming" style="left: 5%; top: 35%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <h3 class="project-title">Elephant Aware Farming</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="okavango-supply-co" style="left: 15%; top: 15%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3 class="project-title">Okavango Supply Co</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="pabalelo-still" style="left: 20%; top: 70%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <h3 class="project-title">Pabalelo Still</h3>
+            </div>
+
+            <!-- New Long Term Mitigation Branch -->
+            <div class="project-card secondary-branch" id="school-talks" style="left: 75%; top: 30%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3 class="project-title">School Talks</h3>
+            </div>
+
+            <!-- New Short Term Mitigation Branches -->
+            <div class="project-card tertiary-branch" id="elephant-express-bus" style="left: 85%; top: 50%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-bus"></i>
+                </div>
+                <h3 class="project-title">Elephant Express Bus</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="solar-electric-fences" style="left: 70%; top: 60%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-solar-panel"></i>
+                </div>
+                <h3 class="project-title">Solar Electric Fences</h3>
+            </div>
+            <div class="project-card tertiary-branch" id="bee-hive-fence" style="left: 80%; top: 30%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <h3 class="project-title">Bee Hive Fence</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="chilli-fences" style="left: 90%; top: 60%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-pepper-hot"></i>
+                </div>
+                <h3 class="project-title">Chilli Fences</h3>
+            </div>
+
+            <div class="project-card tertiary-branch" id="cluster-fields" style="left: 75%; top: 70%; transform: translate(-50%, -50%);">
+                <div class="project-icon">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <h3 class="project-title">Cluster Fields</h3>
+            </div>
+
+            <!-- Connection Lines -->
+            <svg class="connection-lines">
+                <!-- Dynamic connection lines will be added here by JavaScript -->
             </svg>
-            <!-- Mitigation Measures -->
-            <div class="category-group">
-                <div class="sub-items left">
-                    <div class="sub-item-container">
-                        <a href="#" class="sub-item" onclick="showInfo('long-term'); return false;">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>Long-term Mitigation</span>
-                        </a>
-                        <div class="sub-sub-items">
-                            <a href="#" class="sub-sub-item" onclick="showInfo('conflict-identification'); return false;">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <span>Conflict Identification</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('corridor-mapping'); return false;">
-                                <i class="fas fa-route"></i>
-                                <span>Corridor Mapping & Monitoring</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('land-use-planning'); return false;">
-                                <i class="fas fa-map-marked-alt"></i>
-                                <span>Land Use Planning</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="sub-item-container">
-                        <a href="#" class="sub-item" onclick="showInfo('short-term'); return false;">
-                            <i class="fas fa-clock"></i>
-                            <span>Short-term Mitigation</span>
-                        </a>
-                        <div class="sub-sub-items">
-                            <a href="#" class="sub-sub-item" onclick="showInfo('cluster-fields'); return false;">
-                                <i class="fas fa-th-large"></i>
-                                <span>Cluster Fields</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('beehive-fences'); return false;">
-                                <i class="fas fa-archive"></i>
-                                <span>Beehive Fences</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('chillie-bricks'); return false;">
-                                <i class="fas fa-cubes"></i>
-                                <span>Chillie Bricks</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('solar-fences'); return false;">
-                                <i class="fas fa-bolt"></i>
-                                <span>Solar Electric Fences</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="main-category">
-                    <div class="main-circle">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Mitigation Measures</span>
-                    </div>
-                </div>
-
-                <div class="sub-items right" style="opacity: 0; visibility: hidden;">
-                    <!-- Placeholder for symmetry -->
-                </div>
-            </div>
-
-            <!-- Elephant Aware Economy -->
-            <div class="category-group">
-                <div class="sub-items left">
-                    <div class="sub-item-container">
-                        <a href="#" class="sub-item" onclick="showInfo('farming'); return false;">
-                            <i class="fas fa-tractor"></i>
-                            <span>Elephant Aware Farming</span>
-                        </a>
-                        <div class="sub-sub-items">
-                            <a href="#" class="sub-sub-item" onclick="showInfo('shandirika'); return false;">
-                                <i class="fas fa-seedling"></i>
-                                <span>Shandirika Farming Cooperative</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('okavango-supply'); return false;">
-                                <i class="fas fa-truck"></i>
-                                <span>Okavango Supply Co</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('diyoveya-honey'); return false;">
-                                <i class="fas fa-archive"></i>
-                                <span>Diyoveya Honey</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('okavango-brewery'); return false;">
-                                <i class="fas fa-beer"></i>
-                                <span>Okavango Brewery Company</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="sub-item-container">
-                        <a href="#" class="sub-item" onclick="showInfo('sme'); return false;">
-                            <i class="fas fa-store"></i>
-                            <span>SMEs</span>
-                        </a>
-                        <div class="sub-sub-items">
-                            <a href="#" class="sub-sub-item" onclick="showInfo('beetsha'); return false;">
-                                <i class="fas fa-shopping-basket"></i>
-                                <span>Beetsha Basket Weavers</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('yikote'); return false;">
-                                <i class="fas fa-elephant"></i>
-                                <span>Yikote Elephants</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('seronga-craft'); return false;">
-                                <i class="fas fa-palette"></i>
-                                <span>Seronga Craft Shop</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('kaputura-crafts'); return false;">
-                                <i class="fas fa-hammer"></i>
-                                <span>Kaputura ≠xoa Crafts</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('diyoveya-honey-sme'); return false;">
-                                <i class="fas fa-archive"></i>
-                                <span>Diyoveya Honey</span>
-                            </a>
-                            <a href="#" class="sub-sub-item" onclick="showInfo('life-with-elephants'); return false;">
-                                <i class="fas fa-camera"></i>
-                                <span>Life With Elephants Tour</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="main-category">
-                    <div class="main-circle">
-                        <i class="fas fa-globe-africa"></i>
-                        <span>Elephant Aware Economy</span>
-                    </div>
-                </div>
-
-                <div class="sub-items right" style="opacity: 0; visibility: hidden;">
-                    <!-- Placeholder for symmetry -->
-                </div>
-            </div>
         </div>
-
-        <p class="info-text">Hover over each circle to explore our project areas</p>
     </div>
-
-    <!-- Footer Ribbon -->
-    <footer class="footer-ribbon">
-        <div class="footer-content">
-            <a href="https://www.ecoexisttrust.org/" target="_blank">
-                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" class="footer-logo">
-            </a>
-            <div class="footer-quote">
-                "Our mission is to support the lives and livelihoods of people who share space with elephants while considering the needs of elephants and their habitats"
-            </div>
-            <div class="footer-contact">
-                <h6>Contact us</h6>
-                <p><strong>Email:</strong> <a href="mailto:info@ecoexisttrust.org">info@ecoexisttrust.org</a></p>
-                <p><strong>Ecoexist Trust</strong></p>
-                <p>P.O.Box 1755, Plot 1278,<br>
-                Sennonori Ward, Maun<br>
-                <strong>Tel:</strong> +267 6865083</p>
-                <div class="social-icons">
-                    <a href="https://www.facebook.com/ecoexistproject" target="_blank" title="Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="https://www.instagram.com/ecoexisttrust/?hl=en" target="_blank" title="Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="https://www.linkedin.com/company/ecoexist-trust/posts/?feedView=all" target="_blank" title="LinkedIn">
-                        <i class="fab fa-linkedin-in"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Mind Map Physics-Based Layout Script -->
     <script>
-        // Draw connection lines between all nodes
-        function drawConnectionLines() {
-            const svg = document.querySelector('.connection-svg');
-            if (!svg) return;
-            
-            svg.innerHTML = ''; // Clear existing lines
-            
-            const mainCategories = document.querySelectorAll('.main-circle');
-            const subItems = document.querySelectorAll('.sub-item');
-            const tertiaryItems = document.querySelectorAll('.sub-sub-item');
-            
-            // Helper function to get center position of element
-            function getCenter(elem) {
-                const rect = elem.getBoundingClientRect();
-                const container = document.querySelector('.main-categories').getBoundingClientRect();
+        class MindMapLayout {
+            constructor() {
+                this.container = document.querySelector('.mindmap-container');
+                this.cards = Array.from(document.querySelectorAll('.project-card'));
+                this.svg = document.querySelector('.connection-lines');
+                this.isRunning = false;
+                this.animationFrame = null;
+                this.bufferDistance = 30; // Adjusted buffer distance for smaller tiles
+
+                // Define connections between tiles
+                this.connections = [
+                    { from: 'mitigation-center', to: 'short-term', type: 'primary' },
+                    { from: 'mitigation-center', to: 'long-term', type: 'primary' },
+                    { from: 'long-term', to: 'land-use-planning', type: 'secondary' },
+                    { from: 'long-term', to: 'corridor-monitoring', type: 'secondary' },
+                    { from: 'long-term', to: 'corridor-identification', type: 'secondary' },
+                    { from: 'long-term', to: 'school-talks', type: 'secondary' },
+                    { from: 'short-term', to: 'bee-hive-fence', type: 'tertiary' },
+                    { from: 'short-term', to: 'chilli-fences', type: 'tertiary' },
+                    { from: 'short-term', to: 'cluster-fields', type: 'tertiary' },
+                    { from: 'short-term', to: 'elephant-express-bus', type: 'tertiary' },
+                    { from: 'short-term', to: 'solar-electric-fences', type: 'tertiary' },
+                    { from: 'elephant-aware-economy', to: 'shandrika-cooperative', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'okavango-brewing-company', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'smes', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'okavango-supply-co', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'pabalelo-still', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'life-with-elephants-tour', type: 'secondary' },
+                    { from: 'elephant-aware-economy', to: 'elephant-aware-farming', type: 'secondary' },
+                    { from: 'smes', to: 'seronga-craft-shop', type: 'tertiary' },
+                    { from: 'smes', to: 'yikote-elephants', type: 'tertiary' },
+                    { from: 'smes', to: 'beetsha-basket-weavers', type: 'tertiary' },
+                    { from: 'smes', to: 'kaputura-xoa-crafts', type: 'tertiary' },
+                    { from: 'smes', to: 'diyoveya-honey', type: 'tertiary' },
+                    { from: 'smes', to: 'life-with-elephants-tour', type: 'tertiary' },
+                    { from: 'diyoveya-honey', to: 'bee-hive-fence', type: 'tertiary' },
+                    { from: 'elephant-aware-farming', to: 'cluster-fields', type: 'tertiary' },
+                    { from: 'elephant-aware-farming', to: 'bee-hive-fence', type: 'tertiary' },
+                    { from: 'elephant-aware-farming', to: 'chilli-fences', type: 'tertiary' },
+                    { from: 'elephant-express-bus', to: 'corridor-identification', type: 'tertiary' },
+                    { from: 'elephant-express-bus', to: 'corridor-monitoring', type: 'tertiary' },
+                    { from: 'solar-electric-fences', to: 'cluster-fields', type: 'tertiary' },
+                    { from: 'solar-electric-fences', to: 'elephant-aware-farming', type: 'tertiary' }
+                ];
+
+                // Create connection lookup for fast checks
+                this.connectionMap = new Map();
+                this.connections.forEach(conn => {
+                    if (!this.connectionMap.has(conn.from)) this.connectionMap.set(conn.from, []);
+                    if (!this.connectionMap.has(conn.to)) this.connectionMap.set(conn.to, []);
+                    this.connectionMap.get(conn.from).push({id: conn.to, type: conn.type});
+                    this.connectionMap.get(conn.to).push({id: conn.from, type: conn.type});
+                });
+
+                this.init();
+            }
+
+            init() {
+                this.setupCards();
+                this.updateSVGViewBox();
+                this.preventOverlaps();
+                this.setupEventListeners();
+            }
+
+            setupCards() {
+                this.cards.forEach(card => {
+                    // Store original positions for physics calculations
+                    const rect = card.getBoundingClientRect();
+                    const containerRect = this.container.getBoundingClientRect();
+
+                    card.dataset.originalLeft = card.style.left;
+                    card.dataset.originalTop = card.style.top;
+
+                    // Add physics properties
+                    card.physics = {
+                        x: parseFloat(card.style.left) / 100 * containerRect.width,
+                        y: parseFloat(card.style.top) / 100 * containerRect.height,
+                        vx: 0, // velocity x
+                        vy: 0, // velocity y
+                        radius: rect.width / 2 + this.bufferDistance
+                    };
+                });
+            }
+
+            preventOverlaps() {
+                if (this.isRunning) return;
+
+                this.isRunning = true;
+                this.animate();
+            }
+
+            checkLineIntersectsTile(x1, y1, x2, y2, tile) {
+                // Check if line between (x1,y1) and (x2,y2) intersects with tile
+                const tileRect = tile.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const tileLeft = tileRect.left - containerRect.left;
+                const tileTop = tileRect.top - containerRect.top;
+                const tileRight = tileLeft + tileRect.width;
+                const tileBottom = tileTop + tileRect.height;
+
+                // Add buffer around tile
+                const buffer = 20;
+                const bufferedLeft = tileLeft - buffer;
+                const bufferedTop = tileTop - buffer;
+                const bufferedRight = tileRight + buffer;
+                const bufferedBottom = tileBottom + buffer;
+
+                // Check if line intersects with buffered tile rectangle
+                return this.lineIntersectsRect(x1, y1, x2, y2, bufferedLeft, bufferedTop, bufferedRight, bufferedBottom);
+            }
+
+            lineIntersectsRect(x1, y1, x2, y2, rectLeft, rectTop, rectRight, rectBottom) {
+                // Check if line intersects with rectangle
+                const left = Math.min(x1, x2);
+                const right = Math.max(x1, x2);
+                const top = Math.min(y1, y2);
+                const bottom = Math.max(y1, y2);
+
+                // Quick bounding box check
+                if (right < rectLeft || left > rectRight || bottom < rectTop || top > rectBottom) {
+                    return false;
+                }
+
+                // Check line intersections with all four sides of rectangle
+                return this.lineIntersectsLine(x1, y1, x2, y2, rectLeft, rectTop, rectRight, rectTop) ||
+                       this.lineIntersectsLine(x1, y1, x2, y2, rectRight, rectTop, rectRight, rectBottom) ||
+                       this.lineIntersectsLine(x1, y1, x2, y2, rectRight, rectBottom, rectLeft, rectBottom) ||
+                       this.lineIntersectsLine(x1, y1, x2, y2, rectLeft, rectBottom, rectLeft, rectTop);
+            }
+
+            lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+                // Calculate intersection of two lines
+                const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                if (Math.abs(denom) < 0.01) return false; // Lines are parallel
+
+                const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+                const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+
+                return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+            }
+
+            findPathAroundObstacles(fromX, fromY, toX, toY, excludeCards = []) {
+                // Lines connect directly to tile centers, only avoiding other connection lines
+                const startPoint = {x: fromX, y: fromY};
+                const endPoint = {x: toX, y: toY};
+
+                // Only check for conflicts with other connection lines, not tiles
+                const adjustedPoints = this.adjustForLineConflicts(startPoint, endPoint, 15, excludeCards);
+
+                // Create curved path
+                const controlPoint = adjustedPoints.controlPoint;
+                if (controlPoint) {
+                    return `M ${adjustedPoints.start.x} ${adjustedPoints.start.y} Q ${controlPoint.x} ${controlPoint.y} ${adjustedPoints.end.x} ${adjustedPoints.end.y}`;
+                } else {
+                    return this.createCurvedPath(adjustedPoints.start.x, adjustedPoints.start.y, adjustedPoints.end.x, adjustedPoints.end.y, 0.15);
+                }
+            }
+
+
+            adjustForLineConflicts(startPoint, endPoint, lineBuffer, excludeCards) {
+                // Check if this line conflicts with existing connection lines
+                const existingLines = Array.from(document.querySelectorAll('.connection-line'));
+                let adjustedStart = {x: startPoint.x, y: startPoint.y};
+                let adjustedEnd = {x: endPoint.x, y: endPoint.y};
+
+                let needsAdjustment = false;
+
+                for (const line of existingLines) {
+                    const pathData = line.getAttribute('d');
+                    if (!pathData) continue;
+
+                    // Check if our proposed line conflicts with this existing line
+                    const conflict = this.checkLineToLineConflict(
+                        adjustedStart.x, adjustedStart.y, adjustedEnd.x, adjustedEnd.y,
+                        pathData, lineBuffer
+                    );
+
+                    if (conflict) {
+                        needsAdjustment = true;
+
+                        // Create a curved detour around the conflicting line
+                        const detour = this.createLineDetour(adjustedStart, adjustedEnd, pathData, lineBuffer);
+                        adjustedStart = detour.start;
+                        adjustedEnd = detour.end;
+                    }
+                }
+
+                return {start: adjustedStart, end: adjustedEnd};
+            }
+
+            checkLineToLineConflict(line1x1, line1y1, line1x2, line1y2, pathData2, buffer) {
+                // Extract points from the second path (simplified)
+                const numbers = pathData2.match(/-?\d+\.?\d*/g);
+                if (!numbers || numbers.length < 4) return false;
+
+                const path2x1 = parseFloat(numbers[0]);
+                const path2y1 = parseFloat(numbers[1]);
+                const path2x2 = parseFloat(numbers[numbers.length - 2]);
+                const path2y2 = parseFloat(numbers[numbers.length - 1]);
+
+                // Check if lines are too close
+                const minDistance = this.getMinimumDistanceBetweenLines(
+                    line1x1, line1y1, line1x2, line1y2,
+                    path2x1, path2y1, path2x2, path2y2
+                );
+
+                return minDistance < buffer;
+            }
+
+            getMinimumDistanceBetweenLines(x1, y1, x2, y2, x3, y3, x4, y4) {
+                // Calculate minimum distance between two line segments
+                // This is a simplified version - in practice you'd use proper line segment distance calculation
+
+                // Check distance from line1 endpoints to line2
+                const dist1 = this.pointToLineDistance(x1, y1, x3, y3, x4, y4);
+                const dist2 = this.pointToLineDistance(x2, y2, x3, y3, x4, y4);
+
+                // Check distance from line2 endpoints to line1
+                const dist3 = this.pointToLineDistance(x3, y3, x1, y1, x2, y2);
+                const dist4 = this.pointToLineDistance(x4, y4, x1, y1, x2, y2);
+
+                return Math.min(dist1, dist2, dist3, dist4);
+            }
+
+            createLineDetour(startPoint, endPoint, conflictingPath, buffer) {
+                // Create a detour around the conflicting line by adding curvature
+                const dx = endPoint.x - startPoint.x;
+                const dy = endPoint.y - startPoint.y;
+
+                // Add perpendicular offset to create detour
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const offsetX = -dy / length * (buffer * 1.5); // Perpendicular offset
+                const offsetY = dx / length * (buffer * 1.5);
+
+                // Create curved path with detour
+                const midX = (startPoint.x + endPoint.x) / 2 + offsetX;
+                const midY = (startPoint.y + endPoint.y) / 2 + offsetY;
+
                 return {
-                    x: rect.left + rect.width / 2 - container.left,
-                    y: rect.top + rect.height / 2 - container.top
+                    start: startPoint,
+                    end: endPoint,
+                    controlPoint: {x: midX, y: midY}
                 };
             }
-            
-            // Draw lines from main categories to sub-items
-            mainCategories.forEach(mainCat => {
-                const mainPos = getCenter(mainCat);
-                const categoryGroup = mainCat.closest('.category-group');
-                const subItemsInCategory = categoryGroup.querySelectorAll('.sub-item');
-                
-                subItemsInCategory.forEach(subItem => {
-                    const subPos = getCenter(subItem);
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', mainPos.x);
-                    line.setAttribute('y1', mainPos.y);
-                    line.setAttribute('x2', subPos.x);
-                    line.setAttribute('y2', subPos.y);
-                    line.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
-                    line.setAttribute('stroke-width', '2');
-                    line.classList.add('connection-line');
-                    line.dataset.from = mainCat.parentElement.querySelector('.main-circle').textContent.trim();
-                    line.dataset.to = subItem.textContent.trim();
-                    svg.appendChild(line);
+
+            createCurvedPath(x1, y1, x2, y2, curvature = 0.15) {
+                // Standard curved path
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 1) return `M ${x1} ${y1} L ${x2} ${y2}`; // Very short line
+
+                const offsetX = -dy * curvature;
+                const offsetY = dx * curvature;
+
+                const cp1x = x1 + dx * 0.4 + offsetX;
+                const cp1y = y1 + dy * 0.4 + offsetY;
+                const cp2x = x2 - dx * 0.4 + offsetX;
+                const cp2y = y2 - dy * 0.4 + offsetY;
+
+                return `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+            }
+
+            getObstaclesInPath(fromX, fromY, toX, toY, excludeCards) {
+                const obstacles = [];
+
+                // Fast obstacle detection - check only endpoints and midpoint
+                for (const card of this.cards) {
+                    if (!excludeCards.includes(card)) {
+                        // Quick bounding box check first
+                        const cardRect = card.getBoundingClientRect();
+                        const containerRect = this.container.getBoundingClientRect();
+
+                        const cardLeft = cardRect.left - containerRect.left - 30;
+                        const cardTop = cardRect.top - containerRect.top - 30;
+                        const cardRight = cardLeft + cardRect.width + 60;
+                        const cardBottom = cardTop + cardRect.height + 60;
+
+                        // Check if line bounding box intersects card bounding box
+                        const lineLeft = Math.min(fromX, toX) - 10;
+                        const lineRight = Math.max(fromX, toX) + 10;
+                        const lineTop = Math.min(fromY, toY) - 10;
+                        const lineBottom = Math.max(fromY, toY) + 10;
+
+                        if (!(lineRight < cardLeft || lineLeft > cardRight ||
+                              lineBottom < cardTop || lineTop > cardBottom)) {
+                            // Bounding boxes overlap - check midpoint
+                            const midX = (fromX + toX) / 2;
+                            const midY = (fromY + toY) / 2;
+
+                            if (this.pointIntersectsTile(midX, midY, card)) {
+                                obstacles.push(card);
+                            }
+                        }
+                    }
+                }
+
+                return obstacles;
+            }
+
+            computeObstacleAvoidingPath(fromX, fromY, toX, toY, obstacles, excludeCards) {
+                // Fast routing strategies prioritized by speed
+
+                // Strategy 1: Quick single detour (fastest)
+                if (obstacles.length > 0) {
+                    const detourPath = this.createSingleObstacleDetour(fromX, fromY, toX, toY, obstacles[0]);
+                    if (this.quickPathCheck(detourPath, excludeCards)) {
+                        return detourPath;
+                    }
+                }
+
+                // Strategy 2: Direct safe path if available
+                if (obstacles.length === 0 || this.isPathClear(fromX, fromY, toX, toY, excludeCards, 3)) {
+                    return this.createCurvedPath(fromX, fromY, toX, toY, 0.1);
+                }
+
+                // Strategy 3: Emergency safe routing (fastest safe option)
+                return this.createEmergencySafePath(fromX, fromY, toX, toY, excludeCards);
+            }
+
+            createEmergencySafePath(fromX, fromY, toX, toY, excludeCards) {
+                // Fast emergency routing - simple diagonal offset
+                const midX = (fromX + toX) / 2;
+                const midY = (fromY + toY) / 2;
+
+                // Add perpendicular offset to avoid direct line
+                const dx = toX - fromX;
+                const dy = toY - fromY;
+                const offsetX = -dy * 0.2; // Perpendicular offset
+                const offsetY = dx * 0.2;
+
+                const detourX = midX + offsetX;
+                const detourY = midY + offsetY;
+
+                return this.createTwoPointCurve(fromX, fromY, detourX, detourY, toX, toY);
+            }
+
+            pointIntersectsAnyTile(x, y, excludeCards) {
+                for (const card of this.cards) {
+                    if (!excludeCards.includes(card) && this.pointIntersectsTile(x, y, card)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            updateConnectionLinesStrict() {
+                // Simple direct line connections
+                while (this.svg.firstChild) {
+                    this.svg.removeChild(this.svg.firstChild);
+                }
+
+                // Create clean, direct curved lines
+                this.connections.forEach(connection => {
+                    const fromCard = document.getElementById(connection.from);
+                    const toCard = document.getElementById(connection.to);
+
+                    if (fromCard && toCard) {
+                        const containerRect = this.container.getBoundingClientRect();
+                        const fromRect = fromCard.getBoundingClientRect();
+                        const toRect = toCard.getBoundingClientRect();
+
+                        const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
+                        const fromY = fromRect.top + fromRect.height / 2 - containerRect.top;
+                        const toX = toRect.left + toRect.width / 2 - containerRect.left;
+                        const toY = toRect.top + toRect.height / 2 - containerRect.top;
+
+                        const pathData = this.findPathAroundObstacles(fromX, fromY, toX, toY, [fromCard, toCard]);
+
+                        // Create and add the path element
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', pathData);
+                        path.setAttribute('data-connection', `${connection.from}-${connection.to}`);
+
+                        switch(connection.type) {
+                            case 'primary':
+                                path.setAttribute('stroke', '#4a7c59');
+                                path.setAttribute('stroke-width', '4');
+                                path.setAttribute('stroke-dasharray', '8,4');
+                                break;
+                            case 'secondary':
+                                path.setAttribute('stroke', '#6c757d');
+                                path.setAttribute('stroke-width', '3');
+                                path.setAttribute('stroke-dasharray', '6,3');
+                                break;
+                            case 'tertiary':
+                                path.setAttribute('stroke', '#adb5bd');
+                                path.setAttribute('stroke-width', '2');
+                                path.setAttribute('stroke-dasharray', '4,2');
+                                break;
+                        }
+
+                        path.setAttribute('fill', 'none');
+                        path.classList.add('connection-line', 'curved-line', connection.type);
+
+                        this.svg.appendChild(path);
+                    }
                 });
-            });
-            
-            // Draw lines from sub-items to tertiary items
-            subItems.forEach(subItem => {
-                const subPos = getCenter(subItem);
-                const container = subItem.closest('.sub-item-container');
-                const tertiaryInContainer = container.querySelectorAll('.sub-sub-item');
-                
-                tertiaryInContainer.forEach(tertiary => {
-                    const tertPos = getCenter(tertiary);
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', subPos.x);
-                    line.setAttribute('y1', subPos.y);
-                    line.setAttribute('x2', tertPos.x);
-                    line.setAttribute('y2', tertPos.y);
-                    line.setAttribute('stroke', 'rgba(0, 0, 0, 0.15)');
-                    line.setAttribute('stroke-width', '1.5');
-                    line.classList.add('connection-line');
-                    svg.appendChild(line);
-                });
-            });
-        }
-        
-        // Redraw lines on load and resize
-        window.addEventListener('load', drawConnectionLines);
-        window.addEventListener('resize', drawConnectionLines);
-        
-        // Add hover effects to highlight connections
-        document.addEventListener('DOMContentLoaded', function() {
-            const allNodes = document.querySelectorAll('.main-circle, .sub-item, .sub-sub-item');
-            
-            allNodes.forEach(node => {
-                node.addEventListener('mouseenter', function() {
-                    // Highlight this node's connections
-                    const categoryGroup = this.closest('.category-group');
-                    if (categoryGroup) {
-                        const connectedElements = categoryGroup.querySelectorAll('.main-circle, .sub-item, .sub-sub-item');
-                        connectedElements.forEach(el => {
-                            el.style.opacity = '0.9';
+            }
+
+            validatePathThoroughly(pathData, excludeCards) {
+                if (!pathData || pathData.length < 10) return false;
+
+                // Extract all numeric values from the path
+                const numbers = pathData.match(/-?\d+\.?\d*/g);
+                if (!numbers || numbers.length < 4) return false;
+
+                // Convert to coordinates
+                const coords = [];
+                for (let i = 0; i < numbers.length; i += 2) {
+                    if (i + 1 < numbers.length) {
+                        coords.push({
+                            x: parseFloat(numbers[i]),
+                            y: parseFloat(numbers[i + 1])
                         });
                     }
-                    
-                    // Highlight connection lines
-                    const lines = document.querySelectorAll('.connection-line');
-                    lines.forEach(line => {
-                        line.setAttribute('stroke', 'rgba(0, 0, 0, 0.5)');
-                        line.setAttribute('stroke-width', '3');
+                }
+
+                if (coords.length < 2) return false;
+
+                // Dense sampling: check many points along the path
+                const totalSamples = 20;
+                for (let i = 0; i < totalSamples; i++) {
+                    const t = i / (totalSamples - 1);
+
+                    // Interpolate between coordinate pairs
+                    let x, y;
+                    if (coords.length === 2) {
+                        // Simple line
+                        x = coords[0].x + (coords[1].x - coords[0].x) * t;
+                        y = coords[0].y + (coords[1].y - coords[0].y) * t;
+                    } else {
+                        // Multi-point path - interpolate between segments
+                        const segmentIndex = Math.floor(t * (coords.length - 1));
+                        const segmentT = (t * (coords.length - 1)) % 1;
+
+                        if (segmentIndex < coords.length - 1) {
+                            const start = coords[segmentIndex];
+                            const end = coords[segmentIndex + 1];
+                            x = start.x + (end.x - start.x) * segmentT;
+                            y = start.y + (end.y - start.y) * segmentT;
+                        } else {
+                            x = coords[coords.length - 1].x;
+                            y = coords[coords.length - 1].y;
+                        }
+                    }
+
+                    // Check if this point intersects ANY tile (except connected ones)
+                    for (const card of this.cards) {
+                        if (!excludeCards.includes(card) && this.pointIntersectsTile(x, y, card)) {
+                            return false; // Path is invalid
+                        }
+                    }
+                }
+
+                return true; // Path passed all validation
+            }
+
+            createNuclearSafePath(fromX, fromY, toX, toY, excludeCards) {
+                // Nuclear option: find the absolute safest route possible
+
+                // Method 1: Try routing around all obstacles with maximum clearance
+                const safeWaypoints = this.findMaximumClearancePath(fromX, fromY, toX, toY, excludeCards);
+                if (safeWaypoints.length > 2) {
+                    return this.createPathFromWaypoints(safeWaypoints);
+                }
+
+                // Method 2: Emergency diagonal routing
+                return this.createDiagonalSafePath(fromX, fromY, toX, toY, excludeCards);
+            }
+
+            findMaximumClearancePath(fromX, fromY, toX, toY, excludeCards) {
+                const waypoints = [{x: fromX, y: fromY}];
+                const numWaypoints = 6;
+
+                // Create waypoints that maximize distance from all obstacles
+                for (let i = 1; i <= numWaypoints; i++) {
+                    const t = i / (numWaypoints + 1);
+                    const idealX = fromX + (toX - fromX) * t;
+                    const idealY = fromY + (toY - fromY) * t;
+
+                    // Find the point farthest from all obstacles
+                    const safePoint = this.findPointOfMaximumClearance(idealX, idealY, excludeCards);
+                    waypoints.push(safePoint);
+                }
+
+                waypoints.push({x: toX, y: toY});
+                return waypoints;
+            }
+
+            findPointOfMaximumClearance(centerX, centerY, excludeCards) {
+                const searchRadius = 150;
+                const candidates = [];
+
+                // Generate candidate points in a grid pattern
+                for (let dx = -searchRadius; dx <= searchRadius; dx += 30) {
+                    for (let dy = -searchRadius; dy <= searchRadius; dy += 30) {
+                        const testX = centerX + dx;
+                        const testY = centerY + dy;
+
+                        // Calculate clearance (distance to nearest obstacle)
+                        let minDistance = Infinity;
+                        for (const card of this.cards) {
+                            if (!excludeCards.includes(card)) {
+                                const clearance = this.calculateClearanceToTile(testX, testY, card);
+                                minDistance = Math.min(minDistance, clearance);
+                            }
+                        }
+
+                        candidates.push({x: testX, y: testY, clearance: minDistance});
+                    }
+                }
+
+                // Return the candidate with maximum clearance
+                candidates.sort((a, b) => b.clearance - a.clearance);
+                return candidates[0] || {x: centerX, y: centerY, clearance: 0};
+            }
+
+            calculateClearanceToTile(x, y, tile) {
+                const tileRect = tile.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const tileCenterX = tileRect.left + tileRect.width / 2 - containerRect.left;
+                const tileCenterY = tileRect.top + tileRect.height / 2 - containerRect.top;
+                const tileRadius = Math.max(tileRect.width, tileRect.height) / 2 + 40; // Include buffer
+
+                const distance = Math.sqrt((x - tileCenterX) ** 2 + (y - tileCenterY) ** 2);
+                return Math.max(0, distance - tileRadius);
+            }
+
+            createDiagonalSafePath(fromX, fromY, toX, toY, excludeCards) {
+                // Create a diagonal path that avoids direct line-of-sight issues
+                const midX = (fromX + toX) / 2;
+                const midY = (fromY + toY) / 2;
+
+                // Offset the midpoint diagonally
+                const offsetX = (toY - fromY) * 0.3; // Perpendicular offset
+                const offsetY = (fromX - toX) * 0.3;
+
+                const diagonalX = midX + offsetX;
+                const diagonalY = midY + offsetY;
+
+                // Ensure the diagonal point is safe
+                const safeDiagonal = this.findNearestSafePoint(diagonalX, diagonalY, this.cards.filter(c => !excludeCards.includes(c)), excludeCards);
+
+                return this.createTwoPointCurve(fromX, fromY, safeDiagonal.x, safeDiagonal.y, toX, toY);
+            }
+
+            resetTransparency() {
+                // Reset to default transparency and scale state
+                this.cards.forEach(card => {
+                    if (card.id === 'mitigation-center' || card.id === 'elephant-aware-economy') {
+                        card.style.opacity = '1.0'; // Key tiles fully opaque
+                    } else {
+                        card.style.opacity = '0.3'; // Others 70% transparent
+                    }
+                    // Reset scale and z-index
+                    card.style.transform = 'translate(-50%, -50%) scale(1.0)';
+                    card.style.zIndex = card.classList.contains('mitigation-center') ? '10' : '5';
+                });
+
+                // Reset all connection lines to 20% transparent (80% visible)
+                const lines = document.querySelectorAll('.connection-line');
+                lines.forEach(line => {
+                    line.style.opacity = '0.8';
+                });
+            }
+
+            forceRecalculateAllPaths() {
+                // Emergency method to force complete recalculation of all paths
+                this.updateConnectionLinesStrict();
+            }
+
+            finalPathValidation() {
+                // Ultimate safety check: validate all paths and fix any that still intersect tiles
+                let needsRecalculation = false;
+
+                this.connections.forEach(connection => {
+                    const fromCard = document.getElementById(connection.from);
+                    const toCard = document.getElementById(connection.to);
+
+                    if (fromCard && toCard) {
+                        // Check if the current path is still valid
+                        const pathElement = this.svg.querySelector(`.connection-line.${connection.type}`);
+                        if (pathElement) {
+                            const pathData = pathElement.getAttribute('d');
+                            const excludeCards = [fromCard, toCard];
+
+                            if (!this.validatePathThoroughly(pathData, excludeCards)) {
+                                // Path is invalid - mark for recalculation
+                                needsRecalculation = true;
+                            }
+                        }
+                    }
+                });
+
+                if (needsRecalculation) {
+                    console.log('Final validation found invalid paths - recalculating...');
+                    this.updateConnectionLinesStrict();
+                }
+            }
+
+            quickPathCheck(pathData, excludeCards) {
+                // Fast path validation - check only critical points
+                if (!pathData || pathData.length < 10) return false;
+
+                // Extract coordinates from path
+                const numbers = pathData.match(/-?\d+\.?\d*/g);
+                if (!numbers || numbers.length < 4) return false;
+
+                // Check start, middle, and end points only
+                const startX = parseFloat(numbers[0]);
+                const startY = parseFloat(numbers[1]);
+                const endX = parseFloat(numbers[numbers.length - 2]);
+                const endY = parseFloat(numbers[numbers.length - 1]);
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+
+                // Quick intersection checks
+                return !this.pointIntersectsAnyTile(startX, startY, excludeCards) &&
+                       !this.pointIntersectsAnyTile(midX, midY, excludeCards) &&
+                       !this.pointIntersectsAnyTile(endX, endY, excludeCards);
+            }
+
+            pathIsSafe(pathData, excludeCards) {
+                // Use the faster quick check
+                return this.quickPathCheck(pathData, excludeCards);
+            }
+
+            createComplexDetourPath(fromX, fromY, toX, toY, obstacles, excludeCards) {
+                // Create multiple waypoints to navigate around all obstacles
+                const waypoints = [{x: fromX, y: fromY}];
+
+                // Find safe intermediate points
+                const safePoints = this.findSafeIntermediatePoints(fromX, fromY, toX, toY, obstacles, excludeCards);
+                waypoints.push(...safePoints);
+
+                waypoints.push({x: toX, y: toY});
+
+                return this.createPathFromWaypoints(waypoints);
+            }
+
+            findSafeIntermediatePoints(fromX, fromY, toX, toY, obstacles, excludeCards) {
+                const safePoints = [];
+                const numPoints = Math.min(4, obstacles.length + 2);
+
+                for (let i = 1; i <= numPoints; i++) {
+                    const t = i / (numPoints + 1);
+
+                    // Try multiple candidate positions around the ideal point
+                    const idealX = fromX + (toX - fromX) * t;
+                    const idealY = fromY + (toY - fromY) * t;
+
+                    const safePoint = this.findNearestSafePoint(idealX, idealY, obstacles, excludeCards);
+                    if (safePoint) {
+                        safePoints.push(safePoint);
+                    }
+                }
+
+                return safePoints;
+            }
+
+            findNearestSafePoint(targetX, targetY, obstacles, excludeCards) {
+                const searchRadius = 100;
+                const stepSize = 15;
+                const maxAttempts = 20;
+
+                // Search in expanding circles for a safe point
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const angle = (attempt * 137.5) * Math.PI / 180; // Golden angle for good distribution
+                    const radius = stepSize * Math.sqrt(attempt + 1);
+
+                    const testX = targetX + Math.cos(angle) * radius;
+                    const testY = targetY + Math.sin(angle) * radius;
+
+                    // Check if this point is safe
+                    let isSafe = true;
+                    for (const obstacle of obstacles) {
+                        if (this.pointIntersectsTile(testX, testY, obstacle)) {
+                            isSafe = false;
+                            break;
+                        }
+                    }
+
+                    if (isSafe) {
+                        return {x: testX, y: testY};
+                    }
+                }
+
+                // Fallback: return a point that's at least not inside any obstacle
+                return this.findAnySafePoint(targetX, targetY, excludeCards);
+            }
+
+            findAnySafePoint(nearX, nearY, excludeCards) {
+                // Find any point that's not inside a tile
+                const searchRadius = 200;
+                const stepSize = 25;
+
+                for (let radius = 0; radius <= searchRadius; radius += stepSize) {
+                    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+                        const testX = nearX + Math.cos(angle) * radius;
+                        const testY = nearY + Math.sin(angle) * radius;
+
+                        let isSafe = true;
+                        for (const card of this.cards) {
+                            if (!excludeCards.includes(card) && this.pointIntersectsTile(testX, testY, card)) {
+                                isSafe = false;
+                                break;
+                            }
+                        }
+
+                        if (isSafe) {
+                            return {x: testX, y: testY};
+                        }
+                    }
+                }
+
+                // Ultimate fallback
+                return {x: nearX + 50, y: nearY + 50};
+            }
+
+            createGuaranteedSafePath(fromX, fromY, toX, toY, excludeCards) {
+                // Create a path that goes through guaranteed safe zones
+                // This is a more aggressive routing that prioritizes safety over aesthetics
+
+                const safeStart = this.findAnySafePoint(fromX, fromY, excludeCards);
+                const safeEnd = this.findAnySafePoint(toX, toY, excludeCards);
+
+                // Add intermediate safe points
+                const midSafe = this.findAnySafePoint((fromX + toX) / 2, (fromY + toY) / 2, excludeCards);
+
+                const waypoints = [
+                    {x: fromX, y: fromY},
+                    safeStart,
+                    midSafe,
+                    safeEnd,
+                    {x: toX, y: toY}
+                ];
+
+                return this.createPathFromWaypoints(waypoints);
+            }
+
+            createMinimalDetour(fromX, fromY, toX, toY, excludeCards) {
+                // Find the single biggest obstacle blocking the direct path
+                let biggestObstacle = null;
+                let maxInterference = 0;
+
+                for (const card of this.cards) {
+                    if (!excludeCards.includes(card)) {
+                        const interference = this.calculateObstacleInterference(fromX, fromY, toX, toY, card);
+                        if (interference > maxInterference) {
+                            maxInterference = interference;
+                            biggestObstacle = card;
+                        }
+                    }
+                }
+
+                if (!biggestObstacle || maxInterference < 50) {
+                    return null; // No significant obstacle, use direct path
+                }
+
+                // Create minimal detour around the biggest obstacle
+                return this.createSingleObstacleDetour(fromX, fromY, toX, toY, biggestObstacle);
+            }
+
+            createSingleObstacleDetour(fromX, fromY, toX, toY, obstacle) {
+                const obstacleRect = obstacle.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const obsCenterX = obstacleRect.left + obstacleRect.width / 2 - containerRect.left;
+                const obsCenterY = obstacleRect.top + obstacleRect.height / 2 - containerRect.top;
+                const obsRadius = Math.max(obstacleRect.width, obstacleRect.height) / 2 + 50; // Buffer
+
+                // Calculate vectors
+                const toObstacleX = obsCenterX - fromX;
+                const toObstacleY = obsCenterY - fromY;
+                const toTargetX = toX - fromX;
+                const toTargetY = toY - fromY;
+
+                // Find tangent points on the obstacle circle
+                const distToObstacle = Math.sqrt(toObstacleX * toObstacleX + toObstacleY * toObstacleY);
+                const distToTarget = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
+
+                if (distToObstacle <= obsRadius) {
+                    // Starting point is inside obstacle, route around it
+                    const angle = Math.atan2(toTargetY, toTargetX);
+                    const detourX = obsCenterX + Math.cos(angle) * (obsRadius + 30);
+                    const detourY = obsCenterY + Math.sin(angle) * (obsRadius + 30);
+
+                    return this.createTwoPointCurve(fromX, fromY, detourX, detourY, toX, toY);
+                }
+
+                // Simple tangent-based detour
+                const angleToObstacle = Math.atan2(toObstacleY, toObstacleX);
+                const tangentAngle = Math.asin(obsRadius / distToObstacle);
+
+                // Try both tangent directions, pick the one closer to target
+                const tangent1X = obsCenterX + Math.cos(angleToObstacle + tangentAngle) * obsRadius;
+                const tangent1Y = obsCenterY + Math.sin(angleToObstacle + tangentAngle) * obsRadius;
+
+                const tangent2X = obsCenterX + Math.cos(angleToObstacle - tangentAngle) * obsRadius;
+                const tangent2Y = obsCenterY + Math.sin(angleToObstacle - tangentAngle) * obsRadius;
+
+                // Choose tangent closer to target direction
+                const dist1 = Math.sqrt((tangent1X - toX) ** 2 + (tangent1Y - toY) ** 2);
+                const dist2 = Math.sqrt((tangent2X - toX) ** 2 + (tangent2Y - toY) ** 2);
+
+                const detourX = dist1 < dist2 ? tangent1X : tangent2X;
+                const detourY = dist1 < dist2 ? tangent1Y : tangent2Y;
+
+                return this.createTwoPointCurve(fromX, fromY, detourX, detourY, toX, toY);
+            }
+
+            createTwoPointCurve(startX, startY, midX, midY, endX, endY) {
+                // Create a smooth curve through three points
+                return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
+            }
+
+            isPathClearFromData(pathData, excludeCards) {
+                // Simplified path clearance check - in a full implementation,
+                // this would parse the SVG path and sample points along it
+                return true; // For now, assume detours are clear
+            }
+
+            isPathClear(fromX, fromY, toX, toY, excludeCards, samples = 5) {
+                // Sample points along the path to check for collisions
+                for (let i = 0; i <= samples; i++) {
+                    const t = i / samples;
+                    const x = fromX + (toX - fromX) * t;
+                    const y = fromY + (toY - fromY) * t;
+
+                    for (const card of this.cards) {
+                        if (!excludeCards.includes(card) && this.pointIntersectsTile(x, y, card)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            pointIntersectsTile(x, y, tile) {
+                const tileRect = tile.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const tileLeft = tileRect.left - containerRect.left - 30; // 30px buffer
+                const tileTop = tileRect.top - containerRect.top - 30;
+                const tileRight = tileLeft + tileRect.width + 60;
+                const tileBottom = tileTop + tileRect.height + 60;
+
+                return x >= tileLeft && x <= tileRight && y >= tileTop && y <= tileBottom;
+            }
+
+            evaluatePathQuality(pathData, excludeCards) {
+                // Sample points along the path and count how many are clear
+                const samples = 20;
+                let clearPoints = 0;
+
+                // Parse path data to get points (simplified - just check start and end for now)
+                const startMatch = pathData.match(/M\s*(-?\d+\.?\d*)\s*(-?\d+\.?\d*)/);
+                const endMatch = pathData.match(/(-?\d+\.?\d*)\s*(-?\d+\.?\d*)$/);
+
+                if (startMatch && endMatch) {
+                    const startX = parseFloat(startMatch[1]);
+                    const startY = parseFloat(startMatch[2]);
+                    const endX = parseFloat(endMatch[1]);
+                    const endY = parseFloat(endMatch[2]);
+
+                    return this.isPathClear(startX, startY, endX, endY, excludeCards, 15) ? 1 : 0;
+                }
+
+                return 0;
+            }
+
+            createForcedDetourPath(fromX, fromY, toX, toY, excludeCards) {
+                // Simplified forced detour - just go around the primary obstacle
+                let primaryObstacle = null;
+                let maxInterference = 0;
+
+                for (const card of this.cards) {
+                    if (!excludeCards.includes(card)) {
+                        const interference = this.calculateObstacleInterference(fromX, fromY, toX, toY, card);
+                        if (interference > maxInterference) {
+                            maxInterference = interference;
+                            primaryObstacle = card;
+                        }
+                    }
+                }
+
+                if (primaryObstacle) {
+                    return this.createSingleObstacleDetour(fromX, fromY, toX, toY, primaryObstacle);
+                }
+
+                // Fallback to gentle curve
+                return this.createCurvedPath(fromX, fromY, toX, toY, 0.1);
+            }
+
+            calculateObstacleInterference(fromX, fromY, toX, toY, obstacle) {
+                // Calculate how much this obstacle interferes with the direct path
+                const obstacleRect = obstacle.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const obsCenterX = obstacleRect.left + obstacleRect.width / 2 - containerRect.left;
+                const obsCenterY = obstacleRect.top + obstacleRect.height / 2 - containerRect.top;
+
+                // Distance from line to obstacle center
+                const lineDist = this.pointToLineDistance(obsCenterX, obsCenterY, fromX, fromY, toX, toY);
+                const obstacleRadius = Math.max(obstacleRect.width, obstacleRect.height) / 2 + 40;
+
+                return Math.max(0, obstacleRadius - lineDist);
+            }
+
+            pointToLineDistance(px, py, x1, y1, x2, y2) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const length = Math.sqrt(dx * dx + dy * dy);
+
+                if (length === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+
+                const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length)));
+                const closestX = x1 + t * dx;
+                const closestY = y1 + t * dy;
+
+                return Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
+            }
+
+            routeAroundObstacle(fromX, fromY, toX, toY, obstacle) {
+                const waypoints = [{x: fromX, y: fromY}];
+
+                const obstacleRect = obstacle.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+
+                const obsLeft = obstacleRect.left - containerRect.left;
+                const obsTop = obstacleRect.top - containerRect.top;
+                const obsRight = obsLeft + obstacleRect.width;
+                const obsBottom = obsTop + obstacleRect.height;
+
+                // Create waypoints that go around the obstacle corners
+                const margin = 60; // Extra clearance
+
+                // Go around the obstacle by creating a path that avoids it
+                const detour1 = {
+                    x: obsLeft - margin,
+                    y: fromY + (obsTop - margin - fromY) * 0.5
+                };
+
+                const detour2 = {
+                    x: obsRight + margin,
+                    y: toY - (toY - obsBottom - margin) * 0.5
+                };
+
+                waypoints.push(detour1, detour2);
+                waypoints.push({x: toX, y: toY});
+
+                return waypoints;
+            }
+
+            areCardsConnected(card1Id, card2Id) {
+                if (!card1Id || !card2Id) return false;
+                const connections = this.connectionMap.get(card1Id) || [];
+                return connections.some(conn => conn.id === card2Id);
+            }
+
+            getConnectionType(card1Id, card2Id) {
+                if (!card1Id || !card2Id) return null;
+                const connections = this.connectionMap.get(card1Id) || [];
+                const connection = connections.find(conn => conn.id === card2Id);
+                return connection ? connection.type : null;
+            }
+
+            getTargetDistance(connectionType) {
+                // Target distances for connected cards
+                switch(connectionType) {
+                    case 'primary': return 150;   // Close for direct relationships
+                    case 'secondary': return 180; // Medium distance
+                    case 'tertiary': return 200;  // Slightly farther
+                    default: return 200;
+                }
+            }
+
+            createPathFromWaypointsCurved(waypoints, curvature) {
+                if (waypoints.length < 2) return '';
+
+                let path = `M ${waypoints[0].x} ${waypoints[0].y}`;
+
+                for (let i = 1; i < waypoints.length; i++) {
+                    const current = waypoints[i];
+                    const previous = waypoints[i - 1];
+
+                    if (i === waypoints.length - 1) {
+                        // Last segment
+                        path += ` L ${current.x} ${current.y}`;
+                    } else {
+                        // Create curved segment with specified curvature
+                        const next = waypoints[i + 1];
+                        const dx1 = current.x - previous.x;
+                        const dy1 = current.y - previous.y;
+                        const dx2 = next.x - current.x;
+                        const dy2 = next.y - current.y;
+
+                        const cp1x = previous.x + dx1 * 0.5 - dy1 * curvature;
+                        const cp1y = previous.y + dy1 * 0.5 + dx1 * curvature;
+                        const cp2x = current.x - dx2 * 0.5 - dy2 * curvature;
+                        const cp2y = current.y - dy2 * 0.5 + dx2 * curvature;
+
+                        path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${current.x} ${current.y}`;
+                    }
+                }
+
+                return path;
+            }
+
+            calculateWaypoints(fromX, fromY, toX, toY, excludeCards) {
+                const waypoints = [{x: fromX, y: fromY}];
+                const dx = toX - fromX;
+                const dy = toY - fromY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Create multiple intermediate points to ensure clear routing
+                const numPoints = Math.max(3, Math.floor(distance / 100)); // More points for longer distances
+
+                for (let i = 1; i <= numPoints; i++) {
+                    const t = i / (numPoints + 1);
+                    let pointX = fromX + dx * t;
+                    let pointY = fromY + dy * t;
+
+                    // Try to find a clear position near this point
+                    const clearPoint = this.findClearPosition(pointX, pointY, excludeCards);
+                    waypoints.push(clearPoint);
+                }
+
+                waypoints.push({x: toX, y: toY});
+                return waypoints;
+            }
+
+            findClearPosition(targetX, targetY, excludeCards) {
+                const maxAttempts = 20;
+                const stepSize = 30;
+
+                // Start with the target position
+                let bestX = targetX;
+                let bestY = targetY;
+                let bestClearance = this.calculateClearance(bestX, bestY, excludeCards);
+
+                // Try positions in expanding circles around the target
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const angle = (attempt * 137.5) * Math.PI / 180; // Golden angle for good distribution
+                    const radius = stepSize * Math.sqrt(attempt + 1);
+
+                    const testX = targetX + Math.cos(angle) * radius;
+                    const testY = targetY + Math.sin(angle) * radius;
+
+                    const clearance = this.calculateClearance(testX, testY, excludeCards);
+                    if (clearance > bestClearance) {
+                        bestX = testX;
+                        bestY = testY;
+                        bestClearance = clearance;
+                    }
+                }
+
+                return {x: bestX, y: bestY};
+            }
+
+            calculateClearance(x, y, excludeCards) {
+                let minDistance = Infinity;
+
+                for (const card of this.cards) {
+                    if (!excludeCards.includes(card)) {
+                        const cardRect = card.getBoundingClientRect();
+                        const containerRect = this.container.getBoundingClientRect();
+
+                        const cardCenterX = cardRect.left + cardRect.width / 2 - containerRect.left;
+                        const cardCenterY = cardRect.top + cardRect.height / 2 - containerRect.top;
+                        const cardRadius = Math.max(cardRect.width, cardRect.height) / 2 + 40; // Include buffer
+
+                        const distance = Math.sqrt((x - cardCenterX) ** 2 + (y - cardCenterY) ** 2);
+                        minDistance = Math.min(minDistance, distance - cardRadius);
+                    }
+                }
+
+                return minDistance;
+            }
+
+            createDetourPoints(fromX, fromY, toX, toY, excludeCards) {
+                // Simple detour strategy: create waypoints that avoid obstacles by going around
+                const detourPoints = [];
+                const dx = toX - fromX;
+                const dy = toY - fromY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Create intermediate points that arc around potential obstacles
+                const steps = 3;
+                for (let i = 1; i < steps; i++) {
+                    const t = i / steps;
+                    const baseX = fromX + dx * t;
+                    const baseY = fromY + dy * t;
+
+                    // Add perpendicular offset to avoid obstacles
+                    const offsetX = -dy * 0.3; // Perpendicular to line direction
+                    const offsetY = dx * 0.3;
+
+                    detourPoints.push({
+                        x: baseX + offsetX,
+                        y: baseY + offsetY
+                    });
+                }
+
+                return detourPoints;
+            }
+
+            createPathFromWaypoints(waypoints) {
+                if (waypoints.length < 2) return '';
+
+                let path = `M ${waypoints[0].x} ${waypoints[0].y}`;
+
+                // Simple direct connections between waypoints
+                for (let i = 1; i < waypoints.length; i++) {
+                    const current = waypoints[i];
+                    const previous = waypoints[i - 1];
+
+                    // Use simple quadratic curves for smooth but direct connections
+                    if (i < waypoints.length - 1) {
+                        const next = waypoints[i + 1];
+                        const cpX = current.x;
+                        const cpY = current.y;
+                        path += ` Q ${cpX} ${cpY} ${next.x} ${next.y}`;
+                        i++; // Skip next waypoint since we connected to it
+                    } else {
+                        path += ` L ${current.x} ${current.y}`;
+                    }
+                }
+
+                return path;
+            }
+
+            createCurvedPath(x1, y1, x2, y2, curvature = 0.15) {
+                // Create a gentle curve - much more direct than before
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+
+                // Minimal control point offset for subtle curve
+                const offsetX = -dy * curvature;
+                const offsetY = dx * curvature;
+
+                // Position control points closer to the line for straighter appearance
+                const cp1x = x1 + dx * 0.4 + offsetX;
+                const cp1y = y1 + dy * 0.4 + offsetY;
+                const cp2x = x2 - dx * 0.4 + offsetX;
+                const cp2y = y2 - dy * 0.4 + offsetY;
+
+                return `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+            }
+
+            updateSVGViewBox() {
+                const containerRect = this.container.getBoundingClientRect();
+                this.svg.setAttribute('viewBox', `0 0 ${containerRect.width} ${containerRect.height}`);
+            }
+
+            updateConnectionLines() {
+                // Clear existing lines
+                while (this.svg.firstChild) {
+                    this.svg.removeChild(this.svg.firstChild);
+                }
+
+                // Create new lines based on current positions
+                this.connections.forEach(connection => {
+                    const fromCard = document.getElementById(connection.from);
+                    const toCard = document.getElementById(connection.to);
+
+                    if (fromCard && toCard) {
+                        const containerRect = this.container.getBoundingClientRect();
+                        const fromRect = fromCard.getBoundingClientRect();
+                        const toRect = toCard.getBoundingClientRect();
+
+                        // Calculate center points
+                        const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
+                        const fromY = fromRect.top + fromRect.height / 2 - containerRect.top;
+                        const toX = toRect.left + toRect.width / 2 - containerRect.left;
+                        const toY = toRect.top + toRect.height / 2 - containerRect.top;
+
+                        // Find path that avoids other tiles
+                        const excludeCards = [fromCard, toCard];
+                        const pathData = this.findPathAroundObstacles(fromX, fromY, toX, toY, excludeCards);
+
+                        // Create SVG path element
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', pathData);
+
+                        // Set styling based on connection type
+                        switch(connection.type) {
+                            case 'primary':
+                                path.setAttribute('stroke', '#4a7c59');
+                                path.setAttribute('stroke-width', '4');
+                                path.setAttribute('stroke-dasharray', '8,4');
+                                break;
+                            case 'secondary':
+                                path.setAttribute('stroke', '#6c757d');
+                                path.setAttribute('stroke-width', '3');
+                                path.setAttribute('stroke-dasharray', '6,3');
+                                break;
+                            case 'tertiary':
+                                path.setAttribute('stroke', '#adb5bd');
+                                path.setAttribute('stroke-width', '2');
+                                path.setAttribute('stroke-dasharray', '4,2');
+                                break;
+                        }
+
+                        path.setAttribute('fill', 'none');
+                        path.classList.add('connection-line', 'curved-line', connection.type);
+
+                        this.svg.appendChild(path);
+                    }
+                });
+            }
+
+            animate() {
+                const damping = 0.98; // Slightly less damping for more movement
+                let hasMovement = false;
+
+                // Reset forces
+                this.cards.forEach(card => {
+                    card.physics.fx = 0;
+                    card.physics.fy = 0;
+                });
+
+                // Calculate forces between all pairs of cards
+                for (let i = 0; i < this.cards.length; i++) {
+                    for (let j = i + 1; j < this.cards.length; j++) {
+                        const card1 = this.cards[i];
+                        const card2 = this.cards[j];
+
+                        const dx = card2.physics.x - card1.physics.x;
+                        const dy = card2.physics.y - card1.physics.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance === 0) continue; // Avoid division by zero
+
+                        const card1Id = card1.id || card1.getAttribute('id');
+                        const card2Id = card2.id || card2.getAttribute('id');
+
+                        // Check if cards are connected
+                        const areConnected = this.areCardsConnected(card1Id, card2Id);
+                        const connectionType = areConnected ? this.getConnectionType(card1Id, card2Id) : null;
+
+                        // Calculate forces based on connection status
+                        const minDistance = card1.physics.radius + card2.physics.radius;
+
+                        if (areConnected) {
+                            // Attractive force for connected cards - pull them closer
+                            const targetDistance = this.getTargetDistance(connectionType);
+                            if (distance > targetDistance) {
+                                const force = (distance - targetDistance) * 0.3; // Attraction strength
+                                const forceX = (dx / distance) * force;
+                                const forceY = (dy / distance) * force;
+
+                                card1.physics.fx += forceX;
+                                card1.physics.fy += forceY;
+                                card2.physics.fx -= forceX;
+                                card2.physics.fy -= forceY;
+
+                                hasMovement = true;
+                            }
+                        } else {
+                            // Very strong repulsive force for unconnected cards
+                            if (distance < minDistance) {
+                                const force = (minDistance - distance) * 2.0; // Much stronger repulsion
+                                const forceX = (dx / distance) * force;
+                                const forceY = (dy / distance) * force;
+
+                                card1.physics.fx -= forceX;
+                                card1.physics.fy -= forceY;
+                                card2.physics.fx += forceX;
+                                card2.physics.fy += forceY;
+
+                                hasMovement = true;
+                            } else if (distance < minDistance * 1.5) {
+                                // Additional repulsion at longer range to prevent close approaches
+                                const force = Math.max(0, (minDistance * 1.5 - distance) * 0.5);
+                                const forceX = (dx / distance) * force;
+                                const forceY = (dy / distance) * force;
+
+                                card1.physics.fx -= forceX;
+                                card1.physics.fy -= forceY;
+                                card2.physics.fx += forceX;
+                                card2.physics.fy += forceY;
+
+                                hasMovement = true;
+                            }
+                        }
+
+                        // Stronger repulsion for connected cards to prevent any overlap
+                        if (areConnected && distance < minDistance) {
+                            const force = (minDistance - distance) * 1.5;
+                            const forceX = (dx / distance) * force;
+                            const forceY = (dy / distance) * force;
+
+                            card1.physics.fx -= forceX;
+                            card1.physics.fy -= forceY;
+                            card2.physics.fx += forceX;
+                            card2.physics.fy += forceY;
+
+                            hasMovement = true;
+                        }
+                    }
+                }
+
+                // Apply forces and update positions
+                const containerRect = this.container.getBoundingClientRect();
+                this.cards.forEach(card => {
+                    // Apply forces to velocity
+                    card.physics.vx += card.physics.fx * 0.1; // Scale down force application
+                    card.physics.vy += card.physics.fy * 0.1;
+
+                    // Apply damping
+                    card.physics.vx *= damping;
+                    card.physics.vy *= damping;
+
+                    // Update positions
+                    card.physics.x += card.physics.vx;
+                    card.physics.y += card.physics.vy;
+
+                    // Keep within container bounds
+                    const radius = card.physics.radius - this.bufferDistance;
+                    card.physics.x = Math.max(radius, Math.min(containerRect.width - radius, card.physics.x));
+                    card.physics.y = Math.max(radius, Math.min(containerRect.height - radius, card.physics.y));
+
+                    // Update DOM position
+                    const leftPercent = (card.physics.x / containerRect.width) * 100;
+                    const topPercent = (card.physics.y / containerRect.height) * 100;
+
+                    card.style.left = `${leftPercent}%`;
+                    card.style.top = `${topPercent}%`;
+
+                    // Check if still moving
+                    if (Math.abs(card.physics.vx) > 0.1 || Math.abs(card.physics.vy) > 0.1 ||
+                        Math.abs(card.physics.fx) > 0.1 || Math.abs(card.physics.fy) > 0.1) {
+                        hasMovement = true;
+                    }
+                });
+
+                // Update connection lines during animation with strict validation
+                this.updateConnectionLinesStrict();
+
+                // Continue animation if there's still movement
+                if (hasMovement) {
+                    this.animationFrame = requestAnimationFrame(() => this.animate());
+                } else {
+                    this.isRunning = false;
+                }
+            }
+
+            setupEventListeners() {
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    this.setupCards();
+                    this.updateSVGViewBox();
+                    this.preventOverlaps();
+                });
+
+                // Add mind map interaction effects
+                this.cards.forEach(card => {
+                    card.addEventListener('mouseenter', (e) => {
+                        const hoveredCard = e.target.closest('.project-card');
+                        const cardId = hoveredCard.id;
+
+                        if (cardId) {
+                            // Find directly connected cards
+                            const directlyConnectedIds = new Set();
+                            this.connections.forEach(connection => {
+                                if (connection.from === cardId) {
+                                    directlyConnectedIds.add(connection.to);
+                                } else if (connection.to === cardId) {
+                                    directlyConnectedIds.add(connection.from);
+                                }
+                            });
+
+                            // Apply size and opacity effects
+                            this.cards.forEach(otherCard => {
+                                const otherCardId = otherCard.id;
+
+                                if (otherCard === hoveredCard) {
+                                    // Hovered card: largest, fully opaque
+                                    otherCard.style.opacity = '1.0';
+                                    otherCard.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                                    otherCard.style.zIndex = '20';
+                                } else if (directlyConnectedIds.has(otherCardId)) {
+                                    // DIRECTLY CONNECTED TILES: ALWAYS 20% TRANSPARENT (0.8 opacity = 80% visible)
+                                    // This applies to ALL directly connected tiles, NO EXCEPTIONS
+                                    otherCard.style.opacity = '0.8';
+                                    otherCard.style.transform = 'translate(-50%, -50%) scale(1.25)';
+                                    otherCard.style.zIndex = '15';
+                                } else {
+                                    // NOT DIRECTLY CONNECTED tiles
+                                    if (otherCardId === 'mitigation-center' || otherCardId === 'elephant-aware-economy') {
+                                        // Key tiles that are NOT directly connected: stay 100% visible
+                                        otherCard.style.opacity = '1.0';
+                                        otherCard.style.transform = 'translate(-50%, -50%) scale(0.75)';
+                                        otherCard.style.zIndex = '5';
+                                    } else {
+                                        // Regular tiles that are NOT directly connected: 70% transparent
+                                        otherCard.style.opacity = '0.3';
+                                        otherCard.style.transform = 'translate(-50%, -50%) scale(0.75)';
+                                        otherCard.style.zIndex = '5';
+                                    }
+                                }
+                            });
+
+                            // Highlight lines connected to this card (25% opacity)
+                            const connectedLineIds = new Set();
+                            this.connections.forEach(connection => {
+                                if (connection.from === cardId || connection.to === cardId) {
+                                    connectedLineIds.add(`${connection.from}-${connection.to}`);
+                                    connectedLineIds.add(`${connection.to}-${connection.from}`);
+                                }
+                            });
+
+                            // Set connected lines to 20% transparent (80% visible), others to 70% transparent
+                            const lines = document.querySelectorAll('.connection-line');
+                            lines.forEach(line => {
+                                const lineData = line.getAttribute('data-connection');
+                                if (lineData && connectedLineIds.has(lineData)) {
+                                    line.style.opacity = '0.8';
+                                } else {
+                                    line.style.opacity = '0.3';
+                                }
+                            });
+                        }
+                    });
+
+                    card.addEventListener('mouseleave', () => {
+                        // Reset to default state
+                        this.resetTransparency();
                     });
                 });
-                
-                node.addEventListener('mouseleave', function() {
-                    drawConnectionLines(); // Reset lines
-                });
-            });
+
+                // Initial setup
+                this.resetTransparency();
+            }
+        }
+
+        function updateConnectionLines() {
+            // Emergency override: force all lines to be recalculated with maximum safety
+            const layout = window.mindMapLayout;
+            if (layout) {
+                layout.forceRecalculateAllPaths();
+            }
+        }
+
+        // Initialize mind map layout when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            window.mindMapLayout = new MindMapLayout();
         });
 
-        function showInfo(type) {
-            const messages = {
-                'long-term': 'Long-term Mitigation: Strategic approaches to sustainable coexistence with elephants over extended periods.',
-                'short-term': 'Short-term Mitigation: Immediate response measures to address urgent human-elephant conflict situations.',
-                'farming': 'Elephant Aware Farming: Agricultural practices designed to minimize human-elephant conflict while maximizing productivity.',
-                'sme': 'SMEs: Supporting small and medium enterprises that promote coexistence with wildlife and benefit local communities.',
-                // Long-term mitigation sub-items
-                'conflict-identification': 'Conflict Identification: Systematic identification and assessment of human-elephant conflict hotspots and patterns.',
-                'corridor-mapping': 'Corridor Mapping & Monitoring: Mapping elephant movement corridors and monitoring their usage to inform conservation planning.',
-                'land-use-planning': 'Land Use Planning: Integrated land use planning that balances human development needs with elephant habitat requirements.',
-                // Short-term mitigation sub-items
-                'cluster-fields': 'Cluster Fields: Grouping agricultural fields together to create more defensible areas and reduce edge effects.',
-                'beehive-fences': 'Beehive Fences: Using beehives as natural barriers to deter elephants from entering agricultural areas.',
-                'chillie-bricks': 'Chillie Bricks: Natural chilli-based deterrents that elephants find unpleasant but harmless.',
-                'solar-fences': 'Solar Electric Fences: Solar-powered electric fencing systems to protect crops and communities.',
-                // Elephant aware farming sub-items
-                'shandirika': 'Shandirika Farming Cooperative: Community-led farming cooperative implementing elephant-aware agricultural practices.',
-                'okavango-supply': 'Okavango Supply Co: Local supply chain supporting elephant-aware farming with sustainable sourcing.',
-                'diyoveya-honey': 'Diyoveya Honey: Beekeeping initiative that supports both livelihoods and elephant deterrence through beehive fences.',
-                'okavango-brewery': 'Okavango Brewery Company: Brewery using local ingredients and supporting elephant-aware agriculture.',
-                // SME sub-items
-                'beetsha': 'Beetsha Basket Weavers: Traditional basket weaving cooperative creating sustainable livelihoods.',
-                'yikote': 'Yikote Elephants: Elephant-themed crafts and souvenirs supporting local artisans.',
-                'seronga-craft': 'Seronga Craft Shop: Local craft shop showcasing traditional Botswana craftsmanship.',
-                'kaputura-crafts': 'Kaputura ≠xoa Crafts: San traditional crafts and cultural products promoting indigenous heritage.',
-                'diyoveya-honey-sme': 'Diyoveya Honey: Community beekeeping enterprise producing high-quality honey products.',
-                'life-with-elephants': 'Life With Elephants Tour: Eco-tourism experiences that educate visitors about human-elephant coexistence.'
-            };
-            
-            alert(messages[type] || 'More information coming soon!');
-        }
+        // Update lines on resize
+        window.addEventListener('resize', updateConnectionLines);
     </script>
+
 </body>
 </html>
-
