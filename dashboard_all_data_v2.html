@@ -776,6 +776,11 @@
                 // Check if currently inside any buffer zone
                 const in10kmBuffer = fence.buffer10km && isPointInPolygon(currentPoint, fence.buffer10km);
                 const in5kmBuffer = fence.buffer5km && isPointInPolygon(currentPoint, fence.buffer5km);
+                const inActual = fence.actual && (
+                    fence.actual.geometry.type.includes('Polygon')
+                        ? isPointInPolygon(currentPoint, fence.actual)
+                        : distanceToLine(currentPoint, fence.actual) < 10 // Within 10m of line
+                );
 
                 // TEMP DEBUGGING: Log coordinates and buffer status
                 console.log(`${elephantName} at [${currentPoint[0].toFixed(4)}, ${currentPoint[1].toFixed(4)}]`);
