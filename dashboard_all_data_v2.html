@@ -970,18 +970,36 @@
 
         // Check elephant movement and send alerts
         function checkElephantMovement() {
-            console.log('🔍 Checking elephant movement and geo-fences...');
+            console.log('🔍 CHECK_ELEPHANT_MOVEMENT FUNCTION CALLED');
+            console.log('📊 Window.allData exists:', !!window.allData);
+            console.log('📊 Window.allData length:', window.allData ? window.allData.length : 0);
 
-            // Get current data from the global allData variable
-            if (!window.allData || !Array.isArray(window.allData) || window.allData.length === 0) {
+            // Simple test alert to verify email sending works
+            if (window.allData && window.allData.length > 0) {
+                console.log('✅ Data available - sending test geo-fence alert');
+
+                // Send a test geo-fence alert
+                sendSecurityAlert(
+                    'Test Elephant',
+                    'TEST001',
+                    null, // no distance
+                    -19.8157, // lat
+                    23.5233,  // lng
+                    Date.now() / 1000, // current time
+                    'within_10km', // alert type
+                    {
+                        featureName: 'Test GeoFence',
+                        featureType: 'road',
+                        distanceKm: '10'
+                    }
+                );
+            } else {
                 console.log('❌ No data available for security check');
-                console.log('   window.allData:', window.allData);
-                console.log('   Array.isArray(window.allData):', Array.isArray(window.allData));
-                console.log('   window.allData.length:', window.allData ? window.allData.length : 'undefined');
                 return;
             }
 
-            console.log('✅ Data validated - proceeding with security check');
+            // TEMP: Return early to avoid complex logic during testing
+            return;
 
             // Group data by elephant
             const elephantGroups = {};
@@ -1062,27 +1080,14 @@
 
         // Start security monitoring
         async function startSecurityMonitoring() {
-            console.log('🚀 Starting security monitoring...');
+            console.log('🚀 STARTSECURITYMONITORING FUNCTION CALLED');
 
             // Load geo-fence data first
             await loadGeoFences();
+            console.log('✅ Geo-fences loaded, data available:', !!(window.allData && window.allData.length > 0));
 
-            // Wait a bit for data to be fully loaded, then run initial check
-            setTimeout(() => {
-                if (window.allData && window.allData.length > 0) {
-                    checkElephantMovement();
-                } else {
-                    console.log('⏳ Waiting for data to load...');
-                    // Try again in 5 seconds
-                    setTimeout(() => {
-                        if (window.allData && window.allData.length > 0) {
-                            checkElephantMovement();
-                        } else {
-                            console.log('❌ Data still not available after delay');
-                        }
-                    }, 5000);
-                }
-            }, 2000);
+            // Simple immediate check
+            checkElephantMovement();
 
             // Set up periodic checks
             if (securityMonitorInterval) {
@@ -1109,10 +1114,11 @@
             }
         }
 
-        // Make functions available globally
+        // Make functions available globally (ensure they are set)
         window.startSecurityMonitoring = startSecurityMonitoring;
         window.stopSecurityMonitoring = stopSecurityMonitoring;
         window.checkElephantMovement = checkElephantMovement;
+        console.log('✅ Security monitoring functions registered globally');
     </script>
 
     <script>
@@ -1792,15 +1798,13 @@
             // Fit map to data extent initially
             fitMapToDataExtent();
 
-            // Start security monitoring (delay to ensure script is fully loaded)
-            setTimeout(() => {
-                if (typeof startSecurityMonitoring === 'function') {
-                    startSecurityMonitoring();
-                } else {
-                    console.log('⏳ startSecurityMonitoring not ready yet, retrying...');
-                    setTimeout(() => startSecurityMonitoring(), 1000);
-                }
-            }, 100);
+            // Start security monitoring
+            console.log('🚀 Calling startSecurityMonitoring...');
+            if (typeof window.startSecurityMonitoring === 'function') {
+                window.startSecurityMonitoring();
+            } else {
+                console.log('❌ startSecurityMonitoring function not found');
+            }
         }
 
         // Apply filters with initial 30-day range
