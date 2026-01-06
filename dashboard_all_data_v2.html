@@ -988,10 +988,10 @@
         // Check elephant movement and send alerts
         function checkElephantMovement() {
             console.log('🔍 Checking elephant movement and geo-fences...');
-            console.log('📊 Data contains', allData ? allData.length : 0, 'total records');
+            console.log('📊 Data contains', window.allData ? window.allData.length : 0, 'total records');
 
             // Get current data from the global allData variable
-            if (!window.allData || !Array.isArray(window.allData)) {
+            if (!window.allData || !Array.isArray(window.allData) || window.allData.length === 0) {
                 console.log('No data available for security check');
                 return;
             }
@@ -1085,15 +1085,35 @@
             // Load geo-fence data first
             await loadGeoFences();
 
-            // Run initial check
-            checkElephantMovement();
+            // Wait a bit for data to be fully loaded, then run initial check
+            setTimeout(() => {
+                if (window.allData && window.allData.length > 0) {
+                    checkElephantMovement();
+                } else {
+                    console.log('⏳ Waiting for data to load...');
+                    // Try again in 5 seconds
+                    setTimeout(() => {
+                        if (window.allData && window.allData.length > 0) {
+                            checkElephantMovement();
+                        } else {
+                            console.log('❌ Data still not available after delay');
+                        }
+                    }, 5000);
+                }
+            }, 2000);
 
             // Set up periodic checks
             if (securityMonitorInterval) {
                 clearInterval(securityMonitorInterval);
             }
 
-            securityMonitorInterval = setInterval(checkElephantMovement, SECURITY_CONFIG.CHECK_INTERVAL_MINUTES * 60 * 1000);
+            securityMonitorInterval = setInterval(() => {
+                if (window.allData && window.allData.length > 0) {
+                    checkElephantMovement();
+                } else {
+                    console.log('⏳ Skipping security check - data not loaded yet');
+                }
+            }, SECURITY_CONFIG.CHECK_INTERVAL_MINUTES * 60 * 1000);
 
             console.log(`✅ Security monitoring active - checking every ${SECURITY_CONFIG.CHECK_INTERVAL_MINUTES} minutes`);
         }
@@ -1238,6 +1258,7 @@
             "8542": "Dream",
             "8543": "Queenie"
         };
+        window.elephantNames = elephantNames; // Make available globally for security monitoring
 
         // Animation variables
         let dateSlider = null;
@@ -1583,7 +1604,9 @@
 
                 // All data (historical + live) is now merged in the main API response
                 allData = liveData;
+                window.allData = allData; // Make data available globally for security monitoring
                 console.log(`📊 Loaded complete dataset: ${allData.length} records`);
+                console.log('🔗 Data now available globally as window.allData for security monitoring');
 
                 // Filter to show only last 30 days initially
                 const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 86400);
