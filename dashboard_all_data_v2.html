@@ -782,14 +782,6 @@
                         : distanceToLine(currentPoint, fence.actual) < 10 // Within 10m of line
                 );
 
-                // TEMP DEBUGGING: Log coordinates and buffer status
-                console.log(`${elephantName} at [${currentPoint[0].toFixed(4)}, ${currentPoint[1].toFixed(4)}]`);
-                console.log(`${fence.name}: in10km=${in10kmBuffer}, in5km=${in5kmBuffer}, inActual=${inActual}`);
-                const inActual = fence.actual && (
-                    fence.actual.geometry.type.includes('Polygon')
-                        ? isPointInPolygon(currentPoint, fence.actual)
-                        : distanceToLine(currentPoint, fence.actual) < 10 // Within 10m of line
-                );
 
                 // Calculate distance to actual feature
                 let distanceToFeature = Infinity;
@@ -846,20 +838,6 @@
                     });
                 }
 
-                // TEMP TEST: Force alert for testing (remove after testing)
-                if (tagId === "3839") { // Replace with an elephant ID you know exists
-                    alerts.push({
-                        type: 'within_10km',
-                        elephantName: elephantName,
-                        tagId: tagId,
-                        featureName: "Test GeoFence Alert",
-                        featureType: "road",
-                        distanceKm: '10',
-                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
-                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
-                    });
-                    console.log(`🚨 FORCED TEST ALERT for ${elephantName} (tag ${tagId})`);
-                }
 
                 // Check for buffer status alerts (current position)
                 if (in5kmBuffer && !inActual) {
@@ -994,11 +972,6 @@
         function checkElephantMovement() {
             console.log('🔍 Checking elephant movement and geo-fences...');
 
-            // Debug data availability
-            console.log('🔍 window.allData exists:', typeof window.allData);
-            console.log('🔍 window.allData is array:', Array.isArray(window.allData));
-            console.log('🔍 window.allData length:', window.allData ? window.allData.length : 'undefined');
-
             // Get current data from the global allData variable
             if (!window.allData || !Array.isArray(window.allData) || window.allData.length === 0) {
                 console.log('❌ No data available for security check');
@@ -1081,15 +1054,10 @@
 
                     if (geoFenceAlerts.length > 0) {
                         console.log(`📍 ${elephantName}: ${geoFenceAlerts.length} geo-fence alerts triggered`);
-                        geoFenceAlerts.forEach((alert, index) => {
-                            console.log(`   ${index + 1}. ${alert.type} - ${alert.featureName}`);
-                        });
                     }
                 }
             });
 
-            // TEMP DEBUG: Quick summary
-            console.log(`🔍 Finished checking ${Object.keys(elephantGroups).length} elephants for geo-fence alerts`);
         }
 
         // Start security monitoring
@@ -1824,8 +1792,15 @@
             // Fit map to data extent initially
             fitMapToDataExtent();
 
-            // Start security monitoring
-            startSecurityMonitoring();
+            // Start security monitoring (delay to ensure script is fully loaded)
+            setTimeout(() => {
+                if (typeof startSecurityMonitoring === 'function') {
+                    startSecurityMonitoring();
+                } else {
+                    console.log('⏳ startSecurityMonitoring not ready yet, retrying...');
+                    setTimeout(() => startSecurityMonitoring(), 1000);
+                }
+            }, 100);
         }
 
         // Apply filters with initial 30-day range
