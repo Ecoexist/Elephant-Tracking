@@ -988,13 +988,22 @@
         // Check elephant movement and send alerts
         function checkElephantMovement() {
             console.log('🔍 Checking elephant movement and geo-fences...');
-            console.log('📊 Data contains', window.allData ? window.allData.length : 0, 'total records');
+
+            // Debug data availability
+            console.log('🔍 window.allData exists:', typeof window.allData);
+            console.log('🔍 window.allData is array:', Array.isArray(window.allData));
+            console.log('🔍 window.allData length:', window.allData ? window.allData.length : 'undefined');
 
             // Get current data from the global allData variable
             if (!window.allData || !Array.isArray(window.allData) || window.allData.length === 0) {
-                console.log('No data available for security check');
+                console.log('❌ No data available for security check');
+                console.log('   window.allData:', window.allData);
+                console.log('   Array.isArray(window.allData):', Array.isArray(window.allData));
+                console.log('   window.allData.length:', window.allData ? window.allData.length : 'undefined');
                 return;
             }
+
+            console.log('✅ Data validated - proceeding with security check');
 
             // Group data by elephant
             const elephantGroups = {};
