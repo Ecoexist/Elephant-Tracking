@@ -542,8 +542,8 @@
                     </div>
                     <div class="card-body text-center">
                         <p class="text-muted mb-0">
-                            <strong>Active:</strong> Automatically checks every hour for elephants that moved less than 1 meter<br>
-                            <small class="text-info">Check browser console for monitoring logs</small>
+                            <strong>Active:</strong> Automatically checks every hour for elephant security and geo-fence alerts<br>
+                            <small class="text-info">Monitors: stationary elephants (< 1m movement), village/road entries, proximity (< 1km), and approach warnings</small>
                         </p>
                     </div>
                 </div>
@@ -605,10 +605,16 @@
             MOVEMENT_THRESHOLD_METERS: 1, // Alert if moved less than 1 meter
             CHECK_INTERVAL_MINUTES: 60, // Check every hour
             EMAIL_SERVICE_ID: 'service_m8ag76m',
-            EMAIL_TEMPLATE_ID: 'template_security_alert',
+            EMAIL_TEMPLATE_ID_SECURITY: 'template_security_alert',
+            EMAIL_TEMPLATE_ID_GEOFENCE: 'template_geofence_alert',
             EMAIL_PUBLIC_KEY: 'Yn0Q9DnnxvnV3KZrb',
-            ALERT_EMAIL: 'gis@ecoexisttrust.org'
+            ALERT_EMAIL: 'gis@ecoexisttrust.org',
+            GEOFENCE_BUFFER_CHECK_KM: 10 // Check movement through 10km buffers
         };
+
+        // Geo-fence data storage
+        let geoFences = [];
+        let elephantGeoFenceHistory = {}; // Track elephant positions relative to geo-fences
 
         // Calculate distance between two GPS points (Haversine formula)
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -626,39 +632,310 @@
             return R * c; // Distance in meters
         }
 
-        // Send security alert email
-        function sendSecurityAlert(elephantName, tagId, distance, lat, lng, timestamp) {
+        // Load GeoFence data
+        async function loadGeoFences() {
+            try {
+                console.log('🗺️ Loading geo-fence data...');
+                const response = await fetch('data/GeoFence.geojson');
+                const geoJson = await response.json();
+
+                // Process geo-fences by name and type
+                const fenceMap = {};
+
+                geoJson.features.forEach(feature => {
+                    const props = feature.properties;
+                    const name = props.Name;
+                    const distance = props.Distance; // null, "5km", or "10km"
+                    const type = props.Type; // "road" or "village"
+
+                    if (!fenceMap[name]) {
+                        fenceMap[name] = {
+                            name: name,
+                            type: type,
+                            actual: null, // The actual road/line
+                            buffer5km: null, // 5km buffer polygon
+                            buffer10km: null // 10km buffer polygon
+                        };
+                    }
+
+                    // Store the appropriate geometry based on distance
+                    if (distance === null) {
+                        fenceMap[name].actual = feature;
+                    } else if (distance === "5km") {
+                        fenceMap[name].buffer5km = feature;
+                    } else if (distance === "10km") {
+                        fenceMap[name].buffer10km = feature;
+                    }
+                });
+
+                // Convert to array
+                geoFences = Object.values(fenceMap);
+                console.log(`✅ Loaded ${geoFences.length} geo-fences`);
+
+            } catch (error) {
+                console.error('❌ Failed to load geo-fence data:', error);
+            }
+        }
+
+        // Check if point is inside polygon (ray casting algorithm)
+        function isPointInPolygon(point, polygon) {
+            if (!polygon || !polygon.geometry || !polygon.geometry.coordinates) return false;
+
+            const x = point[0], y = point[1]; // lon, lat
+            let inside = false;
+
+            // Handle both Polygon and MultiPolygon
+            const coords = polygon.geometry.type === 'Polygon'
+                ? polygon.geometry.coordinates
+                : polygon.geometry.coordinates[0]; // Take first polygon from MultiPolygon
+
+            for (let ring of coords) {
+                let j = ring.length - 1;
+                for (let i = 0; i < ring.length; i++) {
+                    const xi = ring[i][0], yi = ring[i][1];
+                    const xj = ring[j][0], yj = ring[j][1];
+
+                    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+                        inside = !inside;
+                    }
+                    j = i;
+                }
+            }
+
+            return inside;
+        }
+
+        // Calculate distance from point to line (road)
+        function distanceToLine(point, line) {
+            if (!line || !line.geometry || !line.geometry.coordinates) return Infinity;
+
+            const pt = point;
+            let minDistance = Infinity;
+
+            // Handle both LineString and MultiLineString
+            const coords = line.geometry.type === 'LineString'
+                ? [line.geometry.coordinates]
+                : line.geometry.coordinates;
+
+            for (let lineCoords of coords) {
+                for (let i = 0; i < lineCoords.length - 1; i++) {
+                    const p1 = lineCoords[i];
+                    const p2 = lineCoords[i + 1];
+
+                    const distance = distanceToLineSegment(pt, p1, p2);
+                    minDistance = Math.min(minDistance, distance);
+                }
+            }
+
+            return minDistance;
+        }
+
+        // Distance from point to line segment
+        function distanceToLineSegment(point, lineStart, lineEnd) {
+            const A = point[0] - lineStart[0];
+            const B = point[1] - lineStart[1];
+            const C = lineEnd[0] - lineStart[0];
+            const D = lineEnd[1] - lineStart[1];
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+
+            let param = -1;
+            if (lenSq !== 0) {
+                param = dot / lenSq;
+            }
+
+            let xx, yy;
+            if (param < 0) {
+                xx = lineStart[0];
+                yy = lineStart[1];
+            } else if (param > 1) {
+                xx = lineEnd[0];
+                yy = lineEnd[1];
+            } else {
+                xx = lineStart[0] + param * C;
+                yy = lineStart[1] + param * D;
+            }
+
+            return calculateDistance(point[1], point[0], yy, xx);
+        }
+
+        // Analyze geo-fence interactions for an elephant
+        function analyzeGeoFenceInteractions(elephantName, tagId, currentPos, previousPos) {
+            const alerts = [];
+            const currentPoint = [currentPos.longitude, currentPos.latitude];
+
+            // Initialize history for this elephant if needed
+            if (!elephantGeoFenceHistory[tagId]) {
+                elephantGeoFenceHistory[tagId] = {};
+            }
+
+            geoFences.forEach(fence => {
+                const fenceKey = `${fence.name}_${fence.type}`;
+
+                // Check if currently inside any buffer zone
+                const in10kmBuffer = fence.buffer10km && isPointInPolygon(currentPoint, fence.buffer10km);
+                const in5kmBuffer = fence.buffer5km && isPointInPolygon(currentPoint, fence.buffer5km);
+                const inActual = fence.actual && (
+                    fence.actual.geometry.type.includes('Polygon')
+                        ? isPointInPolygon(currentPoint, fence.actual)
+                        : distanceToLine(currentPoint, fence.actual) < 10 // Within 10m of line
+                );
+
+                // Calculate distance to actual feature
+                let distanceToFeature = Infinity;
+                if (fence.actual) {
+                    if (fence.actual.geometry.type.includes('Polygon')) {
+                        // For polygons, check if inside or calculate distance to boundary
+                        if (isPointInPolygon(currentPoint, fence.actual)) {
+                            distanceToFeature = 0;
+                        } else {
+                            // Would need more complex polygon distance calculation
+                            distanceToFeature = 1000; // Placeholder
+                        }
+                    } else {
+                        // For lines (roads)
+                        distanceToFeature = distanceToLine(currentPoint, fence.actual);
+                    }
+                }
+
+                // Get previous state
+                const prevState = elephantGeoFenceHistory[tagId][fenceKey] || {
+                    in10kmBuffer: false,
+                    in5kmBuffer: false,
+                    inActual: false,
+                    distanceToFeature: Infinity
+                };
+
+                // Check for entry/crossing alerts
+                if (inActual && !prevState.inActual) {
+                    const alertType = fence.type === 'road' ? 'crossed' : 'entered';
+                    alerts.push({
+                        type: 'entry',
+                        elephantName: elephantName,
+                        tagId: tagId,
+                        featureName: fence.name,
+                        featureType: fence.type,
+                        action: alertType,
+                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                    });
+                }
+
+                // Check for proximity alerts (within 1km)
+                if (distanceToFeature <= 1000 && distanceToFeature > 10) {
+                    const distanceKm = (distanceToFeature / 1000).toFixed(2);
+                    alerts.push({
+                        type: 'proximity',
+                        elephantName: elephantName,
+                        tagId: tagId,
+                        featureName: fence.name,
+                        featureType: fence.type,
+                        distanceKm: distanceKm,
+                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                    });
+                }
+
+                // Check for movement towards feature (buffer progression)
+                if (previousPos) {
+                    const prevPoint = [previousPos.longitude, previousPos.latitude];
+                    const prevIn10kmBuffer = fence.buffer10km && isPointInPolygon(prevPoint, fence.buffer10km);
+                    const prevIn5kmBuffer = fence.buffer5km && isPointInPolygon(prevPoint, fence.buffer5km);
+
+                    // Moving from 10km buffer into 5km buffer = heading towards feature
+                    if (!prevIn5kmBuffer && in5kmBuffer && prevIn10kmBuffer) {
+                        alerts.push({
+                            type: 'approach',
+                            elephantName: elephantName,
+                            tagId: tagId,
+                            featureName: fence.name,
+                            featureType: fence.type,
+                            direction: 'towards',
+                            location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                            timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                        });
+                    }
+                }
+
+                // Update history
+                elephantGeoFenceHistory[tagId][fenceKey] = {
+                    in10kmBuffer: in10kmBuffer,
+                    in5kmBuffer: in5kmBuffer,
+                    inActual: inActual,
+                    distanceToFeature: distanceToFeature
+                };
+            });
+
+            return alerts;
+        }
+
+        // Send security alert email (stationary or geo-fence)
+        function sendSecurityAlert(elephantName, tagId, distance, lat, lng, timestamp, alertType = "stationary", alertData = null) {
             // Initialize EmailJS if not already done
             if (typeof emailjs !== 'undefined' && !emailjs._init) {
                 emailjs.init(SECURITY_CONFIG.EMAIL_PUBLIC_KEY);
                 emailjs._init = true;
             }
 
-            const templateParams = {
+            // Build template parameters based on alert type
+            let templateParams = {
+                alert_type: alertType,
                 elephant_name: elephantName,
                 elephant_id: tagId,
-                distance_meters: distance.toFixed(2),
                 location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
                 timestamp: new Date(timestamp * 1000).toLocaleString(),
                 alert_time: new Date().toLocaleString()
             };
 
-            console.log(`🚨 ALERT: ${elephantName} moved only ${distance.toFixed(2)}m - sending email`);
+            // Add type-specific parameters
+            if (alertType === 'stationary') {
+                templateParams.distance_meters = distance ? distance.toFixed(2) : '';
+            } else if (alertData) {
+                // Geo-fence alert parameters
+                templateParams.feature_name = alertData.featureName || '';
+                templateParams.feature_type = alertData.featureType || '';
+                templateParams.action = alertData.action || '';
+                templateParams.direction = alertData.direction || '';
+                templateParams.distance_km = alertData.distanceKm || '';
+            }
+
+            let alertDescription = '';
+            if (alertType === 'stationary') {
+                alertDescription = `${elephantName} moved only ${distance ? distance.toFixed(2) : 'unknown'}m - sending stationary alert`;
+            } else {
+                switch (alertType) {
+                    case 'entry':
+                        alertDescription = `${elephantName} ${alertData?.action || 'interacted with'} ${alertData?.featureName || 'feature'} - sending entry alert`;
+                        break;
+                    case 'proximity':
+                        alertDescription = `${elephantName} is ${alertData?.distanceKm || 'near'}km from ${alertData?.featureName || 'feature'} - sending proximity alert`;
+                        break;
+                    case 'approach':
+                        alertDescription = `${elephantName} heading ${alertData?.direction || 'towards'} ${alertData?.featureName || 'feature'} - sending approach alert`;
+                        break;
+                    default:
+                        alertDescription = `${elephantName} - sending ${alertType} alert`;
+                }
+            }
+
+            console.log(`🚨 ALERT: ${alertDescription}`);
 
             emailjs.send(
                 SECURITY_CONFIG.EMAIL_SERVICE_ID,
-                SECURITY_CONFIG.EMAIL_TEMPLATE_ID,
+                SECURITY_CONFIG.EMAIL_TEMPLATE_ID_GEOFENCE,
                 templateParams
             ).then(function(response) {
-                console.log('✅ Security alert sent successfully for', elephantName);
+                console.log(`✅ ${alertType} alert sent successfully for`, elephantName);
             }, function(error) {
-                console.error('❌ Failed to send security alert:', error);
+                console.error(`❌ Failed to send ${alertType} alert:`, error);
             });
         }
 
+
         // Check elephant movement and send alerts
         function checkElephantMovement() {
-            console.log('🔍 Checking elephant movement...');
+            console.log('🔍 Checking elephant movement and geo-fences...');
 
             // Get current data from the global allData variable
             if (!window.allData || !Array.isArray(window.allData)) {
@@ -692,7 +969,7 @@
 
                     console.log(`${elephantName}: moved ${distance.toFixed(2)}m`);
 
-                    // Alert if moved less than threshold
+                        // Alert if moved less than threshold (stationary alert)
                     if (distance < SECURITY_CONFIG.MOVEMENT_THRESHOLD_METERS) {
                         // Check if we already alerted for this elephant recently
                         const lastAlert = lastCheckedElephants[tagId];
@@ -706,18 +983,48 @@
                                 distance,
                                 currentPoint.latitude,
                                 currentPoint.longitude,
-                                currentPoint.timestamp
+                                currentPoint.timestamp,
+                                "stationary"
                             );
                             lastCheckedElephants[tagId] = now;
                         }
+                    }
+
+                    // Check geo-fence interactions
+                    const geoFenceAlerts = analyzeGeoFenceInteractions(elephantName, tagId, currentPoint, previousPoint);
+
+                    // Send geo-fence alerts
+                    geoFenceAlerts.forEach(alert => {
+                        // Parse location coordinates
+                        const coords = alert.location.split(', ');
+                        const lat = parseFloat(coords[0]);
+                        const lng = parseFloat(coords[1]);
+
+                        sendSecurityAlert(
+                            alert.elephantName,
+                            alert.tagId,
+                            null, // no distance for geo-fence alerts
+                            lat,
+                            lng,
+                            new Date(alert.timestamp).getTime() / 1000, // convert back to unix timestamp
+                            alert.type, // alert type (entry, proximity, approach)
+                            alert // pass the full alert data object
+                        );
+                    });
+
+                    if (geoFenceAlerts.length > 0) {
+                        console.log(`📍 ${elephantName}: ${geoFenceAlerts.length} geo-fence alerts triggered`);
                     }
                 }
             });
         }
 
         // Start security monitoring
-        function startSecurityMonitoring() {
+        async function startSecurityMonitoring() {
             console.log('🚀 Starting security monitoring...');
+
+            // Load geo-fence data first
+            await loadGeoFences();
 
             // Run initial check
             checkElephantMovement();
