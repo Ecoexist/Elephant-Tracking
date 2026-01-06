@@ -837,6 +837,33 @@
                     });
                 }
 
+                // Check for buffer status alerts (current position)
+                if (in5kmBuffer && !inActual) {
+                    // Within 5km buffer
+                    alerts.push({
+                        type: 'within_5km',
+                        elephantName: elephantName,
+                        tagId: tagId,
+                        featureName: fence.name,
+                        featureType: fence.type,
+                        distanceKm: '5',
+                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                    });
+                } else if (in10kmBuffer && !in5kmBuffer && !inActual) {
+                    // Within 10km buffer (but not 5km)
+                    alerts.push({
+                        type: 'within_10km',
+                        elephantName: elephantName,
+                        tagId: tagId,
+                        featureName: fence.name,
+                        featureType: fence.type,
+                        distanceKm: '10',
+                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                    });
+                }
+
                 // Check for movement towards feature (buffer progression)
                 if (previousPos) {
                     const prevPoint = [previousPos.longitude, previousPos.latitude];
@@ -910,6 +937,12 @@
                         break;
                     case 'proximity':
                         alertDescription = `${elephantName} is ${alertData?.distanceKm || 'near'}km from ${alertData?.featureName || 'feature'} - sending proximity alert`;
+                        break;
+                    case 'within_5km':
+                        alertDescription = `${elephantName} is within 5km of ${alertData?.featureName || 'feature'} - sending buffer alert`;
+                        break;
+                    case 'within_10km':
+                        alertDescription = `${elephantName} is within 10km of ${alertData?.featureName || 'feature'} - sending buffer alert`;
                         break;
                     case 'approach':
                         alertDescription = `${elephantName} heading ${alertData?.direction || 'towards'} ${alertData?.featureName || 'feature'} - sending approach alert`;
