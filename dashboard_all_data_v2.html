@@ -917,17 +917,13 @@
                 alert_time: new Date().toLocaleString()
             };
 
-            // Add type-specific parameters
-            if (alertType === 'stationary') {
-                templateParams.distance_meters = distance ? distance.toFixed(2) : '';
-            } else if (alertData) {
-                // Geo-fence alert parameters
-                templateParams.feature_name = alertData.featureName || '';
-                templateParams.feature_type = alertData.featureType || '';
-                templateParams.action = alertData.action || '';
-                templateParams.direction = alertData.direction || '';
-                templateParams.distance_km = alertData.distanceKm || '';
-            }
+            // Always include all parameters (empty strings if not applicable)
+            templateParams.distance_meters = distance ? distance.toFixed(2) : '';
+            templateParams.feature_name = (alertData && alertData.featureName) ? alertData.featureName : '';
+            templateParams.feature_type = (alertData && alertData.featureType) ? alertData.featureType : '';
+            templateParams.action = (alertData && alertData.action) ? alertData.action : '';
+            templateParams.direction = (alertData && alertData.direction) ? alertData.direction : '';
+            templateParams.distance_km = (alertData && alertData.distanceKm) ? alertData.distanceKm : '';
 
             let alertDescription = '';
             if (alertType === 'stationary') {
