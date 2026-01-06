@@ -776,6 +776,10 @@
                 // Check if currently inside any buffer zone
                 const in10kmBuffer = fence.buffer10km && isPointInPolygon(currentPoint, fence.buffer10km);
                 const in5kmBuffer = fence.buffer5km && isPointInPolygon(currentPoint, fence.buffer5km);
+
+                // TEMP DEBUGGING: Log coordinates and buffer status
+                console.log(`${elephantName} at [${currentPoint[0].toFixed(4)}, ${currentPoint[1].toFixed(4)}]`);
+                console.log(`${fence.name}: in10km=${in10kmBuffer}, in5km=${in5kmBuffer}, inActual=${inActual}`);
                 const inActual = fence.actual && (
                     fence.actual.geometry.type.includes('Polygon')
                         ? isPointInPolygon(currentPoint, fence.actual)
@@ -835,6 +839,21 @@
                         location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
                         timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
                     });
+                }
+
+                // TEMP TEST: Force alert for testing (remove after testing)
+                if (tagId === "3839") { // Replace with an elephant ID you know exists
+                    alerts.push({
+                        type: 'within_10km',
+                        elephantName: elephantName,
+                        tagId: tagId,
+                        featureName: "Test GeoFence Alert",
+                        featureType: "road",
+                        distanceKm: '10',
+                        location: `${currentPos.latitude.toFixed(6)}, ${currentPos.longitude.toFixed(6)}`,
+                        timestamp: new Date(currentPos.timestamp * 1000).toLocaleString()
+                    });
+                    console.log(`🚨 FORCED TEST ALERT for ${elephantName} (tag ${tagId})`);
                 }
 
                 // Check for buffer status alerts (current position)
@@ -969,6 +988,7 @@
         // Check elephant movement and send alerts
         function checkElephantMovement() {
             console.log('🔍 Checking elephant movement and geo-fences...');
+            console.log('📊 Data contains', allData ? allData.length : 0, 'total records');
 
             // Get current data from the global allData variable
             if (!window.allData || !Array.isArray(window.allData)) {
@@ -1047,9 +1067,15 @@
 
                     if (geoFenceAlerts.length > 0) {
                         console.log(`📍 ${elephantName}: ${geoFenceAlerts.length} geo-fence alerts triggered`);
+                        geoFenceAlerts.forEach((alert, index) => {
+                            console.log(`   ${index + 1}. ${alert.type} - ${alert.featureName}`);
+                        });
                     }
                 }
             });
+
+            // TEMP DEBUG: Quick summary
+            console.log(`🔍 Finished checking ${Object.keys(elephantGroups).length} elephants for geo-fence alerts`);
         }
 
         // Start security monitoring
