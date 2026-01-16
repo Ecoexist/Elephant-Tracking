@@ -822,24 +822,21 @@
 
         // Donation handler
         function donate(item, amount) {
-            // Build donation details
+            // Build donation details for notes field
             const itemNames = {
-                'adopt-elephant': 'Adopt an Elephant',
-                'helicopter': 'Helicopter for Collaring',
+                'adopt-elephant': 'Adopt an Elephant - Annual GPS Tracking Sponsorship',
+                'helicopter': 'Helicopter for Collaring Operations',
                 'gps-collar': 'GPS Tracking Collar',
-                'fixed-wing': 'Fixed Wing Aircraft',
-                'helicopter-fuel': 'Helicopter Fuel',
-                'plane-fuel': 'Aircraft Fuel'
+                'fixed-wing': 'Fixed Wing Aircraft Support',
+                'helicopter-fuel': 'Helicopter Fuel Costs',
+                'plane-fuel': 'Aircraft Fuel Costs'
             };
 
             const itemName = itemNames[item] || item;
 
-            // Show confirmation
-            if (confirm(`Thank you for your generous donation!\n\nItem: ${itemName}\nAmount: $${amount.toLocaleString()}\n\nClick OK to proceed to secure payment`)) {
-                // Redirect to Kindful donation portal with pre-filled amount
-                const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=`;
-                window.open(donationUrl, '_blank');
-            }
+            // Redirect directly to Kindful donation portal with pre-filled amount and notes
+            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&custom_field_1=${encodeURIComponent(itemName)}`;
+            window.open(donationUrl, '_blank');
         }
 
         // Custom amount donation
@@ -851,12 +848,11 @@
                 return;
             }
 
-            if (confirm(`Thank you for your generous donation of $${parseFloat(amount).toLocaleString()}!\n\nClick OK to proceed to secure payment`)) {
-                // Redirect to Kindful donation portal with custom amount
-                const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=`;
-                window.open(donationUrl, '_blank');
-                document.getElementById('customAmount').value = '';
-            }
+            // Redirect directly to Kindful donation portal with custom amount and notes
+            const notes = `Custom Donation - $${amount}`;
+            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&custom_field_1=${encodeURIComponent(notes)}`;
+            window.open(donationUrl, '_blank');
+            document.getElementById('customAmount').value = '';
         }
 
         // Allow Enter key to submit custom amount
