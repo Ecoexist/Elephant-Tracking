@@ -877,22 +877,6 @@
         </div>
     </div>
 
-    <!-- Donation Modal -->
-    <div id="donationModal" class="donation-modal" style="display: none;">
-        <div class="modal-overlay" onclick="closeDonationModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4>Complete Your Donation</h4>
-                <button class="modal-close-btn" onclick="closeDonationModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <iframe id="donationIframe" src="" width="100%" height="600" frameborder="0" style="border-radius: 8px;">
-                    Your browser does not support iframes. Please visit our donation page directly.
-                </iframe>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer Ribbon -->
     <footer class="footer-ribbon">
         <div class="footer-content">
@@ -977,11 +961,26 @@
 
         // Modal functions
         function openDonationModal(url) {
-            const modal = document.getElementById('donationModal');
-            const iframe = document.getElementById('donationIframe');
+            // Create modal HTML dynamically
+            const modalHTML = `
+                <div id="donationModal" class="donation-modal">
+                    <div class="modal-overlay" onclick="closeDonationModal()"></div>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4>Complete Your Donation</h4>
+                            <button class="modal-close-btn" onclick="closeDonationModal()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <iframe src="${url}" width="100%" height="600" frameborder="0" style="border-radius: 8px;">
+                                Your browser does not support iframes. Please visit our donation page directly.
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            iframe.src = url;
-            modal.style.display = 'flex';
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
 
             // Prevent body scrolling when modal is open
             document.body.style.overflow = 'hidden';
@@ -989,13 +988,11 @@
 
         function closeDonationModal() {
             const modal = document.getElementById('donationModal');
-            const iframe = document.getElementById('donationIframe');
-
-            modal.style.display = 'none';
-            iframe.src = '';
-
-            // Restore body scrolling
-            document.body.style.overflow = 'auto';
+            if (modal) {
+                modal.remove();
+                // Restore body scrolling
+                document.body.style.overflow = 'auto';
+            }
         }
 
         // Close modal when clicking Escape key
