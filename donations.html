@@ -905,21 +905,31 @@
 
         // Donation handler
         function donate(item, amount) {
-            // Build donation details for notes field
-            const itemNames = {
-                'adopt-elephant': 'Adopt an Elephant - Annual GPS Tracking Sponsorship',
-                'helicopter': 'Helicopter for Collaring Operations',
-                'gps-collar': 'GPS Tracking Collar',
-                'fixed-wing': 'Fixed Wing Aircraft Support',
-                'helicopter-fuel': 'Helicopter Fuel Costs',
-                'plane-fuel': 'Aircraft Fuel Costs'
+            // Store donation details in localStorage for certificate generation
+            const donationDetails = {
+                item: item,
+                amount: amount,
+                timestamp: Date.now(),
+                itemName: getItemName(item)
             };
-
-            const itemName = itemNames[item] || item;
+            localStorage.setItem('pendingDonation', JSON.stringify(donationDetails));
 
             // Open modal with Kindful donation portal
-            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&notes=${encodeURIComponent(itemName)}`;
+            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=`;
             openDonationModal(donationUrl);
+        }
+
+        // Get item display name
+        function getItemName(item) {
+            const itemNames = {
+                'adopt-elephant': 'Elephant Adoption',
+                'helicopter': 'Helicopter Support',
+                'gps-collar': 'GPS Tracking Collar',
+                'fixed-wing': 'Aircraft Support',
+                'helicopter-fuel': 'Helicopter Fuel',
+                'plane-fuel': 'Aircraft Fuel'
+            };
+            return itemNames[item] || item;
         }
 
         // Custom amount donation
