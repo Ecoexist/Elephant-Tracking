@@ -918,7 +918,7 @@
             const itemName = itemNames[item] || item;
 
             // Open modal with Kindful donation portal
-            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&notes=${encodeURIComponent(itemName)}`;
+            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&custom_fields%5Bcustom1_value%5D=${encodeURIComponent(itemName)}`;
             openDonationModal(donationUrl);
         }
 
@@ -933,7 +933,7 @@
 
             // Open modal with Kindful donation portal
             const notes = `Custom Donation - $${amount}`;
-            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&notes=${encodeURIComponent(notes)}`;
+            const donationUrl = `https://empowersafrica.kindful.com/campaigns/1019301?amount=${amount}&recurring=landing_recurring&frequency=&custom_fields%5Bcustom1_value%5D=${encodeURIComponent(notes)}`;
             openDonationModal(donationUrl);
             document.getElementById('customAmount').value = '';
         }
