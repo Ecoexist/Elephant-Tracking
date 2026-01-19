@@ -250,7 +250,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="data/ecoexist.jpg" alt="Ecoexist Logo" height="30" class="me-2">
+                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" height="30" class="me-2">
                 Ecoexist Elephant Tracking Dashboard - Public
             </a>
             <div class="ms-auto d-flex align-items-center">
@@ -323,23 +323,7 @@
             <div class="col-lg-3">
                 <!-- Statistics Cards -->
                 <div class="row">
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card stats-card">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Total Elephants</h6>
-                                <h3 class="text-success mb-0" id="totalAnimals">0</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card stats-card">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Number of Fixes</h6>
-                                <h3 class="text-primary mb-0" id="totalLocations">0</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-12">
+                    <div class="col-12">
                         <div class="card stats-card">
                             <div class="card-body">
                                 <h6 class="card-title text-muted">Date Range</h6>
@@ -797,10 +781,6 @@
         }
 
         function updateStatistics() {
-            const uniqueTags = new Set(allData.map(d => d.tagId));
-            document.getElementById('totalAnimals').textContent = uniqueTags.size;
-            document.getElementById('totalLocations').textContent = allData.length;
-
             // Calculate date range
             const timestamps = allData.map(d => d.timestamp);
             const minDate = new Date(Math.min(...timestamps) * 1000);
