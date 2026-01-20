@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-01-19T12:30:19.931Z",
+    "generated_at": "2026-01-20T01:03:11.077Z",
     "description": "Rolling 7-day averaged locations for privacy protection",
     "rolling_window_days": 7,
     "total_animals": 11,
