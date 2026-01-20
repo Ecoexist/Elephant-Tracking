@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GIS Portfolio Copy - Jono Benjamin</title>
+  <link rel="stylesheet" href="gis-style.css">
+</head>
+<body>
+  <!-- Top navigation ribbon -->
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="about.html">About Me</a>
+    <a href="portfolio.html">Portfolio</a>
+  </nav>
+
+  <!-- Main content -->
+  <main>
+    <!-- Page Title and Description - same layout as homepage -->
+    <h1>GIS Portfolio</h1>
+    <p>Click on any map to view the interactive version in a popup window.</p>
+
+    <!-- Maps Section -->
+    <div class="portfolio-blocks">
+      <!-- Scratch Map -->
+      <div class="portfolio-block" data-iframe-src="https://jonobenjamin.github.io/Strava/scratchmap.html">
+        <h3 class="portfolio-title">Scratch Map</h3>
+        <div class="flip-container">
+          <div class="flipper">
+            <div class="front">
+              <div class="thumb-wrap">
+                <iframe class="thumb-frame" src="https://jonobenjamin.github.io/Strava/scratchmap.html" frameborder="0"></iframe>
+              </div>
+            </div>
+            <div class="back">
+              <p class="block-description">An interactive map showing my running and cycling routes. Built with Leaflet and powered by Strava data, this visualization displays GPS tracks from various outdoor activities across different locations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strava Heatmap -->
+      <div class="portfolio-block" data-iframe-src="https://jonobenjamin.github.io/Strava/index.html">
+        <h3 class="portfolio-title">Strava Heatmap</h3>
+        <div class="flip-container">
+          <div class="flipper">
+            <div class="front">
+              <div class="thumb-wrap">
+                <iframe class="thumb-frame" src="https://jonobenjamin.github.io/Strava/index.html" frameborder="0"></iframe>
+              </div>
+            </div>
+            <div class="back">
+              <p class="block-description">A comprehensive heatmap visualization of all my Strava activities. This interactive map uses heat mapping techniques to show activity density and patterns across different regions and time periods.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Travel Map -->
+      <div class="portfolio-block" data-iframe-src="https://jonobenjamin.github.io/Strava/all_data.html">
+        <h3 class="portfolio-title">Travel Map</h3>
+        <div class="flip-container">
+          <div class="flipper">
+            <div class="front">
+              <div class="thumb-wrap">
+                <iframe class="thumb-frame" src="https://jonobenjamin.github.io/Strava/all_data.html" frameborder="0"></iframe>
+              </div>
+            </div>
+            <div class="back">
+              <p class="block-description">An all-encompassing travel map combining GPS data from multiple sources including Strava activities and general travel logs. This visualization provides a complete overview of my geographic footprint.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elephant Tracking Dashboard -->
+      <div class="portfolio-block" data-iframe-src="https://ecoexist.github.io/Elephant-Tracking/dashboard_public.html">
+        <h3 class="portfolio-title">Elephant Tracking Dashboard</h3>
+        <div class="flip-container">
+          <div class="flipper">
+            <div class="front">
+              <div class="thumb-wrap">
+                <iframe class="thumb-frame" src="https://ecoexist.github.io/Elephant-Tracking/dashboard_public.html" frameborder="0"></iframe>
+              </div>
+            </div>
+            <div class="back">
+              <p class="block-description">A real-time elephant tracking dashboard for conservation monitoring. This interactive platform displays GPS collar data from elephants in protected areas, helping researchers track movement patterns and behavior.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal for displaying maps -->
+  <div id="map-modal" class="map-modal">
+    <div class="map-modal-content">
+      <button class="map-modal-close" onclick="closeMapModal()">&times;</button>
+      <iframe id="map-iframe" src="" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Modal functionality
+    function openMapModal(iframeSrc) {
+      const modal = document.getElementById('map-modal');
+      const iframe = document.getElementById('map-iframe');
+      iframe.src = iframeSrc;
+      modal.classList.add('active');
+    }
+
+    function closeMapModal() {
+      const modal = document.getElementById('map-modal');
+      const iframe = document.getElementById('map-iframe');
+      modal.classList.remove('active');
+      // Clear the iframe src to stop loading
+      setTimeout(() => {
+        iframe.src = '';
+      }, 300);
+    }
+
+    // Add click event listeners to portfolio blocks
+    document.addEventListener('DOMContentLoaded', function() {
+      const portfolioBlocks = document.querySelectorAll('.portfolio-block');
+
+      portfolioBlocks.forEach(block => {
+        block.addEventListener('click', function(e) {
+          e.preventDefault();
+          const iframeSrc = this.getAttribute('data-iframe-src');
+          if (iframeSrc) {
+            openMapModal(iframeSrc);
+          }
+        });
+      });
+
+      // Close modal when clicking outside the content
+      document.getElementById('map-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeMapModal();
+        }
+      });
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeMapModal();
+        }
+      });
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Jono Benjamin. All Rights Reserved.</p>
+  </footer>
+</body>
+</html>
