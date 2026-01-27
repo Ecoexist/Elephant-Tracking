@@ -1298,13 +1298,28 @@
 
             console.log(`Processing ${allData.length} total records...`);
 
-            // Filter out erroneous data points above the equator (Botswana is in Southern Hemisphere)
+            // Filter out erroneous data points
             const originalCount = allData.length;
-            allData = allData.filter(point => point.latitude < 0); // Only keep points below equator
+            
+            // Filter out points above the equator (Botswana is in Southern Hemisphere)
+            // AND filter out points where both lat/long are 0 (invalid GPS readings)
+            allData = allData.filter(point => {
+                // Keep only points below equator
+                if (point.latitude >= 0) return false;
+                
+                // Filter out 0,0 coordinates (invalid GPS)
+                if (point.latitude === 0 && point.longitude === 0) return false;
+                
+                // Also filter out very close to 0,0 (within 0.001 degrees)
+                if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                
+                return true;
+            });
+            
             const filteredCount = originalCount - allData.length;
 
             if (filteredCount > 0) {
-                console.log(`Filtered out ${filteredCount} erroneous data points above the equator`);
+                console.log(`Filtered out ${filteredCount} erroneous data points (above equator or invalid 0,0 coordinates)`);
                 console.log(`Remaining valid records: ${allData.length}`);
             }
 
