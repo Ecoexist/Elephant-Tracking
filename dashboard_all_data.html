@@ -1091,18 +1091,15 @@
                         // Keep only points below equator
                         if (point.latitude >= 0) return false;
                         
-                        // Filter out 0,0 coordinates (invalid GPS)
-                        if (point.latitude === 0 && point.longitude === 0) return false;
-                        
-                        // Also filter out very close to 0,0 (within 0.001 degrees)
-                        if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                        // Filter out points within ±5 degrees of 0,0 (invalid GPS or bad data)
+                        if (Math.abs(point.latitude) < 5 && Math.abs(point.longitude) < 5) return false;
                         
                         return true;
                     });
                     
                     const historicalFiltered = originalHistoricalCount - filteredHistoricalData.length;
                     if (historicalFiltered > 0) {
-                        console.log(`   Filtered out ${historicalFiltered} invalid historical records (0,0 or above equator)`);
+                        console.log(`   Filtered out ${historicalFiltered} invalid historical records (within ±5° of 0,0 or above equator)`);
                     }
                     console.log(`   Valid historical records: ${filteredHistoricalData.length.toLocaleString()}`);
                     
@@ -1191,18 +1188,15 @@
                             // Keep only points below equator
                             if (point.latitude >= 0) return false;
                             
-                            // Filter out 0,0 coordinates (invalid GPS)
-                            if (point.latitude === 0 && point.longitude === 0) return false;
-                            
-                            // Also filter out very close to 0,0 (within 0.001 degrees)
-                            if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                            // Filter out points within ±5 degrees of 0,0 (invalid GPS or bad data)
+                            if (Math.abs(point.latitude) < 5 && Math.abs(point.longitude) < 5) return false;
                             
                             return true;
                         });
                         
                         const brotherFiltered = originalBrotherCount - filteredBrotherData.length;
                         if (brotherFiltered > 0) {
-                            console.log(`   Filtered out ${brotherFiltered} invalid Brother collar records (0,0 or above equator)`);
+                            console.log(`   Filtered out ${brotherFiltered} invalid Brother collar records (within ±5° of 0,0 or above equator)`);
                         }
                         console.log(`   Valid Brother records: ${filteredBrotherData.length}`);
                         
@@ -1344,16 +1338,14 @@
             const originalCount = allData.length;
             
             // Filter out points above the equator (Botswana is in Southern Hemisphere)
-            // AND filter out points where both lat/long are 0 (invalid GPS readings)
+            // AND filter out points near 0,0 (invalid GPS readings)
             allData = allData.filter(point => {
                 // Keep only points below equator
                 if (point.latitude >= 0) return false;
                 
-                // Filter out 0,0 coordinates (invalid GPS)
-                if (point.latitude === 0 && point.longitude === 0) return false;
-                
-                // Also filter out very close to 0,0 (within 0.001 degrees)
-                if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                // Filter out points within ±5 degrees of 0,0 (invalid GPS or bad data)
+                // This catches 0,0 and any nearby erroneous readings
+                if (Math.abs(point.latitude) < 5 && Math.abs(point.longitude) < 5) return false;
                 
                 return true;
             });
@@ -1361,7 +1353,7 @@
             const filteredCount = originalCount - allData.length;
 
             if (filteredCount > 0) {
-                console.log(`Filtered out ${filteredCount} erroneous data points (above equator or invalid 0,0 coordinates)`);
+                console.log(`Filtered out ${filteredCount} erroneous data points (above equator or within ±5° of 0,0)`);
                 console.log(`Remaining valid records: ${allData.length}`);
             }
 
