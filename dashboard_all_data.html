@@ -1085,9 +1085,30 @@
                     const historicalData = await historicalResponse.json();
                     console.log(`✅ Background load complete: ${historicalData.length.toLocaleString()} historical records`);
                     
-                    // Merge with existing data
+                    // Filter historical data before merging (remove invalid coordinates)
+                    const originalHistoricalCount = historicalData.length;
+                    const filteredHistoricalData = historicalData.filter(point => {
+                        // Keep only points below equator
+                        if (point.latitude >= 0) return false;
+                        
+                        // Filter out 0,0 coordinates (invalid GPS)
+                        if (point.latitude === 0 && point.longitude === 0) return false;
+                        
+                        // Also filter out very close to 0,0 (within 0.001 degrees)
+                        if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                        
+                        return true;
+                    });
+                    
+                    const historicalFiltered = originalHistoricalCount - filteredHistoricalData.length;
+                    if (historicalFiltered > 0) {
+                        console.log(`   Filtered out ${historicalFiltered} invalid historical records (0,0 or above equator)`);
+                    }
+                    console.log(`   Valid historical records: ${filteredHistoricalData.length.toLocaleString()}`);
+                    
+                    // Merge filtered data with existing data
                     console.log('🔄 Merging historical data...');
-                    const combined = historicalData.concat(allData);
+                    const combined = filteredHistoricalData.concat(allData);
                     combined.sort((a, b) => a.timestamp - b.timestamp);
                     allData = combined;
                     
@@ -1164,9 +1185,30 @@
                         const maxDate = new Date(Math.max(...brotherTimestamps) * 1000);
                         console.log(`   Brother data date range: ${minDate.toISOString()} to ${maxDate.toISOString()}`);
                         
-                        // Merge with existing data
+                        // Filter Brother data before merging (remove invalid coordinates)
+                        const originalBrotherCount = brotherData.length;
+                        const filteredBrotherData = brotherData.filter(point => {
+                            // Keep only points below equator
+                            if (point.latitude >= 0) return false;
+                            
+                            // Filter out 0,0 coordinates (invalid GPS)
+                            if (point.latitude === 0 && point.longitude === 0) return false;
+                            
+                            // Also filter out very close to 0,0 (within 0.001 degrees)
+                            if (Math.abs(point.latitude) < 0.001 && Math.abs(point.longitude) < 0.001) return false;
+                            
+                            return true;
+                        });
+                        
+                        const brotherFiltered = originalBrotherCount - filteredBrotherData.length;
+                        if (brotherFiltered > 0) {
+                            console.log(`   Filtered out ${brotherFiltered} invalid Brother collar records (0,0 or above equator)`);
+                        }
+                        console.log(`   Valid Brother records: ${filteredBrotherData.length}`);
+                        
+                        // Merge filtered data with existing data
                         console.log('🔄 Merging Brother collar data with existing data...');
-                        const combined = allData.concat(brotherData);
+                        const combined = allData.concat(filteredBrotherData);
                         
                         // Sort by timestamp
                         combined.sort((a, b) => a.timestamp - b.timestamp);
