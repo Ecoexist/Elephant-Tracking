@@ -320,7 +320,7 @@
     <div id="loginModal" class="login-modal">
         <div class="login-content">
             <div class="login-header">
-                <h3><img src="data/ele.png" alt="Elephant" style="width: 32px; height: 24px; margin-right: 10px; vertical-align: middle;"> Elephant Movement Login</h3>
+                <h3><img src="data/ele.png" alt="Elephant" style="width: 32px; height: 32px; margin-right: 10px; vertical-align: middle;"> AWT Dashboard Login</h3>
                 <p>Enter your credentials to access the wildlife tracking data</p>
             </div>
             <form id="loginForm" class="login-form">
@@ -1070,6 +1070,8 @@
 
         // Background loading of historical data
         let historicalDataLoaded = false;
+        let brotherDataLoaded = false;
+        
         async function loadHistoricalDataInBackground(authToken) {
             try {
                 const historicalResponse = await fetch('https://ecoexist-api.vercel.app/api/historical-data', {
@@ -1117,14 +1119,105 @@
                     // Update statistics and filters with new data
                     console.log('📊 Updating statistics with full historical + live data...');
                     updateStatistics();
+                    
+                    // Load Brother collar data after historical data
+                    loadBrotherDataInBackground(authToken);
                     populateTagFilter();
                     populateMonthFilter();
                 } else {
                     console.log('⚠️  Historical data not available, using live data only');
+                    // Still try to load Brother data even if historical data failed
+                    loadBrotherDataInBackground(authToken);
                 }
             } catch (error) {
                 console.log('⚠️  Could not load historical data:', error.message);
                 console.log('   Dashboard will work with live data only');
+                // Still try to load Brother data even if historical data failed
+                loadBrotherDataInBackground(authToken);
+            }
+        }
+
+        // Background loading of Brother collar (8537) data from GCS
+        async function loadBrotherDataInBackground(authToken) {
+            try {
+                console.log('🐘 Loading Brother collar (8537) historical data from API...');
+                
+                // Brother data is served through the secure API
+                const brotherApiUrl = 'https://ecoexist-api.vercel.app/api/brother-collar-data';
+                
+                const brotherResponse = await fetch(brotherApiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Basic ' + authToken
+                    }
+                });
+                
+                if (brotherResponse.ok) {
+                    const brotherData = await brotherResponse.json();
+                    console.log(`✅ Brother collar data loaded: ${brotherData.length} records`);
+                    
+                    if (brotherData.length > 0) {
+                        // Show sample record
+                        console.log('   Sample Brother record:', brotherData[0]);
+                        const brotherTimestamps = brotherData.map(d => d.timestamp);
+                        const minDate = new Date(Math.min(...brotherTimestamps) * 1000);
+                        const maxDate = new Date(Math.max(...brotherTimestamps) * 1000);
+                        console.log(`   Brother data date range: ${minDate.toISOString()} to ${maxDate.toISOString()}`);
+                        
+                        // Merge with existing data
+                        console.log('🔄 Merging Brother collar data with existing data...');
+                        const combined = allData.concat(brotherData);
+                        
+                        // Sort by timestamp
+                        combined.sort((a, b) => a.timestamp - b.timestamp);
+                        allData = combined;
+                        
+                        brotherDataLoaded = true;
+                        console.log(`✅ Total data with Brother collar: ${allData.length.toLocaleString()} records`);
+                        
+                        // Update global min/max timestamps
+                        minTimestamp = allData[0].timestamp;
+                        maxTimestamp = allData[0].timestamp;
+                        
+                        for (let i = 1; i < allData.length; i++) {
+                            const ts = allData[i].timestamp;
+                            if (ts < minTimestamp) minTimestamp = ts;
+                            if (ts > maxTimestamp) maxTimestamp = ts;
+                        }
+                        
+                        console.log(`📅 Updated date range: ${new Date(minTimestamp * 1000).toLocaleDateString()} to ${new Date(maxTimestamp * 1000).toLocaleDateString()}`);
+                        
+                        // Reinitialize slider with updated range
+                        if (dateSlider) {
+                            console.log('🔄 Reinitializing slider with Brother data included...');
+                            dateSlider.destroy();
+                            dateSlider = null;
+                            initializeDateSlider();
+                        }
+                        
+                        // Update statistics and filters
+                        console.log('📊 Updating statistics with Brother data...');
+                        updateStatistics();
+                        populateTagFilter();
+                        populateMonthFilter();
+                        
+                        // Refresh the display if we're viewing this tag
+                        const selectedTag = document.getElementById('tagFilter').value;
+                        if (selectedTag === 'all' || selectedTag === '8537') {
+                            console.log('🔄 Refreshing map display with Brother data...');
+                            processData();
+                        }
+                    }
+                } else {
+                    console.log('⚠️  Brother collar data not available (this is optional)');
+                    console.log(`   Response status: ${brotherResponse.status}`);
+                    console.log('   If you want to include Brother data:');
+                    console.log('   1. Ensure 8537_brother_historical.json is uploaded to GCS');
+                    console.log('   2. Make sure the file is publicly accessible or update the URL');
+                }
+            } catch (error) {
+                console.log('⚠️  Could not load Brother collar data:', error.message);
+                console.log('   Dashboard will work without Brother collar historical data');
             }
         }
 
@@ -2373,7 +2466,7 @@
             if (mainContent && mainContent.style.display === 'block') {
                 loadData();
             }
-        }, 2400000);
+        }, 300000);
     </script>
 </body>
 </html>
