@@ -41,7 +41,7 @@
 </head>
 <body>
     <div class="header">
-        <h1 id="mapTitle">KAZA Agriculture Fields & Micro Corridors</h1>
+        <h1 id="mapTitle">KAZA Agriculture Fields & Micro-Corridors</h1>
     </div>
 
     <div class="main-wrapper">
@@ -92,7 +92,7 @@
         // Map configurations
         const mapConfigs = [
             {
-                title: "KAZA Agriculture Fields & Micro Corridors",
+                title: "KAZA Agriculture Fields & Micro-Corridors",
                 // subtitle: "Green agriculture fields with pre-buffered corridors in different shades of red",
                 layers: {
                     boundary: { show: true, file: './Data/KAZA_Boundary.geojson', style: { color: '#000000', weight: 3, opacity: 1, fillColor: 'transparent', fillOpacity: 0 } },
@@ -103,15 +103,15 @@
                 controls: `
                     <label><input type="checkbox" id="showBoundary" checked> KAZA Boundary</label>
                     <label><input type="checkbox" id="showAgriculture" checked> Agriculture Fields</label>
-                    <label><input type="checkbox" id="showCorridors"> Micro Corridors</label>
-                    <label><input type="checkbox" id="showIntersects"> Corridor Intersects</label>
+                    <label><input type="checkbox" id="showCorridors"> Micro-Corridors</label>
+                    <label><input type="checkbox" id="showIntersects"> Corridor-Agri Intersects</label>
                 `,
                 legend: `
                     <h4>Map Legend</h4>
                     <div class="legend-item"><div class="legend-color" style="border: 2px solid #000000; background-color: transparent"></div><span>KAZA Boundary</span></div>
                     <div class="legend-item"><div class="legend-color" style="background-color: #28a745"></div><span>Agriculture Fields</span></div>
-                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000"></div><span>Corridors</span></div>
-                    <div class="legend-item"><div class="legend-color" style="background-color: #000000; border: 2px solid #000000"></div><span>Corridor Intersects</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000"></div><span>Micro-Corridors</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #000000; border: 2px solid #000000"></div><span>Corridor-Agri Intersects</span></div>
                 `,
                 layerInfo: `
                     <h4>Layer Information</h4>
@@ -141,8 +141,7 @@
                     <h4>Map Legend</h4>
                     <div class="legend-item"><div class="legend-color" style="border: 2px solid #000000; background-color: transparent"></div><span>KAZA Boundary</span></div>
                     <div class="legend-item"><div class="legend-color" style="background-color: #6c757d"></div><span>Urban Areas</span></div>
-                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000"></div><span>Corridors</span></div>
-                    <div class="legend-item"><div class="legend-color" style="background-color: #000000; border: 2px solid #000000"></div><span>Corridor Intersects</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000"></div><span>Micro-Corridors</span></div>
                     <div class="legend-item"><div class="legend-color" style="background-color: #000000; border: 2px solid #000000"></div><span>Corridor-Urban Intersects</span></div>
                 `,
                 layerInfo: `
@@ -184,7 +183,7 @@
                     </div>
                     <hr style="margin: 10px 0;">
                     <div class="legend-item"><div class="legend-color" style="border: 2px solid #000000; background-color: transparent"></div><span>KAZA Boundary</span></div>
-                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000;"></div><span>Corridors</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #ff0000;"></div><span>Micro-Corridors</span></div>
                 `,
                 layerInfo: `
                     <h4>Layer Information</h4>
@@ -307,7 +306,7 @@
                 urbanLayer: './Data/KAZA_urban_areas.geojson',
                 info: `<ul>
                           <li>Urban Areas (Google Buildings)</li>
-                          <li>Corridors</li>
+                          <li>Micro-Corridors (KESWG)</li>
                       </ul>`
             },
             'agri-prox': {
@@ -316,7 +315,7 @@
                 agriLayer: './Data/Agri_fields_converted.geojson',
                 info: `<ul>
                           <li>Agriculture Fields (Remote Sensing-WWF Data)</li>
-                          <li>Corridors</li>
+                          <li>Micro-Corridors (KESWG)</li>
                       </ul>`
             }
         };
