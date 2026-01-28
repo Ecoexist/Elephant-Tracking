@@ -6,8 +6,8 @@ Interactive map viewer for KAZA (Kavango-Zambezi Transfrontier Conservation Area
 
 ## 🚀 View the Map
 
-Open `landuse_conflict.html` in a web browser or access via GitHub Pages:
-`https://ecoexist.github.io/Elephant-Tracking/kaza/landuse_conflict.html`
+Open `land_use_conflict.html` in a web browser or access via GitHub Pages:
+`https://ecoexist.github.io/Elephant-Tracking/kaza/land_use_conflict.html`
 
 ## 📊 Map Sections
 
