@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "generated_at": "2026-01-29T06:36:13.401Z",
+    "generated_at": "2026-01-30T06:37:22.942Z",
     "description": "Rolling 7-day averaged locations for privacy protection",
     "rolling_window_days": 7,
     "total_animals": 11,
-    "total_points": 51676,
+    "total_points": 51853,
     "privacy_note": "Individual GPS points are averaged over 7-day rolling windows to protect animal privacy and prevent poaching"
   },
   "data": [
@@ -614985,6 +614985,18 @@
       }
     },
     {
+      "tagId": 8537,
+      "timestamp": 1769462249,
+      "latitude": -20.120383,
+      "longitude": 23.891211,
+      "pointsInAverage": 162,
+      "originalTimestamp": 1769462249,
+      "dateRange": {
+        "start": "2026-01-19T21:17:29.000Z",
+        "end": "2026-01-26T21:17:29.000Z"
+      }
+    },
+    {
       "tagId": 5589,
       "timestamp": 1769462380,
       "latitude": -19.663355,
@@ -615081,6 +615093,18 @@
       }
     },
     {
+      "tagId": 8537,
+      "timestamp": 1769465830,
+      "latitude": -20.119247,
+      "longitude": 23.888683,
+      "pointsInAverage": 162,
+      "originalTimestamp": 1769465830,
+      "dateRange": {
+        "start": "2026-01-19T22:17:10.000Z",
+        "end": "2026-01-26T22:17:10.000Z"
+      }
+    },
+    {
       "tagId": 5589,
       "timestamp": 1769466026,
       "latitude": -19.663435,
@@ -615166,10 +615190,22 @@
     },
     {
       "tagId": 8537,
+      "timestamp": 1769469403,
+      "latitude": -20.118111,
+      "longitude": 23.886156,
+      "pointsInAverage": 162,
+      "originalTimestamp": 1769469403,
+      "dateRange": {
+        "start": "2026-01-19T23:16:43.000Z",
+        "end": "2026-01-26T23:16:43.000Z"
+      }
+    },
+    {
+      "tagId": 8537,
       "timestamp": 1769469404,
-      "latitude": -20.120331,
-      "longitude": 23.891082,
-      "pointsInAverage": 160,
+      "latitude": -20.117021,
+      "longitude": 23.883738,
+      "pointsInAverage": 163,
       "originalTimestamp": 1769469404,
       "dateRange": {
         "start": "2026-01-19T23:16:44.000Z",
@@ -616247,9 +616283,9 @@
     {
       "tagId": 8537,
       "timestamp": 1769512854,
-      "latitude": -20.118798,
-      "longitude": 23.887559,
-      "pointsInAverage": 149,
+      "latitude": -20.115279,
+      "longitude": 23.879753,
+      "pointsInAverage": 152,
       "originalTimestamp": 1769512854,
       "dateRange": {
         "start": "2026-01-20T11:20:54.000Z",
@@ -617219,9 +617255,9 @@
     {
       "tagId": 8537,
       "timestamp": 1769549110,
-      "latitude": -20.117124,
-      "longitude": 23.883732,
-      "pointsInAverage": 140,
+      "latitude": -20.113418,
+      "longitude": 23.875515,
+      "pointsInAverage": 143,
       "originalTimestamp": 1769549110,
       "dateRange": {
         "start": "2026-01-20T21:25:10.000Z",
@@ -618299,9 +618335,9 @@
     {
       "tagId": 8537,
       "timestamp": 1769592537,
-      "latitude": -20.115075,
-      "longitude": 23.879035,
-      "pointsInAverage": 129,
+      "latitude": -20.111107,
+      "longitude": 23.87024,
+      "pointsInAverage": 132,
       "originalTimestamp": 1769592537,
       "dateRange": {
         "start": "2026-01-21T09:28:57.000Z",
@@ -620118,6 +620154,2094 @@
       "dateRange": {
         "start": "2026-01-22T05:35:26.000Z",
         "end": "2026-01-29T05:35:26.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769665088,
+      "latitude": -19.784085,
+      "longitude": 23.54632,
+      "pointsInAverage": 133,
+      "originalTimestamp": 1769665088,
+      "dateRange": {
+        "start": "2026-01-22T05:38:08.000Z",
+        "end": "2026-01-29T05:38:08.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769665634,
+      "latitude": -19.762813,
+      "longitude": 23.699989,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769665634,
+      "dateRange": {
+        "start": "2026-01-22T05:47:14.000Z",
+        "end": "2026-01-29T05:47:14.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769666842,
+      "latitude": -19.964328,
+      "longitude": 24.670024,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769666842,
+      "dateRange": {
+        "start": "2026-01-22T06:07:22.000Z",
+        "end": "2026-01-29T06:07:22.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769667450,
+      "latitude": -22.318649,
+      "longitude": 23.198598,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769667450,
+      "dateRange": {
+        "start": "2026-01-22T06:17:30.000Z",
+        "end": "2026-01-29T06:17:30.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769667462,
+      "latitude": -19.95156,
+      "longitude": 22.541288,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769667462,
+      "dateRange": {
+        "start": "2026-01-22T06:17:42.000Z",
+        "end": "2026-01-29T06:17:42.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769667790,
+      "latitude": -19.774904,
+      "longitude": 22.969606,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769667790,
+      "dateRange": {
+        "start": "2026-01-22T06:23:10.000Z",
+        "end": "2026-01-29T06:23:10.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769668509,
+      "latitude": -20.026938,
+      "longitude": 22.691335,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769668509,
+      "dateRange": {
+        "start": "2026-01-22T06:35:09.000Z",
+        "end": "2026-01-29T06:35:09.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769668518,
+      "latitude": -19.668211,
+      "longitude": 23.675957,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769668518,
+      "dateRange": {
+        "start": "2026-01-22T06:35:18.000Z",
+        "end": "2026-01-29T06:35:18.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769669284,
+      "latitude": -19.763641,
+      "longitude": 23.707175,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769669284,
+      "dateRange": {
+        "start": "2026-01-22T06:48:04.000Z",
+        "end": "2026-01-29T06:48:04.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769670482,
+      "latitude": -19.964063,
+      "longitude": 24.669895,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769670482,
+      "dateRange": {
+        "start": "2026-01-22T07:08:02.000Z",
+        "end": "2026-01-29T07:08:02.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769671035,
+      "latitude": -22.318846,
+      "longitude": 23.197531,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769671035,
+      "dateRange": {
+        "start": "2026-01-22T07:17:15.000Z",
+        "end": "2026-01-29T07:17:15.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769671142,
+      "latitude": -19.951603,
+      "longitude": 22.541335,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769671142,
+      "dateRange": {
+        "start": "2026-01-22T07:19:02.000Z",
+        "end": "2026-01-29T07:19:02.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769671396,
+      "latitude": -19.774461,
+      "longitude": 22.9702,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769671396,
+      "dateRange": {
+        "start": "2026-01-22T07:23:16.000Z",
+        "end": "2026-01-29T07:23:16.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769672140,
+      "latitude": -20.026896,
+      "longitude": 22.690693,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769672140,
+      "dateRange": {
+        "start": "2026-01-22T07:35:40.000Z",
+        "end": "2026-01-29T07:35:40.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769672162,
+      "latitude": -19.668386,
+      "longitude": 23.675899,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769672162,
+      "dateRange": {
+        "start": "2026-01-22T07:36:02.000Z",
+        "end": "2026-01-29T07:36:02.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769672342,
+      "latitude": -19.785277,
+      "longitude": 23.545835,
+      "pointsInAverage": 133,
+      "originalTimestamp": 1769672342,
+      "dateRange": {
+        "start": "2026-01-22T07:39:02.000Z",
+        "end": "2026-01-29T07:39:02.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769672900,
+      "latitude": -19.76449,
+      "longitude": 23.71422,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769672900,
+      "dateRange": {
+        "start": "2026-01-22T07:48:20.000Z",
+        "end": "2026-01-29T07:48:20.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769674085,
+      "latitude": -19.963824,
+      "longitude": 24.669782,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769674085,
+      "dateRange": {
+        "start": "2026-01-22T08:08:05.000Z",
+        "end": "2026-01-29T08:08:05.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769674651,
+      "latitude": -22.319039,
+      "longitude": 23.196486,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769674651,
+      "dateRange": {
+        "start": "2026-01-22T08:17:31.000Z",
+        "end": "2026-01-29T08:17:31.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769674698,
+      "latitude": -19.951617,
+      "longitude": 22.541408,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769674698,
+      "dateRange": {
+        "start": "2026-01-22T08:18:18.000Z",
+        "end": "2026-01-29T08:18:18.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769675041,
+      "latitude": -19.774018,
+      "longitude": 22.970753,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769675041,
+      "dateRange": {
+        "start": "2026-01-22T08:24:01.000Z",
+        "end": "2026-01-29T08:24:01.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769675751,
+      "latitude": -19.668556,
+      "longitude": 23.675854,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769675751,
+      "dateRange": {
+        "start": "2026-01-22T08:35:51.000Z",
+        "end": "2026-01-29T08:35:51.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769675770,
+      "latitude": -20.026835,
+      "longitude": 22.690047,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769675770,
+      "dateRange": {
+        "start": "2026-01-22T08:36:10.000Z",
+        "end": "2026-01-29T08:36:10.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769675950,
+      "latitude": -19.786474,
+      "longitude": 23.545367,
+      "pointsInAverage": 133,
+      "originalTimestamp": 1769675950,
+      "dateRange": {
+        "start": "2026-01-22T08:39:10.000Z",
+        "end": "2026-01-29T08:39:10.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769676488,
+      "latitude": -19.765372,
+      "longitude": 23.721196,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769676488,
+      "dateRange": {
+        "start": "2026-01-22T08:48:08.000Z",
+        "end": "2026-01-29T08:48:08.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769677720,
+      "latitude": -19.963576,
+      "longitude": 24.669654,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769677720,
+      "dateRange": {
+        "start": "2026-01-22T09:08:40.000Z",
+        "end": "2026-01-29T09:08:40.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769678282,
+      "latitude": -22.319196,
+      "longitude": 23.195463,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769678282,
+      "dateRange": {
+        "start": "2026-01-22T09:18:02.000Z",
+        "end": "2026-01-29T09:18:02.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769678342,
+      "latitude": -19.951617,
+      "longitude": 22.541456,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769678342,
+      "dateRange": {
+        "start": "2026-01-22T09:19:02.000Z",
+        "end": "2026-01-29T09:19:02.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769678650,
+      "latitude": -19.773636,
+      "longitude": 22.971256,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769678650,
+      "dateRange": {
+        "start": "2026-01-22T09:24:10.000Z",
+        "end": "2026-01-29T09:24:10.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769679392,
+      "latitude": -19.668655,
+      "longitude": 23.675813,
+      "pointsInAverage": 125,
+      "originalTimestamp": 1769679392,
+      "dateRange": {
+        "start": "2026-01-22T09:36:32.000Z",
+        "end": "2026-01-29T09:36:32.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769679392,
+      "latitude": -20.026717,
+      "longitude": 22.68938,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769679392,
+      "dateRange": {
+        "start": "2026-01-22T09:36:32.000Z",
+        "end": "2026-01-29T09:36:32.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769680150,
+      "latitude": -19.766255,
+      "longitude": 23.728145,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769680150,
+      "dateRange": {
+        "start": "2026-01-22T09:49:10.000Z",
+        "end": "2026-01-29T09:49:10.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769681342,
+      "latitude": -19.963311,
+      "longitude": 24.669552,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769681342,
+      "dateRange": {
+        "start": "2026-01-22T10:09:02.000Z",
+        "end": "2026-01-29T10:09:02.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769681894,
+      "latitude": -22.319334,
+      "longitude": 23.194444,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769681894,
+      "dateRange": {
+        "start": "2026-01-22T10:18:14.000Z",
+        "end": "2026-01-29T10:18:14.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769681937,
+      "latitude": -19.95163,
+      "longitude": 22.541436,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769681937,
+      "dateRange": {
+        "start": "2026-01-22T10:18:57.000Z",
+        "end": "2026-01-29T10:18:57.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769682246,
+      "latitude": -19.773296,
+      "longitude": 22.971696,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769682246,
+      "dateRange": {
+        "start": "2026-01-22T10:24:06.000Z",
+        "end": "2026-01-29T10:24:06.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769683000,
+      "latitude": -20.026573,
+      "longitude": 22.688649,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769683000,
+      "dateRange": {
+        "start": "2026-01-22T10:36:40.000Z",
+        "end": "2026-01-29T10:36:40.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769683165,
+      "latitude": -19.788417,
+      "longitude": 23.54449,
+      "pointsInAverage": 132,
+      "originalTimestamp": 1769683165,
+      "dateRange": {
+        "start": "2026-01-22T10:39:25.000Z",
+        "end": "2026-01-29T10:39:25.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769683780,
+      "latitude": -19.767179,
+      "longitude": 23.73505,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769683780,
+      "dateRange": {
+        "start": "2026-01-22T10:49:40.000Z",
+        "end": "2026-01-29T10:49:40.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769684950,
+      "latitude": -19.963059,
+      "longitude": 24.669496,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769684950,
+      "dateRange": {
+        "start": "2026-01-22T11:09:10.000Z",
+        "end": "2026-01-29T11:09:10.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769685530,
+      "latitude": -22.319466,
+      "longitude": 23.193435,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769685530,
+      "dateRange": {
+        "start": "2026-01-22T11:18:50.000Z",
+        "end": "2026-01-29T11:18:50.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769685559,
+      "latitude": -19.951599,
+      "longitude": 22.54144,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769685559,
+      "dateRange": {
+        "start": "2026-01-22T11:19:19.000Z",
+        "end": "2026-01-29T11:19:19.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769685902,
+      "latitude": -19.772941,
+      "longitude": 22.972122,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769685902,
+      "dateRange": {
+        "start": "2026-01-22T11:25:02.000Z",
+        "end": "2026-01-29T11:25:02.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769686600,
+      "latitude": -19.668785,
+      "longitude": 23.675778,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769686600,
+      "dateRange": {
+        "start": "2026-01-22T11:36:40.000Z",
+        "end": "2026-01-29T11:36:40.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769686612,
+      "latitude": -20.026409,
+      "longitude": 22.687958,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769686612,
+      "dateRange": {
+        "start": "2026-01-22T11:36:52.000Z",
+        "end": "2026-01-29T11:36:52.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769686802,
+      "latitude": -19.789641,
+      "longitude": 23.544078,
+      "pointsInAverage": 132,
+      "originalTimestamp": 1769686802,
+      "dateRange": {
+        "start": "2026-01-22T11:40:02.000Z",
+        "end": "2026-01-29T11:40:02.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769687350,
+      "latitude": -19.768137,
+      "longitude": 23.741865,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769687350,
+      "dateRange": {
+        "start": "2026-01-22T11:49:10.000Z",
+        "end": "2026-01-29T11:49:10.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769688580,
+      "latitude": -19.962814,
+      "longitude": 24.669378,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769688580,
+      "dateRange": {
+        "start": "2026-01-22T12:09:40.000Z",
+        "end": "2026-01-29T12:09:40.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769689142,
+      "latitude": -22.319583,
+      "longitude": 23.192415,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769689142,
+      "dateRange": {
+        "start": "2026-01-22T12:19:02.000Z",
+        "end": "2026-01-29T12:19:02.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769689210,
+      "latitude": -19.951562,
+      "longitude": 22.541452,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769689210,
+      "dateRange": {
+        "start": "2026-01-22T12:20:10.000Z",
+        "end": "2026-01-29T12:20:10.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769689510,
+      "latitude": -19.772574,
+      "longitude": 22.972565,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769689510,
+      "dateRange": {
+        "start": "2026-01-22T12:25:10.000Z",
+        "end": "2026-01-29T12:25:10.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769690246,
+      "latitude": -19.668891,
+      "longitude": 23.675738,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769690246,
+      "dateRange": {
+        "start": "2026-01-22T12:37:26.000Z",
+        "end": "2026-01-29T12:37:26.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769690260,
+      "latitude": -20.026348,
+      "longitude": 22.687368,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769690260,
+      "dateRange": {
+        "start": "2026-01-22T12:37:40.000Z",
+        "end": "2026-01-29T12:37:40.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769690399,
+      "latitude": -19.790838,
+      "longitude": 23.543661,
+      "pointsInAverage": 132,
+      "originalTimestamp": 1769690399,
+      "dateRange": {
+        "start": "2026-01-22T12:39:59.000Z",
+        "end": "2026-01-29T12:39:59.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769690972,
+      "latitude": -19.769109,
+      "longitude": 23.748633,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769690972,
+      "dateRange": {
+        "start": "2026-01-22T12:49:32.000Z",
+        "end": "2026-01-29T12:49:32.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769692178,
+      "latitude": -19.962572,
+      "longitude": 24.669239,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769692178,
+      "dateRange": {
+        "start": "2026-01-22T13:09:38.000Z",
+        "end": "2026-01-29T13:09:38.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769692734,
+      "latitude": -22.319679,
+      "longitude": 23.191413,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769692734,
+      "dateRange": {
+        "start": "2026-01-22T13:18:54.000Z",
+        "end": "2026-01-29T13:18:54.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769692804,
+      "latitude": -19.951517,
+      "longitude": 22.541482,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769692804,
+      "dateRange": {
+        "start": "2026-01-22T13:20:04.000Z",
+        "end": "2026-01-29T13:20:04.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769693103,
+      "latitude": -19.772191,
+      "longitude": 22.972988,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769693103,
+      "dateRange": {
+        "start": "2026-01-22T13:25:03.000Z",
+        "end": "2026-01-29T13:25:03.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769693836,
+      "latitude": -19.668977,
+      "longitude": 23.675691,
+      "pointsInAverage": 124,
+      "originalTimestamp": 1769693836,
+      "dateRange": {
+        "start": "2026-01-22T13:37:16.000Z",
+        "end": "2026-01-29T13:37:16.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769693856,
+      "latitude": -20.026327,
+      "longitude": 22.686763,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769693856,
+      "dateRange": {
+        "start": "2026-01-22T13:37:36.000Z",
+        "end": "2026-01-29T13:37:36.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769694015,
+      "latitude": -19.792006,
+      "longitude": 23.54331,
+      "pointsInAverage": 132,
+      "originalTimestamp": 1769694015,
+      "dateRange": {
+        "start": "2026-01-22T13:40:15.000Z",
+        "end": "2026-01-29T13:40:15.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769694602,
+      "latitude": -19.770091,
+      "longitude": 23.755402,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769694602,
+      "dateRange": {
+        "start": "2026-01-22T13:50:02.000Z",
+        "end": "2026-01-29T13:50:02.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769695826,
+      "latitude": -19.962309,
+      "longitude": 24.669109,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769695826,
+      "dateRange": {
+        "start": "2026-01-22T14:10:26.000Z",
+        "end": "2026-01-29T14:10:26.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769696351,
+      "latitude": -22.319768,
+      "longitude": 23.190422,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769696351,
+      "dateRange": {
+        "start": "2026-01-22T14:19:11.000Z",
+        "end": "2026-01-29T14:19:11.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769696470,
+      "latitude": -19.951469,
+      "longitude": 22.541548,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769696470,
+      "dateRange": {
+        "start": "2026-01-22T14:21:10.000Z",
+        "end": "2026-01-29T14:21:10.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769696753,
+      "latitude": -19.771851,
+      "longitude": 22.973378,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769696753,
+      "dateRange": {
+        "start": "2026-01-22T14:25:53.000Z",
+        "end": "2026-01-29T14:25:53.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769697490,
+      "latitude": -20.026311,
+      "longitude": 22.686101,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769697490,
+      "dateRange": {
+        "start": "2026-01-22T14:38:10.000Z",
+        "end": "2026-01-29T14:38:10.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769697669,
+      "latitude": -19.793194,
+      "longitude": 23.543019,
+      "pointsInAverage": 132,
+      "originalTimestamp": 1769697669,
+      "dateRange": {
+        "start": "2026-01-22T14:41:09.000Z",
+        "end": "2026-01-29T14:41:09.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769698193,
+      "latitude": -19.771112,
+      "longitude": 23.762164,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769698193,
+      "dateRange": {
+        "start": "2026-01-22T14:49:53.000Z",
+        "end": "2026-01-29T14:49:53.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769699420,
+      "latitude": -19.962012,
+      "longitude": 24.668956,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769699420,
+      "dateRange": {
+        "start": "2026-01-22T15:10:20.000Z",
+        "end": "2026-01-29T15:10:20.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769700002,
+      "latitude": -22.319845,
+      "longitude": 23.189438,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769700002,
+      "dateRange": {
+        "start": "2026-01-22T15:20:02.000Z",
+        "end": "2026-01-29T15:20:02.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769700070,
+      "latitude": -19.951403,
+      "longitude": 22.541618,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769700070,
+      "dateRange": {
+        "start": "2026-01-22T15:21:10.000Z",
+        "end": "2026-01-29T15:21:10.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769700380,
+      "latitude": -19.771516,
+      "longitude": 22.97385,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769700380,
+      "dateRange": {
+        "start": "2026-01-22T15:26:20.000Z",
+        "end": "2026-01-29T15:26:20.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769701128,
+      "latitude": -20.026188,
+      "longitude": 22.68544,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769701128,
+      "dateRange": {
+        "start": "2026-01-22T15:38:48.000Z",
+        "end": "2026-01-29T15:38:48.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769701832,
+      "latitude": -19.772192,
+      "longitude": 23.768933,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769701832,
+      "dateRange": {
+        "start": "2026-01-22T15:50:32.000Z",
+        "end": "2026-01-29T15:50:32.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769703062,
+      "latitude": -19.961695,
+      "longitude": 24.668788,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769703062,
+      "dateRange": {
+        "start": "2026-01-22T16:11:02.000Z",
+        "end": "2026-01-29T16:11:02.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769703588,
+      "latitude": -22.319898,
+      "longitude": 23.188466,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769703588,
+      "dateRange": {
+        "start": "2026-01-22T16:19:48.000Z",
+        "end": "2026-01-29T16:19:48.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769703692,
+      "latitude": -19.951307,
+      "longitude": 22.541703,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769703692,
+      "dateRange": {
+        "start": "2026-01-22T16:21:32.000Z",
+        "end": "2026-01-29T16:21:32.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769703967,
+      "latitude": -19.771146,
+      "longitude": 22.974457,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769703967,
+      "dateRange": {
+        "start": "2026-01-22T16:26:07.000Z",
+        "end": "2026-01-29T16:26:07.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769704683,
+      "latitude": -19.669119,
+      "longitude": 23.675696,
+      "pointsInAverage": 123,
+      "originalTimestamp": 1769704683,
+      "dateRange": {
+        "start": "2026-01-22T16:38:03.000Z",
+        "end": "2026-01-29T16:38:03.000Z"
+      }
+    },
+    {
+      "tagId": 8537,
+      "timestamp": 1769704714,
+      "latitude": -20.105389,
+      "longitude": 23.856996,
+      "pointsInAverage": 102,
+      "originalTimestamp": 1769704714,
+      "dateRange": {
+        "start": "2026-01-22T16:38:34.000Z",
+        "end": "2026-01-29T16:38:34.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769704718,
+      "latitude": -20.026046,
+      "longitude": 22.684738,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769704718,
+      "dateRange": {
+        "start": "2026-01-22T16:38:38.000Z",
+        "end": "2026-01-29T16:38:38.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769705462,
+      "latitude": -19.773296,
+      "longitude": 23.775735,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769705462,
+      "dateRange": {
+        "start": "2026-01-22T16:51:02.000Z",
+        "end": "2026-01-29T16:51:02.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769706670,
+      "latitude": -19.961371,
+      "longitude": 24.668652,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769706670,
+      "dateRange": {
+        "start": "2026-01-22T17:11:10.000Z",
+        "end": "2026-01-29T17:11:10.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769707205,
+      "latitude": -22.319943,
+      "longitude": 23.187494,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769707205,
+      "dateRange": {
+        "start": "2026-01-22T17:20:05.000Z",
+        "end": "2026-01-29T17:20:05.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769707286,
+      "latitude": -19.95121,
+      "longitude": 22.541742,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769707286,
+      "dateRange": {
+        "start": "2026-01-22T17:21:26.000Z",
+        "end": "2026-01-29T17:21:26.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769707617,
+      "latitude": -19.770769,
+      "longitude": 22.975125,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769707617,
+      "dateRange": {
+        "start": "2026-01-22T17:26:57.000Z",
+        "end": "2026-01-29T17:26:57.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769708372,
+      "latitude": -20.025898,
+      "longitude": 22.683993,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769708372,
+      "dateRange": {
+        "start": "2026-01-22T17:39:32.000Z",
+        "end": "2026-01-29T17:39:32.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769709052,
+      "latitude": -19.774452,
+      "longitude": 23.782572,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769709052,
+      "dateRange": {
+        "start": "2026-01-22T17:50:52.000Z",
+        "end": "2026-01-29T17:50:52.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769710278,
+      "latitude": -19.961046,
+      "longitude": 24.66855,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769710278,
+      "dateRange": {
+        "start": "2026-01-22T18:11:18.000Z",
+        "end": "2026-01-29T18:11:18.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769710856,
+      "latitude": -22.319994,
+      "longitude": 23.186531,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769710856,
+      "dateRange": {
+        "start": "2026-01-22T18:20:56.000Z",
+        "end": "2026-01-29T18:20:56.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769710930,
+      "latitude": -19.951139,
+      "longitude": 22.541737,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769710930,
+      "dateRange": {
+        "start": "2026-01-22T18:22:10.000Z",
+        "end": "2026-01-29T18:22:10.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769711230,
+      "latitude": -19.77036,
+      "longitude": 22.975976,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769711230,
+      "dateRange": {
+        "start": "2026-01-22T18:27:10.000Z",
+        "end": "2026-01-29T18:27:10.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769711942,
+      "latitude": -19.669275,
+      "longitude": 23.675717,
+      "pointsInAverage": 122,
+      "originalTimestamp": 1769711942,
+      "dateRange": {
+        "start": "2026-01-22T18:39:02.000Z",
+        "end": "2026-01-29T18:39:02.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769711962,
+      "latitude": -20.02569,
+      "longitude": 22.683159,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769711962,
+      "dateRange": {
+        "start": "2026-01-22T18:39:22.000Z",
+        "end": "2026-01-29T18:39:22.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769712109,
+      "latitude": -19.79595,
+      "longitude": 23.542025,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769712109,
+      "dateRange": {
+        "start": "2026-01-22T18:41:49.000Z",
+        "end": "2026-01-29T18:41:49.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769712692,
+      "latitude": -19.775669,
+      "longitude": 23.789415,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769712692,
+      "dateRange": {
+        "start": "2026-01-22T18:51:32.000Z",
+        "end": "2026-01-29T18:51:32.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769713922,
+      "latitude": -19.960694,
+      "longitude": 24.668467,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769713922,
+      "dateRange": {
+        "start": "2026-01-22T19:12:02.000Z",
+        "end": "2026-01-29T19:12:02.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769714443,
+      "latitude": -22.32005,
+      "longitude": 23.185573,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769714443,
+      "dateRange": {
+        "start": "2026-01-22T19:20:43.000Z",
+        "end": "2026-01-29T19:20:43.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769714528,
+      "latitude": -19.95106,
+      "longitude": 22.541687,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769714528,
+      "dateRange": {
+        "start": "2026-01-22T19:22:08.000Z",
+        "end": "2026-01-29T19:22:08.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769714828,
+      "latitude": -19.769963,
+      "longitude": 22.976828,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769714828,
+      "dateRange": {
+        "start": "2026-01-22T19:27:08.000Z",
+        "end": "2026-01-29T19:27:08.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769715539,
+      "latitude": -19.669419,
+      "longitude": 23.675601,
+      "pointsInAverage": 122,
+      "originalTimestamp": 1769715539,
+      "dateRange": {
+        "start": "2026-01-22T19:38:59.000Z",
+        "end": "2026-01-29T19:38:59.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769715602,
+      "latitude": -20.025482,
+      "longitude": 22.682304,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769715602,
+      "dateRange": {
+        "start": "2026-01-22T19:40:02.000Z",
+        "end": "2026-01-29T19:40:02.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769716322,
+      "latitude": -19.776927,
+      "longitude": 23.796269,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769716322,
+      "dateRange": {
+        "start": "2026-01-22T19:52:02.000Z",
+        "end": "2026-01-29T19:52:02.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769717517,
+      "latitude": -19.960347,
+      "longitude": 24.668393,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769717517,
+      "dateRange": {
+        "start": "2026-01-22T20:11:57.000Z",
+        "end": "2026-01-29T20:11:57.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769718060,
+      "latitude": -22.320101,
+      "longitude": 23.184634,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769718060,
+      "dateRange": {
+        "start": "2026-01-22T20:21:00.000Z",
+        "end": "2026-01-29T20:21:00.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769718186,
+      "latitude": -19.95098,
+      "longitude": 22.541646,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769718186,
+      "dateRange": {
+        "start": "2026-01-22T20:23:06.000Z",
+        "end": "2026-01-29T20:23:06.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769718459,
+      "latitude": -19.769584,
+      "longitude": 22.977689,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769718459,
+      "dateRange": {
+        "start": "2026-01-22T20:27:39.000Z",
+        "end": "2026-01-29T20:27:39.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769719202,
+      "latitude": -20.025291,
+      "longitude": 22.681449,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769719202,
+      "dateRange": {
+        "start": "2026-01-22T20:40:02.000Z",
+        "end": "2026-01-29T20:40:02.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769719376,
+      "latitude": -19.797375,
+      "longitude": 23.542245,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769719376,
+      "dateRange": {
+        "start": "2026-01-22T20:42:56.000Z",
+        "end": "2026-01-29T20:42:56.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769719907,
+      "latitude": -19.778196,
+      "longitude": 23.803134,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769719907,
+      "dateRange": {
+        "start": "2026-01-22T20:51:47.000Z",
+        "end": "2026-01-29T20:51:47.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769721152,
+      "latitude": -19.960005,
+      "longitude": 24.668299,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769721152,
+      "dateRange": {
+        "start": "2026-01-22T21:12:32.000Z",
+        "end": "2026-01-29T21:12:32.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769721700,
+      "latitude": -22.320138,
+      "longitude": 23.183716,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769721700,
+      "dateRange": {
+        "start": "2026-01-22T21:21:40.000Z",
+        "end": "2026-01-29T21:21:40.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769721768,
+      "latitude": -19.950892,
+      "longitude": 22.541618,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769721768,
+      "dateRange": {
+        "start": "2026-01-22T21:22:48.000Z",
+        "end": "2026-01-29T21:22:48.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769722081,
+      "latitude": -19.769188,
+      "longitude": 22.978606,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769722081,
+      "dateRange": {
+        "start": "2026-01-22T21:28:01.000Z",
+        "end": "2026-01-29T21:28:01.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769722802,
+      "latitude": -19.669577,
+      "longitude": 23.675502,
+      "pointsInAverage": 121,
+      "originalTimestamp": 1769722802,
+      "dateRange": {
+        "start": "2026-01-22T21:40:02.000Z",
+        "end": "2026-01-29T21:40:02.000Z"
+      }
+    },
+    {
+      "tagId": 8537,
+      "timestamp": 1769722810,
+      "latitude": -20.102728,
+      "longitude": 23.85098,
+      "pointsInAverage": 98,
+      "originalTimestamp": 1769722810,
+      "dateRange": {
+        "start": "2026-01-22T21:40:10.000Z",
+        "end": "2026-01-29T21:40:10.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769722840,
+      "latitude": -20.025089,
+      "longitude": 22.680633,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769722840,
+      "dateRange": {
+        "start": "2026-01-22T21:40:40.000Z",
+        "end": "2026-01-29T21:40:40.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769722930,
+      "latitude": -19.79897,
+      "longitude": 23.542597,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769722930,
+      "dateRange": {
+        "start": "2026-01-22T21:42:10.000Z",
+        "end": "2026-01-29T21:42:10.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769723552,
+      "latitude": -19.779478,
+      "longitude": 23.809974,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769723552,
+      "dateRange": {
+        "start": "2026-01-22T21:52:32.000Z",
+        "end": "2026-01-29T21:52:32.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769724757,
+      "latitude": -19.959647,
+      "longitude": 24.66821,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769724757,
+      "dateRange": {
+        "start": "2026-01-22T22:12:37.000Z",
+        "end": "2026-01-29T22:12:37.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769725322,
+      "latitude": -22.320187,
+      "longitude": 23.182784,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769725322,
+      "dateRange": {
+        "start": "2026-01-22T22:22:02.000Z",
+        "end": "2026-01-29T22:22:02.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769725412,
+      "latitude": -19.950805,
+      "longitude": 22.541617,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769725412,
+      "dateRange": {
+        "start": "2026-01-22T22:23:32.000Z",
+        "end": "2026-01-29T22:23:32.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769725711,
+      "latitude": -19.768776,
+      "longitude": 22.979538,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769725711,
+      "dateRange": {
+        "start": "2026-01-22T22:28:31.000Z",
+        "end": "2026-01-29T22:28:31.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769726388,
+      "latitude": -19.669722,
+      "longitude": 23.675257,
+      "pointsInAverage": 121,
+      "originalTimestamp": 1769726388,
+      "dateRange": {
+        "start": "2026-01-22T22:39:48.000Z",
+        "end": "2026-01-29T22:39:48.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769726443,
+      "latitude": -20.024882,
+      "longitude": 22.679847,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769726443,
+      "dateRange": {
+        "start": "2026-01-22T22:40:43.000Z",
+        "end": "2026-01-29T22:40:43.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769727144,
+      "latitude": -19.780786,
+      "longitude": 23.816854,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769727144,
+      "dateRange": {
+        "start": "2026-01-22T22:52:24.000Z",
+        "end": "2026-01-29T22:52:24.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769728390,
+      "latitude": -19.959282,
+      "longitude": 24.66813,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769728390,
+      "dateRange": {
+        "start": "2026-01-22T23:13:10.000Z",
+        "end": "2026-01-29T23:13:10.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769728914,
+      "latitude": -22.320232,
+      "longitude": 23.181845,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769728914,
+      "dateRange": {
+        "start": "2026-01-22T23:21:54.000Z",
+        "end": "2026-01-29T23:21:54.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769729005,
+      "latitude": -19.950711,
+      "longitude": 22.541637,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769729005,
+      "dateRange": {
+        "start": "2026-01-22T23:23:25.000Z",
+        "end": "2026-01-29T23:23:25.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769729320,
+      "latitude": -19.768367,
+      "longitude": 22.980495,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769729320,
+      "dateRange": {
+        "start": "2026-01-22T23:28:40.000Z",
+        "end": "2026-01-29T23:28:40.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769730098,
+      "latitude": -20.024675,
+      "longitude": 22.679079,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769730098,
+      "dateRange": {
+        "start": "2026-01-22T23:41:38.000Z",
+        "end": "2026-01-29T23:41:38.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769730182,
+      "latitude": -19.801368,
+      "longitude": 23.542756,
+      "pointsInAverage": 129,
+      "originalTimestamp": 1769730182,
+      "dateRange": {
+        "start": "2026-01-22T23:43:02.000Z",
+        "end": "2026-01-29T23:43:02.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769730782,
+      "latitude": -19.782102,
+      "longitude": 23.823728,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769730782,
+      "dateRange": {
+        "start": "2026-01-22T23:53:02.000Z",
+        "end": "2026-01-29T23:53:02.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769732030,
+      "latitude": -19.958916,
+      "longitude": 24.668057,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769732030,
+      "dateRange": {
+        "start": "2026-01-23T00:13:50.000Z",
+        "end": "2026-01-30T00:13:50.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769732654,
+      "latitude": -19.950612,
+      "longitude": 22.541652,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769732654,
+      "dateRange": {
+        "start": "2026-01-23T00:24:14.000Z",
+        "end": "2026-01-30T00:24:14.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769732942,
+      "latitude": -19.767958,
+      "longitude": 22.98148,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769732942,
+      "dateRange": {
+        "start": "2026-01-23T00:29:02.000Z",
+        "end": "2026-01-30T00:29:02.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769733656,
+      "latitude": -19.669833,
+      "longitude": 23.675005,
+      "pointsInAverage": 122,
+      "originalTimestamp": 1769733656,
+      "dateRange": {
+        "start": "2026-01-23T00:40:56.000Z",
+        "end": "2026-01-30T00:40:56.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769733683,
+      "latitude": -20.024468,
+      "longitude": 22.678297,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769733683,
+      "dateRange": {
+        "start": "2026-01-23T00:41:23.000Z",
+        "end": "2026-01-30T00:41:23.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769733769,
+      "latitude": -19.803116,
+      "longitude": 23.543228,
+      "pointsInAverage": 129,
+      "originalTimestamp": 1769733769,
+      "dateRange": {
+        "start": "2026-01-23T00:42:49.000Z",
+        "end": "2026-01-30T00:42:49.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769734411,
+      "latitude": -19.783408,
+      "longitude": 23.830617,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769734411,
+      "dateRange": {
+        "start": "2026-01-23T00:53:31.000Z",
+        "end": "2026-01-30T00:53:31.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769735642,
+      "latitude": -19.958545,
+      "longitude": 24.667987,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769735642,
+      "dateRange": {
+        "start": "2026-01-23T01:14:02.000Z",
+        "end": "2026-01-30T01:14:02.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769736147,
+      "latitude": -22.320348,
+      "longitude": 23.180562,
+      "pointsInAverage": 156,
+      "originalTimestamp": 1769736147,
+      "dateRange": {
+        "start": "2026-01-23T01:22:27.000Z",
+        "end": "2026-01-30T01:22:27.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769736272,
+      "latitude": -19.950512,
+      "longitude": 22.541665,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769736272,
+      "dateRange": {
+        "start": "2026-01-23T01:24:32.000Z",
+        "end": "2026-01-30T01:24:32.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769736542,
+      "latitude": -19.767555,
+      "longitude": 22.982479,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769736542,
+      "dateRange": {
+        "start": "2026-01-23T01:29:02.000Z",
+        "end": "2026-01-30T01:29:02.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769737236,
+      "latitude": -19.669928,
+      "longitude": 23.67477,
+      "pointsInAverage": 123,
+      "originalTimestamp": 1769737236,
+      "dateRange": {
+        "start": "2026-01-23T01:40:36.000Z",
+        "end": "2026-01-30T01:40:36.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769737330,
+      "latitude": -20.024269,
+      "longitude": 22.67753,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769737330,
+      "dateRange": {
+        "start": "2026-01-23T01:42:10.000Z",
+        "end": "2026-01-30T01:42:10.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769737412,
+      "latitude": -19.804211,
+      "longitude": 23.543974,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769737412,
+      "dateRange": {
+        "start": "2026-01-23T01:43:32.000Z",
+        "end": "2026-01-30T01:43:32.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769738004,
+      "latitude": -19.784712,
+      "longitude": 23.837506,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769738004,
+      "dateRange": {
+        "start": "2026-01-23T01:53:24.000Z",
+        "end": "2026-01-30T01:53:24.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769739328,
+      "latitude": -19.958174,
+      "longitude": 24.667918,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769739328,
+      "dateRange": {
+        "start": "2026-01-23T02:15:28.000Z",
+        "end": "2026-01-30T02:15:28.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769739765,
+      "latitude": -22.320308,
+      "longitude": 23.179958,
+      "pointsInAverage": 157,
+      "originalTimestamp": 1769739765,
+      "dateRange": {
+        "start": "2026-01-23T02:22:45.000Z",
+        "end": "2026-01-30T02:22:45.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769739881,
+      "latitude": -19.950414,
+      "longitude": 22.54168,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769739881,
+      "dateRange": {
+        "start": "2026-01-23T02:24:41.000Z",
+        "end": "2026-01-30T02:24:41.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769740165,
+      "latitude": -19.76715,
+      "longitude": 22.983474,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769740165,
+      "dateRange": {
+        "start": "2026-01-23T02:29:25.000Z",
+        "end": "2026-01-30T02:29:25.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769740952,
+      "latitude": -20.024079,
+      "longitude": 22.676772,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769740952,
+      "dateRange": {
+        "start": "2026-01-23T02:42:32.000Z",
+        "end": "2026-01-30T02:42:32.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769741002,
+      "latitude": -19.805993,
+      "longitude": 23.544461,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769741002,
+      "dateRange": {
+        "start": "2026-01-23T02:43:22.000Z",
+        "end": "2026-01-30T02:43:22.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769741642,
+      "latitude": -19.786018,
+      "longitude": 23.844395,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769741642,
+      "dateRange": {
+        "start": "2026-01-23T02:54:02.000Z",
+        "end": "2026-01-30T02:54:02.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769742880,
+      "latitude": -19.957804,
+      "longitude": 24.667853,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769742880,
+      "dateRange": {
+        "start": "2026-01-23T03:14:40.000Z",
+        "end": "2026-01-30T03:14:40.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769743510,
+      "latitude": -19.950314,
+      "longitude": 22.541693,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769743510,
+      "dateRange": {
+        "start": "2026-01-23T03:25:10.000Z",
+        "end": "2026-01-30T03:25:10.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769743802,
+      "latitude": -19.766747,
+      "longitude": 22.984468,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769743802,
+      "dateRange": {
+        "start": "2026-01-23T03:30:02.000Z",
+        "end": "2026-01-30T03:30:02.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769744474,
+      "latitude": -19.670057,
+      "longitude": 23.674534,
+      "pointsInAverage": 122,
+      "originalTimestamp": 1769744474,
+      "dateRange": {
+        "start": "2026-01-23T03:41:14.000Z",
+        "end": "2026-01-30T03:41:14.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769744560,
+      "latitude": -20.023986,
+      "longitude": 22.676058,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769744560,
+      "dateRange": {
+        "start": "2026-01-23T03:42:40.000Z",
+        "end": "2026-01-30T03:42:40.000Z"
+      }
+    },
+    {
+      "tagId": 5588,
+      "timestamp": 1769744642,
+      "latitude": -19.807774,
+      "longitude": 23.544952,
+      "pointsInAverage": 130,
+      "originalTimestamp": 1769744642,
+      "dateRange": {
+        "start": "2026-01-23T03:44:02.000Z",
+        "end": "2026-01-30T03:44:02.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769745235,
+      "latitude": -19.787316,
+      "longitude": 23.851292,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769745235,
+      "dateRange": {
+        "start": "2026-01-23T03:53:55.000Z",
+        "end": "2026-01-30T03:53:55.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769746994,
+      "latitude": -22.320433,
+      "longitude": 23.178643,
+      "pointsInAverage": 156,
+      "originalTimestamp": 1769746994,
+      "dateRange": {
+        "start": "2026-01-23T04:23:14.000Z",
+        "end": "2026-01-30T04:23:14.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769747105,
+      "latitude": -19.950213,
+      "longitude": 22.541699,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769747105,
+      "dateRange": {
+        "start": "2026-01-23T04:25:05.000Z",
+        "end": "2026-01-30T04:25:05.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769747395,
+      "latitude": -19.76638,
+      "longitude": 22.98547,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769747395,
+      "dateRange": {
+        "start": "2026-01-23T04:29:55.000Z",
+        "end": "2026-01-30T04:29:55.000Z"
+      }
+    },
+    {
+      "tagId": 5589,
+      "timestamp": 1769748118,
+      "latitude": -19.67016,
+      "longitude": 23.674313,
+      "pointsInAverage": 122,
+      "originalTimestamp": 1769748118,
+      "dateRange": {
+        "start": "2026-01-23T04:41:58.000Z",
+        "end": "2026-01-30T04:41:58.000Z"
+      }
+    },
+    {
+      "tagId": 8543,
+      "timestamp": 1769748164,
+      "latitude": -20.023926,
+      "longitude": 22.675399,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769748164,
+      "dateRange": {
+        "start": "2026-01-23T04:42:44.000Z",
+        "end": "2026-01-30T04:42:44.000Z"
+      }
+    },
+    {
+      "tagId": 8539,
+      "timestamp": 1769748872,
+      "latitude": -19.788564,
+      "longitude": 23.858178,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769748872,
+      "dateRange": {
+        "start": "2026-01-23T04:54:32.000Z",
+        "end": "2026-01-30T04:54:32.000Z"
+      }
+    },
+    {
+      "tagId": 8540,
+      "timestamp": 1769750110,
+      "latitude": -19.957176,
+      "longitude": 24.667688,
+      "pointsInAverage": 167,
+      "originalTimestamp": 1769750110,
+      "dateRange": {
+        "start": "2026-01-23T05:15:10.000Z",
+        "end": "2026-01-30T05:15:10.000Z"
+      }
+    },
+    {
+      "tagId": 5591,
+      "timestamp": 1769750642,
+      "latitude": -22.32049,
+      "longitude": 23.17765,
+      "pointsInAverage": 156,
+      "originalTimestamp": 1769750642,
+      "dateRange": {
+        "start": "2026-01-23T05:24:02.000Z",
+        "end": "2026-01-30T05:24:02.000Z"
+      }
+    },
+    {
+      "tagId": 8538,
+      "timestamp": 1769750739,
+      "latitude": -19.950096,
+      "longitude": 22.54169,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769750739,
+      "dateRange": {
+        "start": "2026-01-23T05:25:39.000Z",
+        "end": "2026-01-30T05:25:39.000Z"
+      }
+    },
+    {
+      "tagId": 8542,
+      "timestamp": 1769751014,
+      "latitude": -19.766088,
+      "longitude": 22.986455,
+      "pointsInAverage": 168,
+      "originalTimestamp": 1769751014,
+      "dateRange": {
+        "start": "2026-01-23T05:30:14.000Z",
+        "end": "2026-01-30T05:30:14.000Z"
       }
     }
   ]
