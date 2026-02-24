@@ -1536,24 +1536,38 @@
             // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
             const uniqueTags = [...new Set(displayData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
 
+            // Deduplicate by display name - same elephant from different data sources shows once with same color
+            const nameToTagIds = {};
+            uniqueTags.forEach(tagId => {
+                const name = elephantNames[tagId] || `Tag ${tagId}`;
+                if (!nameToTagIds[name]) nameToTagIds[name] = [];
+                nameToTagIds[name].push(tagId);
+            });
+            // Get unique display names (one legend entry per elephant)
+            const uniqueNames = Object.keys(nameToTagIds).sort();
+
             legend.innerHTML = '';
 
-            // For Historic Map - show normal tags + historic data entry
-            if (currentViewMode === 'current-historic') {
-            uniqueTags.forEach(tagId => {
-                if (!tagColors[tagId]) {
-                    tagColors[tagId] = colors[colorIndex % colors.length];
+            // Helper to add legend entries - one per name, same color for all tagIds with that name
+            function addLegendEntries() {
+                uniqueNames.forEach(displayName => {
+                    const tagIds = nameToTagIds[displayName];
+                    const color = colors[colorIndex % colors.length];
                     colorIndex++;
-                }
-
-                const item = document.createElement('div');
-                item.className = 'tag-legend';
+                    tagIds.forEach(tid => { tagColors[tid] = color; });
+                    const item = document.createElement('div');
+                    item.className = 'tag-legend';
                     item.innerHTML = `
-                        <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
-                        ${elephantNames[tagId] || `Tag ${tagId}`}
+                        <span class="tag-color" style="background-color: ${color}"></span>
+                        ${displayName}
                     `;
                     legend.appendChild(item);
                 });
+            }
+
+            // For Historic Map - show normal tags + historic data entry
+            if (currentViewMode === 'current-historic') {
+                addLegendEntries();
 
                 // Add Historic Data entry
                 const historicItem = document.createElement('div');
@@ -1566,20 +1580,7 @@
             }
             // For Day-Night Map - show normal tags + day/night entries
             else if (currentViewMode === 'day-night') {
-                uniqueTags.forEach(tagId => {
-                    if (!tagColors[tagId]) {
-                        tagColors[tagId] = colors[colorIndex % colors.length];
-                        colorIndex++;
-                    }
-
-                    const item = document.createElement('div');
-                    item.className = 'tag-legend';
-                    item.innerHTML = `
-                        <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
-                        ${elephantNames[tagId] || `Tag ${tagId}`}
-                    `;
-                    legend.appendChild(item);
-                });
+                addLegendEntries();
 
                 // Add Day/Night entry (combined in one block)
                 const dayNightItem = document.createElement('div');
@@ -1600,20 +1601,7 @@
             }
             // For Speed Map - show normal tags + slow/fast entries
             else if (currentViewMode === 'speed-map') {
-                uniqueTags.forEach(tagId => {
-                    if (!tagColors[tagId]) {
-                        tagColors[tagId] = colors[colorIndex % colors.length];
-                        colorIndex++;
-                    }
-
-                    const item = document.createElement('div');
-                    item.className = 'tag-legend';
-                    item.innerHTML = `
-                        <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
-                        ${elephantNames[tagId] || `Tag ${tagId}`}
-                    `;
-                    legend.appendChild(item);
-                });
+                addLegendEntries();
 
                 // Add Slow/Fast entry (combined in one block)
                 const speedItem = document.createElement('div');
@@ -1634,20 +1622,7 @@
             }
             // For Standard and Home Range Maps - show normal tags only
             else {
-                uniqueTags.forEach(tagId => {
-                    if (!tagColors[tagId]) {
-                        tagColors[tagId] = colors[colorIndex % colors.length];
-                        colorIndex++;
-                    }
-
-                    const item = document.createElement('div');
-                    item.className = 'tag-legend';
-                    item.innerHTML = `
-                        <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
-                        ${elephantNames[tagId] || `Tag ${tagId}`}
-                    `;
-                legend.appendChild(item);
-            });
+                addLegendEntries();
             }
         }
 
