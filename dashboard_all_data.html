@@ -677,6 +677,11 @@
         let currentViewMode = 'standard';
         let geoJsonLayers = [];
 
+        // Normalize tagId to string for deduplication (handles mix of number/string from different data sources)
+        function normalizeTagId(id) {
+            return id != null && id !== '' ? String(id) : '';
+        }
+
         // Elephant name mapping
         const elephantNames = {
             "3839": "Shorobe",
@@ -1276,10 +1281,11 @@
             const liveDataKeys = new Set();
             
             // Build live data keys - use simpler key format to avoid memory issues
+            // Normalize tagId so 8537 and "8537" from different sources match
             for (let i = 0; i < liveData.length; i++) {
                 const record = liveData[i];
                 const dateKey = Math.floor(record.timestamp / 86400); // Day since epoch
-                const key = `${record.tagId}-${dateKey}`;
+                const key = `${normalizeTagId(record.tagId)}-${dateKey}`;
                 liveDataKeys.add(key);
             }
 
@@ -1293,7 +1299,7 @@
             for (let i = 0; i < historicalData.length; i++) {
                 const record = historicalData[i];
                 const dateKey = Math.floor(record.timestamp / 86400);
-                const key = `${record.tagId}-${dateKey}`;
+                const key = `${normalizeTagId(record.tagId)}-${dateKey}`;
 
                 // Only add if not in live data
                 if (!liveDataKeys.has(key)) {
@@ -1394,8 +1400,8 @@
             
             // Filter data
             filteredData = allData.filter(item => {
-                // Apply tag filter
-                if (tagFilter && item.tagId !== tagFilter) return false;
+                // Apply tag filter (normalize for comparison - handles number vs string)
+                if (tagFilter && normalizeTagId(item.tagId) !== normalizeTagId(tagFilter)) return false;
                 
                 // Apply month filter if selected
                 if (monthFilter) {
@@ -1421,7 +1427,8 @@
             if (!allData || allData.length === 0) return;
             
             // Total Animals = ALL unique tags in entire dataset (not just visible)
-            const allUniqueTags = new Set(allData.map(d => d.tagId));
+            // Normalize to deduplicate (e.g. 8537 and "8537" from different data sources)
+            const allUniqueTags = new Set(allData.map(d => normalizeTagId(d.tagId)).filter(Boolean));
             document.getElementById('totalAnimals').textContent = allUniqueTags.size;
             
             // Total Locations = ALL data points in entire dataset
@@ -1449,7 +1456,8 @@
 
         function populateTagFilter() {
             const tagFilter = document.getElementById('tagFilter');
-            const uniqueTags = [...new Set(allData.map(d => d.tagId))].sort();
+            // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
+            const uniqueTags = [...new Set(allData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
 
             // Clear existing options except the first one
             tagFilter.innerHTML = '<option value="">All Animals</option>';
@@ -1525,7 +1533,8 @@
             const legend = document.getElementById('tagLegend');
             // Use filteredData to show only tags currently displayed on map
             const displayData = filteredData && filteredData.length > 0 ? filteredData : allData;
-            const uniqueTags = [...new Set(displayData.map(d => d.tagId))].sort();
+            // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
+            const uniqueTags = [...new Set(displayData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
 
             legend.innerHTML = '';
 
@@ -1684,8 +1693,8 @@
             console.log(`🔍 Applying filters: Tag=${tagFilter || 'All'}, From=${dateFrom || 'None'}, To=${dateTo || 'None'}`);
 
             filteredData = allData.filter(item => {
-                // Tag filter
-                if (tagFilter && item.tagId != tagFilter) {
+                // Tag filter (normalize for comparison - handles number vs string from different data sources)
+                if (tagFilter && normalizeTagId(item.tagId) !== normalizeTagId(tagFilter)) {
                     return false;
                 }
 
@@ -1784,13 +1793,15 @@
         }
 
         function renderStandardView() {
-            // Group data by tag
+            // Group data by tag (normalize key to merge 8537 and "8537" from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                if (!dataByTag[item.tagId]) {
-                    dataByTag[item.tagId] = [];
+                const key = normalizeTagId(item.tagId);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
                 }
-                dataByTag[item.tagId].push(item);
+                dataByTag[key].push(item);
             });
 
             // For each tag, create a polyline
@@ -1834,11 +1845,13 @@
                 currentMonth = now.getMonth() + 1;
             }
 
-            // Group data by tag and time period
+            // Group data by tag and time period (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                if (!dataByTag[item.tagId]) {
-                    dataByTag[item.tagId] = { current: [], historic: [] };
+                const key = normalizeTagId(item.tagId);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = { current: [], historic: [] };
                 }
                 
                 const date = new Date(item.timestamp * 1000);
@@ -1846,9 +1859,9 @@
                 const itemMonth = date.getMonth() + 1;
                 
                 if (itemYear === currentYear && itemMonth === currentMonth) {
-                    dataByTag[item.tagId].current.push(item);
+                    dataByTag[key].current.push(item);
                 } else {
-                    dataByTag[item.tagId].historic.push(item);
+                    dataByTag[key].historic.push(item);
                 }
             });
 
@@ -1903,13 +1916,15 @@
         }
 
         function renderDayNightView() {
-            // Group data by tag
+            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                if (!dataByTag[item.tagId]) {
-                    dataByTag[item.tagId] = [];
+                const key = normalizeTagId(item.tagId);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
                 }
-                dataByTag[item.tagId].push(item);
+                dataByTag[key].push(item);
             });
 
             // For each tag, create polylines with time-based coloring
@@ -1952,13 +1967,15 @@
         }
 
         function renderHomeRangeView() {
-            // Group data by tag
+            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                if (!dataByTag[item.tagId]) {
-                    dataByTag[item.tagId] = [];
+                const key = normalizeTagId(item.tagId);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
                 }
-                dataByTag[item.tagId].push(item);
+                dataByTag[key].push(item);
             });
 
             // For each tag, create a convex hull
@@ -2004,13 +2021,15 @@
         }
 
         function renderSpeedMapView() {
-            // Group data by tag
+            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                if (!dataByTag[item.tagId]) {
-                    dataByTag[item.tagId] = [];
+                const key = normalizeTagId(item.tagId);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
                 }
-                dataByTag[item.tagId].push(item);
+                dataByTag[key].push(item);
             });
 
             // Speed color mapping function (yellow to dark red gradient)
@@ -2194,8 +2213,8 @@
             filteredData = allData.filter(item => {
                 const tagFilterValue = document.getElementById('tagFilter').value;
 
-                // Tag filter
-                if (tagFilterValue && item.tagId != tagFilterValue) {
+                // Tag filter (normalize for comparison)
+                if (tagFilterValue && normalizeTagId(item.tagId) !== normalizeTagId(tagFilterValue)) {
                     return false;
                 }
 
