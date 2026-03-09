@@ -679,7 +679,19 @@
 
         // Normalize tagId to string for deduplication (handles mix of number/string from different data sources)
         function normalizeTagId(id) {
-            return id != null && id !== '' ? String(id) : '';
+            return id != null && id !== '' ? String(id).trim() : '';
+        }
+
+        // Get display name from tagId string - ensures correct lookup for 1, 2, 5592 etc
+        function getDisplayNameFromTagId(tagId) {
+            const key = normalizeTagId(tagId);
+            if (!key) return 'Unknown';
+            return elephantNames[key] ?? elephantNames[parseInt(key, 10)] ?? `Tag ${key}`;
+        }
+
+        // Extract tagId from record - handles multiple API field names (tagId, tag_id, animalId)
+        function getTagId(record) {
+            return normalizeTagId(record?.tagId ?? record?.tag_id ?? record?.animalId);
         }
 
         // Elephant name mapping
@@ -691,7 +703,7 @@
             "5589": "Mokolwane",
             "5590": "Ebanaria",
             "5591": "Grand Grey",
-            "5592": "Snortitusk",
+            "5592": "snortitusk",
             "8537": "Brother",
             "8538": "Bruce",
             "8539": "Raintree",
@@ -1287,8 +1299,8 @@
             // Normalize tagId so 8537 and "8537" from different sources match
             for (let i = 0; i < liveData.length; i++) {
                 const record = liveData[i];
-                const dateKey = Math.floor(record.timestamp / 86400); // Day since epoch
-                const key = `${normalizeTagId(record.tagId)}-${dateKey}`;
+                const dateKey = Math.floor(record.timestamp / 86400);
+                const key = `${getTagId(record)}-${dateKey}`;
                 liveDataKeys.add(key);
             }
 
@@ -1302,7 +1314,7 @@
             for (let i = 0; i < historicalData.length; i++) {
                 const record = historicalData[i];
                 const dateKey = Math.floor(record.timestamp / 86400);
-                const key = `${normalizeTagId(record.tagId)}-${dateKey}`;
+                const key = `${getTagId(record)}-${dateKey}`;
 
                 // Only add if not in live data
                 if (!liveDataKeys.has(key)) {
@@ -1404,7 +1416,7 @@
             // Filter data
             filteredData = allData.filter(item => {
                 // Apply tag filter (normalize for comparison - handles number vs string)
-                if (tagFilter && normalizeTagId(item.tagId) !== normalizeTagId(tagFilter)) return false;
+                if (tagFilter && getTagId(item) !== normalizeTagId(tagFilter)) return false;
                 
                 // Apply month filter if selected
                 if (monthFilter) {
@@ -1431,7 +1443,7 @@
             
             // Total Animals = ALL unique tags in entire dataset (not just visible)
             // Normalize to deduplicate (e.g. 8537 and "8537" from different data sources)
-            const allUniqueTags = new Set(allData.map(d => normalizeTagId(d.tagId)).filter(Boolean));
+            const allUniqueTags = new Set(allData.map(d => getTagId(d)).filter(Boolean));
             document.getElementById('totalAnimals').textContent = allUniqueTags.size;
             
             // Total Locations = ALL data points in entire dataset
@@ -1459,16 +1471,14 @@
 
         function populateTagFilter() {
             const tagFilter = document.getElementById('tagFilter');
-            // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
-            const uniqueTags = [...new Set(allData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
+            const uniqueTags = [...new Set(allData.map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
-            // Clear existing options except the first one
             tagFilter.innerHTML = '<option value="">All Animals</option>';
 
             uniqueTags.forEach(tagId => {
                 const option = document.createElement('option');
                 option.value = tagId;
-                option.textContent = elephantNames[tagId] || `Tag ${tagId}`;
+                option.textContent = getDisplayNameFromTagId(tagId);
                 tagFilter.appendChild(option);
             });
         }
@@ -1536,36 +1546,38 @@
             const legend = document.getElementById('tagLegend');
             // Use filteredData to show only tags currently displayed on map
             const displayData = filteredData && filteredData.length > 0 ? filteredData : allData;
-            // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
-            const uniqueTags = [...new Set(displayData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
+            const uniqueTags = [...new Set(displayData.map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
-            // Reset color index so colors are assigned consistently each time
-            colorIndex = 0;
+            // Build STABLE color map from FULL dataset - same tag ALWAYS gets same color (fixes legend/map mismatch)
+            const allTagIds = [...new Set((allData || []).map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            const tagToColorIndex = {};
+            allTagIds.forEach((tagId, idx) => { tagToColorIndex[tagId] = idx; });
 
-            // Deduplicate by display name - same elephant from different data sources shows once with same color
-            // Use tag-ID order (not alphabetical) so the same tag always gets the same color
+            // Assign colors using stable map - tag 1 always gets colors[0], tag 2 gets colors[1], etc
+            uniqueTags.forEach(tagId => {
+                const idx = tagToColorIndex[tagId];
+                tagColors[tagId] = colors[(idx !== undefined ? idx : allTagIds.length) % colors.length];
+            });
+
+            // Deduplicate by display name for legend (same elephant from different sources shows once)
             const nameToTagIds = {};
             uniqueTags.forEach(tagId => {
-                const name = elephantNames[tagId] || `Tag ${tagId}`;
+                const name = getDisplayNameFromTagId(tagId);
                 if (!nameToTagIds[name]) nameToTagIds[name] = [];
                 nameToTagIds[name].push(tagId);
             });
 
             legend.innerHTML = '';
 
-            // Helper to add legend entries - iterate in tag-ID order for consistent color mapping
+            // Add legend entries - same tag-ID order, use pre-assigned colors
             function addLegendEntries() {
                 const namesAdded = new Set();
                 uniqueTags.forEach(tagId => {
-                    const displayName = elephantNames[tagId] || `Tag ${tagId}`;
-                    if (namesAdded.has(displayName)) return; // Already added (duplicate tagIds for same elephant)
+                    const displayName = getDisplayNameFromTagId(tagId);
+                    if (namesAdded.has(displayName)) return;
                     namesAdded.add(displayName);
 
-                    const color = colors[colorIndex % colors.length];
-                    colorIndex++;
-                    const tagIds = nameToTagIds[displayName];
-                    tagIds.forEach(tid => { tagColors[tid] = color; });
-
+                    const color = tagColors[tagId];
                     const item = document.createElement('div');
                     item.className = 'tag-legend';
                     item.innerHTML = `
@@ -1680,7 +1692,7 @@
 
             filteredData = allData.filter(item => {
                 // Tag filter (normalize for comparison - handles number vs string from different data sources)
-                if (tagFilter && normalizeTagId(item.tagId) !== normalizeTagId(tagFilter)) {
+                if (tagFilter && getTagId(item) !== normalizeTagId(tagFilter)) {
                     return false;
                 }
 
@@ -1782,7 +1794,7 @@
             // Group data by tag (normalize key to merge 8537 and "8537" from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                const key = normalizeTagId(item.tagId);
+                const key = getTagId(item);
                 if (!key) return;
                 if (!dataByTag[key]) {
                     dataByTag[key] = [];
@@ -1791,7 +1803,7 @@
             });
 
             // For each tag, create a polyline
-            Object.keys(dataByTag).forEach(tagId => {
+            Object.keys(dataByTag).sort((a, b) => parseInt(a, 10) - parseInt(b, 10)).forEach(tagId => {
                 const tagData = dataByTag[tagId].sort((a, b) => a.timestamp - b.timestamp);
                 const coordinates = tagData.map(item => [item.latitude, item.longitude]);
                 const color = tagColors[tagId] || '#2c5530';
@@ -1804,7 +1816,7 @@
                     });
 
                     polyline.bindPopup(`
-                        <strong>Tag ${tagId}</strong><br>
+                        <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
                         Points: ${coordinates.length}<br>
                         From: ${new Date(tagData[0].timestamp * 1000).toLocaleDateString()}<br>
                         To: ${new Date(tagData[tagData.length - 1].timestamp * 1000).toLocaleDateString()}
@@ -1834,7 +1846,7 @@
             // Group data by tag and time period (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                const key = normalizeTagId(item.tagId);
+                const key = getTagId(item);
                 if (!key) return;
                 if (!dataByTag[key]) {
                     dataByTag[key] = { current: [], historic: [] };
@@ -1864,7 +1876,7 @@
                     });
 
                     polyline.bindPopup(`
-                        <strong>Tag ${tagId} - Historic</strong><br>
+                        <strong>${getDisplayNameFromTagId(tagId)} - Historic</strong><br>
                         Points: ${coordinates.length}<br>
                         From: ${new Date(historicData[0].timestamp * 1000).toLocaleDateString()}<br>
                         To: ${new Date(historicData[historicData.length - 1].timestamp * 1000).toLocaleDateString()}
@@ -1889,7 +1901,7 @@
                     });
 
                     polyline.bindPopup(`
-                        <strong>Tag ${tagId} - Current Month</strong><br>
+                        <strong>${getDisplayNameFromTagId(tagId)} - Current Month</strong><br>
                         Points: ${coordinates.length}<br>
                         From: ${new Date(currentData[0].timestamp * 1000).toLocaleDateString()}<br>
                         To: ${new Date(currentData[currentData.length - 1].timestamp * 1000).toLocaleDateString()}
@@ -1902,10 +1914,9 @@
         }
 
         function renderDayNightView() {
-            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                const key = normalizeTagId(item.tagId);
+                const key = getTagId(item);
                 if (!key) return;
                 if (!dataByTag[key]) {
                     dataByTag[key] = [];
@@ -1940,7 +1951,7 @@
                         });
 
                         polyline.bindPopup(`
-                            <strong>Tag ${tagId}</strong><br>
+                            <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
                             Time: ${date.toLocaleString()}<br>
                             Period: ${(hour >= 6 && hour < 18) ? 'Day (6AM-6PM)' : 'Night (6PM-6AM)'}
                         `);
@@ -1953,10 +1964,9 @@
         }
 
         function renderHomeRangeView() {
-            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                const key = normalizeTagId(item.tagId);
+                const key = getTagId(item);
                 if (!key) return;
                 if (!dataByTag[key]) {
                     dataByTag[key] = [];
@@ -1991,7 +2001,7 @@
                             });
 
                             polygon.bindPopup(`
-                                <strong>Tag ${tagId} - Home Range</strong><br>
+                                <strong>${getDisplayNameFromTagId(tagId)} - Home Range</strong><br>
                                 Points: ${tagData.length}<br>
                                 Area: ~${(turf.area(hull) / 1000000).toFixed(2)} km²
                             `);
@@ -2007,10 +2017,9 @@
         }
 
         function renderSpeedMapView() {
-            // Group data by tag (normalize key to merge data from different sources)
             const dataByTag = {};
             filteredData.forEach(item => {
-                const key = normalizeTagId(item.tagId);
+                const key = getTagId(item);
                 if (!key) return;
                 if (!dataByTag[key]) {
                     dataByTag[key] = [];
@@ -2057,7 +2066,7 @@
                         });
 
                         polyline.bindPopup(`
-                            <strong>Tag ${tagId}</strong><br>
+                            <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
                             Speed: ${speed.toFixed(2)} km/h<br>
                             From: ${new Date(point1.timestamp * 1000).toLocaleString()}<br>
                             To: ${new Date(point2.timestamp * 1000).toLocaleString()}
@@ -2200,7 +2209,7 @@
                 const tagFilterValue = document.getElementById('tagFilter').value;
 
                 // Tag filter (normalize for comparison)
-                if (tagFilterValue && normalizeTagId(item.tagId) !== normalizeTagId(tagFilterValue)) {
+                if (tagFilterValue && getTagId(item) !== normalizeTagId(tagFilterValue)) {
                     return false;
                 }
 
@@ -2338,7 +2347,7 @@
 
             // Get elephant filter
             const tagFilter = document.getElementById('tagFilter').value;
-            let elephantText = tagFilter ? `for ${elephantNames[tagFilter] || 'Elephant Tag ' + tagFilter}` : 'for All Elephants';
+            let elephantText = tagFilter ? `for ${getDisplayNameFromTagId(tagFilter)}` : 'for All Elephants';
 
             // Get date range - check month filter first, then slider
             let dateText = '';
