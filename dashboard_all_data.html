@@ -684,11 +684,14 @@
 
         // Elephant name mapping
         const elephantNames = {
+            "1": "Snorten",
+            "2": "Molapo",
             "3839": "Shorobe",
             "5588": "Larry",
             "5589": "Mokolwane",
             "5590": "Ebanaria",
             "5591": "Grand Grey",
+            "5592": "Snortitusk",
             "8537": "Brother",
             "8538": "Bruce",
             "8539": "Raintree",
@@ -1536,25 +1539,33 @@
             // Normalize tagIds to deduplicate (e.g. 8537 and "8537" from different data sources)
             const uniqueTags = [...new Set(displayData.map(d => normalizeTagId(d.tagId)))].filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b));
 
+            // Reset color index so colors are assigned consistently each time
+            colorIndex = 0;
+
             // Deduplicate by display name - same elephant from different data sources shows once with same color
+            // Use tag-ID order (not alphabetical) so the same tag always gets the same color
             const nameToTagIds = {};
             uniqueTags.forEach(tagId => {
                 const name = elephantNames[tagId] || `Tag ${tagId}`;
                 if (!nameToTagIds[name]) nameToTagIds[name] = [];
                 nameToTagIds[name].push(tagId);
             });
-            // Get unique display names (one legend entry per elephant)
-            const uniqueNames = Object.keys(nameToTagIds).sort();
 
             legend.innerHTML = '';
 
-            // Helper to add legend entries - one per name, same color for all tagIds with that name
+            // Helper to add legend entries - iterate in tag-ID order for consistent color mapping
             function addLegendEntries() {
-                uniqueNames.forEach(displayName => {
-                    const tagIds = nameToTagIds[displayName];
+                const namesAdded = new Set();
+                uniqueTags.forEach(tagId => {
+                    const displayName = elephantNames[tagId] || `Tag ${tagId}`;
+                    if (namesAdded.has(displayName)) return; // Already added (duplicate tagIds for same elephant)
+                    namesAdded.add(displayName);
+
                     const color = colors[colorIndex % colors.length];
                     colorIndex++;
+                    const tagIds = nameToTagIds[displayName];
                     tagIds.forEach(tid => { tagColors[tid] = color; });
+
                     const item = document.createElement('div');
                     item.className = 'tag-legend';
                     item.innerHTML = `
@@ -1715,6 +1726,9 @@
         }
 
         function updateMap() {
+            // Update legend FIRST so tagColors is populated before we draw polylines
+            updateTagLegend();
+
             // Clear existing layers
             mapLayers.forEach(layer => map.removeLayer(layer));
             mapLayers = [];
@@ -1733,9 +1747,6 @@
 
             // Update statistics based on FULL dataset (not filtered)
             updateStatistics();
-            
-            // Update legend based on what's currently visible
-            updateTagLegend();
             
             // Update slider date range display
             updateAnimationDateRange();
