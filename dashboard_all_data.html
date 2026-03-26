@@ -294,7 +294,6 @@
             <a href="kaza/land_use_conflict.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Land Use Conflict</a>
             <a href="#" onclick="window.firebasePortal?.signOut?.(window.firebasePortal.auth).then(()=>location.href='login.html'); return false;" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Sign Out</a>
         </div>
-        </div>
     </div>
 
     <div class="main-content" style="overflow-y: auto; flex-direction: column;">
@@ -2125,12 +2124,6 @@
         window.runAfterAuth = runAfterAuth;
         document.addEventListener('authReady', runAfterAuth, { once: true });
         if (document.getElementById('auth-overlay') === null) runAfterAuth();
-
-        setInterval(function() {
-            if (window.firebasePortal?.auth?.currentUser) {
-                loadData();
-            }
-        }, 300000);
     </script>
 </body>
 </html>
