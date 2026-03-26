@@ -708,33 +708,35 @@
             // Roads layer removed from public dashboard
         }
 
-        // Load data from public API (no authentication required)
+        // Public 7-day averaged JSON — generate_averaged_data_gcs.js writes to this object.
+        // If fetch fails from your site origin, add a CORS rule on the collar_public bucket (GET + allowed origins).
+        const AVERAGED_DATA_GCS_URL =
+            'https://storage.googleapis.com/collar_public/public_7day_average.json';
+
         async function loadData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
 
             try {
-                // Load from public API endpoint
-                const apiUrl = 'https://ecoexist-api.vercel.app/api/awt-data-public';
-
-                console.log(`Loading data from public API: ${apiUrl}`);
+                console.log(`Loading averaged data from GCS: ${AVERAGED_DATA_GCS_URL}`);
 
                 try {
-                    console.log('About to call fetch...');
-                    const response = await fetch(apiUrl);
+                    const response = await fetch(AVERAGED_DATA_GCS_URL);
 
-                    console.log('Response received');
-                    console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
-                    console.log('Response status text:', response.statusText);
+                    console.log('Response status:', response.status, response.ok);
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.log('Error response body:', errorText);
                         throw new Error(`Failed to load data: ${response.status} ${response.statusText} - ${errorText}`);
                     }
-                    allData = await response.json();
-                    console.log(`Loaded ${allData.length} averaged records from public API`);
+
+                    const json = await response.json();
+                    // File shape: { data: [...], metadata: {...} } from generate_averaged_data_gcs.js
+                    allData = Array.isArray(json) ? json : (json.data || []);
+                    if (!Array.isArray(allData)) {
+                        throw new Error('Invalid JSON: expected array or { data: array }');
+                    }
+                    console.log(`Loaded ${allData.length} averaged records from GCS`);
                     processData();
                 } catch (fetchError) {
                     console.error('Fetch error:', fetchError);
