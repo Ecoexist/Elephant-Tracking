@@ -453,6 +453,21 @@
         let currentAnimationStart = 0;
         let currentAnimationEnd = 0;
 
+        /** Min/max timestamps without Math.min(...huge array) — avoids stack overflow on large datasets */
+        function getTimestampMinMax(arr) {
+            if (!arr || arr.length === 0) return { min: 0, max: 0 };
+            let min = Infinity;
+            let max = -Infinity;
+            for (let i = 0; i < arr.length; i++) {
+                const t = Number(arr[i].timestamp);
+                if (Number.isNaN(t)) continue;
+                if (t < min) min = t;
+                if (t > max) max = t;
+            }
+            if (min === Infinity) return { min: 0, max: 0 };
+            return { min, max };
+        }
+
         // Initialize map
         function initMap() {
             map = L.map('map', {
@@ -708,20 +723,19 @@
             // Roads layer removed from public dashboard
         }
 
-        // Public 7-day averaged JSON — generate_averaged_data_gcs.js writes to this object.
-        // If fetch fails from your site origin, add a CORS rule on the collar_public bucket (GET + allowed origins).
-        const AVERAGED_DATA_GCS_URL =
-            'https://storage.googleapis.com/collar_public/public_7day_average.json';
+        // Data still lives in GCS (generate_averaged_data_gcs.js → collar_public), but we load via
+        // Vercel API so the browser gets CORS headers (direct storage.googleapis.com fetch is blocked by default).
+        const AVERAGED_DATA_URL = 'https://ecoexist-api.vercel.app/api/awt-data-public';
 
         async function loadData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
 
             try {
-                console.log(`Loading averaged data from GCS: ${AVERAGED_DATA_GCS_URL}`);
+                console.log(`Loading averaged data: ${AVERAGED_DATA_URL}`);
 
                 try {
-                    const response = await fetch(AVERAGED_DATA_GCS_URL);
+                    const response = await fetch(AVERAGED_DATA_URL);
 
                     console.log('Response status:', response.status, response.ok);
 
@@ -731,12 +745,12 @@
                     }
 
                     const json = await response.json();
-                    // File shape: { data: [...], metadata: {...} } from generate_averaged_data_gcs.js
+                    // API returns a plain array (or chunked { data, total, ... } if using offset/limit)
                     allData = Array.isArray(json) ? json : (json.data || []);
                     if (!Array.isArray(allData)) {
                         throw new Error('Invalid JSON: expected array or { data: array }');
                     }
-                    console.log(`Loaded ${allData.length} averaged records from GCS`);
+                    console.log(`Loaded ${allData.length} averaged records`);
                     processData();
                 } catch (fetchError) {
                     console.error('Fetch error:', fetchError);
@@ -792,10 +806,9 @@
         }
 
         function updateStatistics() {
-            // Calculate date range
-            const timestamps = allData.map(d => d.timestamp);
-            const minDate = new Date(Math.min(...timestamps) * 1000);
-            const maxDate = new Date(Math.max(...timestamps) * 1000);
+            const { min: minTs, max: maxTs } = getTimestampMinMax(allData);
+            const minDate = new Date(minTs * 1000);
+            const maxDate = new Date(maxTs * 1000);
 
             document.getElementById('dateRange').textContent =
                 `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
@@ -1035,10 +1048,9 @@
         function initializeDateSlider() {
             if (!allData || allData.length === 0) return;
 
-            // Get timestamp range from all data
-            const timestamps = allData.map(d => d.timestamp);
-            minTimestamp = Math.min(...timestamps);
-            maxTimestamp = Math.max(...timestamps);
+            const { min, max } = getTimestampMinMax(allData);
+            minTimestamp = min;
+            maxTimestamp = max;
 
             // Initialize slider range to full dataset
             currentAnimationStart = minTimestamp;
