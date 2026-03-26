@@ -1136,6 +1136,12 @@
             return { min, max };
         }
 
+        /** Same tag often appears as number and string in API rows; unify so legend/filter dedupe correctly. */
+        function normalizeTagId(id) {
+            if (id == null || id === '') return '';
+            return String(id).trim();
+        }
+
         // Initialize map
         function initMap() {
             map = L.map('map', {
@@ -1452,6 +1458,10 @@
             if (filteredCount > 0) {
                 console.log(`Filtered out ${filteredCount} erroneous data points above the equator`);
                 console.log(`Remaining valid averaged records: ${allData.length}`);
+            }
+
+            for (let i = 0; i < allData.length; i++) {
+                allData[i].tagId = normalizeTagId(allData[i].tagId);
             }
 
             // Update statistics
