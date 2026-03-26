@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEC - Ecoexist</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <script>
+      (async function() {
+        try {
+          await window.AuthPortal.checkAuthAndRedirect(false);
+        } catch (e) {
+          window.location.replace('login.html');
+          return;
+        }
+        document.getElementById('auth-overlay')?.remove();
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        .embed-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .embed-container iframe { flex: 1; width: 100%; border: none; min-height: 600px; }
+    </style>
+</head>
+<body>
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+    <style>html.embed-mode .top-ribbon{display:none!important}html.embed-mode .main-content{margin-top:0!important}</style>
+    <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embed-mode');</script>
+    <div class="top-ribbon">
+        <h1 style="display: flex; align-items: center; gap: 10px;">
+            <img src="data/icons/Ecoexist.svg" alt="" style="width: 48px; height: 48px; flex-shrink: 0;">
+            HEC
+        </h1>
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <a href="admin.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Admin</a>
+            <a href="vehicle-tracker.html" class="submit-data-btn" style="background: #8e44ad; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Vehicle Tracker</a>
+            <a href="dashboard_all_data.html" class="submit-data-btn" style="background: #2c5530; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Wildlife Map</a>
+            <a href="corridor_monitoring.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Corridor monitoring</a>
+            <a href="ngamiland-lucis.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Ngamiland LUCIS</a>
+            <a href="hec.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">HEC</a>
+            <a href="kaza/land_use_conflict.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Land Use Conflict</a>
+            <a href="#" onclick="window.firebasePortal?.signOut?.(window.firebasePortal.auth).then(()=>location.href='login.html'); return false;" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Sign Out</a>
+        </div>
+    </div>
+    <div class="main-content" style="overflow: hidden;">
+        <div class="embed-container">
+            <iframe src="https://ecoexist.maps.arcgis.com/apps/dashboards/483588925bf84aaa988fb0f077fba05a" title="HEC Dashboard"></iframe>
+        </div>
+    </div>
+</body>
+</html>
