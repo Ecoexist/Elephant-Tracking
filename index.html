@@ -17,21 +17,6 @@
     <!-- noUiSlider CSS and JS for range slider -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" />
 
-    <!-- Font Awesome for social media icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DRQS5YSJJT"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-DRQS5YSJJT');
-    </script>
-
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -70,221 +55,6 @@
         .stats-card {
             background: linear-gradient(135deg, #ffffff, #f8f9fa);
             border-left: 4px solid #2c5530;
-        }
-
-        /* Citizen Science Section */
-        .citizen-science-card {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            border-left: 4px solid #4a7c59;
-        }
-
-        .citizen-science-card .card-body {
-            padding: 10px 15px;
-        }
-
-        .citizen-science-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 0;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 8px;
-            transition: background 0.3s ease;
-        }
-
-        .citizen-science-header:hover {
-            background: rgba(74, 124, 89, 0.1);
-        }
-
-        .citizen-science-header i.fa-binoculars {
-            font-size: 40px;
-            color: #2c5530;
-        }
-
-        .citizen-science-header h6 {
-            margin: 0;
-            color: #2c5530;
-            font-weight: bold;
-            font-size: 15px;
-        }
-
-        .citizen-science-header p {
-            font-size: 11px !important;
-        }
-
-        .citizen-science-toggle {
-            margin-left: auto;
-            font-size: 16px;
-            color: #2c5530;
-            transition: transform 0.3s ease;
-        }
-
-        .citizen-science-toggle.expanded {
-            transform: rotate(180deg);
-        }
-
-        .citizen-science-form {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out;
-            margin-top: 15px;
-        }
-
-        .citizen-science-form.expanded {
-            max-height: 2000px;
-            transition: max-height 0.5s ease-in;
-        }
-
-        /* Date Range Card Toggle */
-        #dateRangeCard, #viewModeCard, #filtersCard {
-            transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
-            overflow: hidden;
-        }
-
-        #dateRangeCard.hidden, #viewModeCard.hidden, #filtersCard.hidden {
-            opacity: 0;
-            max-height: 0;
-            margin: 0;
-            padding: 0;
-        }
-
-        .upload-area {
-            border: 2px dashed #4a7c59;
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-            margin-bottom: 15px;
-        }
-
-        .upload-area:hover {
-            border-color: #2c5530;
-            background: #e9ecef;
-        }
-
-        .upload-area.dragover {
-            border-color: #2c5530;
-            background: #d4edda;
-        }
-
-        .upload-area i {
-            font-size: 40px;
-            color: #4a7c59;
-            margin-bottom: 10px;
-        }
-
-        .upload-area p {
-            margin: 5px 0;
-            color: #6c757d;
-            font-size: 14px;
-        }
-
-        .preview-image {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            color: #2c5530;
-            margin-bottom: 5px;
-            display: block;
-            font-size: 14px;
-        }
-
-        .form-control {
-            border-radius: 6px;
-            border: 1px solid #ced4da;
-            padding: 8px 12px;
-            font-size: 14px;
-        }
-
-        .form-control:focus {
-            border-color: #4a7c59;
-            box-shadow: 0 0 0 0.2rem rgba(74, 124, 89, 0.25);
-        }
-
-        .btn-submit {
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .btn-submit:hover {
-            background: linear-gradient(135deg, #1a4a2e, #2c5530);
-            transform: translateY(-2px);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .success-message {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .location-input-wrapper {
-            display: flex;
-            gap: 8px;
-            align-items: stretch;
-        }
-
-        .location-input-wrapper .form-control {
-            flex: 1;
-        }
-
-        .btn-gps {
-            background: linear-gradient(135deg, #2c5530, #4a7c59);
-            border: none;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            font-size: 14px;
-        }
-
-        .btn-gps:hover {
-            background: linear-gradient(135deg, #1a4a2e, #2c5530);
-            transform: translateY(-2px);
-        }
-
-        .btn-gps:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
         }
 
         .btn-custom {
@@ -351,14 +121,6 @@
             border-radius: 4px;
             margin-bottom: 5px;
             font-size: 0.8em;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tag-legend:hover {
-            background: #e9ecef;
-            transform: translateX(-2px);
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .tag-color {
@@ -481,294 +243,27 @@
             margin: 0;
             font-size: 14px;
         }
-
-        /* Footer ribbon styling */
-        .footer-ribbon {
-            background: linear-gradient(135deg, #3d5a3f, #4a6b4f);
-            color: white;
-            padding: 20px 0;
-            margin-top: 50px;
-            border-top: 3px solid #2c5530;
-        }
-
-        .footer-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            flex-wrap: wrap;
-        }
-
-        .footer-logo {
-            height: 140px;
-            width: auto;
-            margin-right: 30px;
-            transition: transform 0.3s ease;
-        }
-
-        .footer-logo:hover {
-            transform: scale(1.05);
-        }
-
-        .footer-quote {
-            flex: 1;
-            font-size: 24px;
-            font-weight: 300;
-            line-height: 1.4;
-            font-style: italic;
-            margin: 0 30px;
-        }
-
-        .footer-contact {
-            text-align: right;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .footer-contact h6 {
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .footer-contact p {
-            margin: 5px 0;
-        }
-
-        .footer-contact a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .footer-contact a:hover {
-            text-decoration: underline;
-        }
-
-        .social-icons {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            justify-content: flex-end;
-        }
-
-        .social-icons a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            color: white;
-            font-size: 20px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .social-icons a:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px);
-        }
-
-        .footer-login-link {
-            display: block;
-            margin-top: 12px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.45);
-            text-decoration: none;
-            letter-spacing: 0.02em;
-        }
-
-        .footer-login-link:hover {
-            color: rgba(255, 255, 255, 0.75);
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            .footer-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .footer-logo {
-                margin: 0 0 20px 0;
-                height: 100px;
-            }
-
-            .footer-quote {
-                margin: 20px 0;
-                font-size: 18px;
-            }
-
-            .footer-contact {
-                text-align: center;
-                margin-top: 20px;
-            }
-
-            .social-icons {
-                justify-content: center;
-            }
-        }
-
-        /* Elephant Bio Panel Styles */
-        #elephantBioPanel {
-            display: none;
-            height: 600px;
-            border-radius: 0 0 10px 10px;
-            position: relative;
-            background: linear-gradient(135deg, #1a3a1c, #2c5530);
-            overflow: hidden;
-        }
-
-        .bio-container {
-            display: flex;
-            height: 100%;
-            width: 100%;
-        }
-
-        .bio-image-section {
-            width: 75%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bio-image-section img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .bio-info-section {
-            width: 25%;
-            height: 100%;
-            background: linear-gradient(180deg, #2c5530, #1a3a1c);
-            padding: 25px 20px;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            color: white;
-        }
-
-        .bio-close-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
-            border-radius: 50%;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            z-index: 10;
-        }
-
-        .bio-close-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
-        }
-
-        .bio-elephant-name {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            margin-top: 50px;
-            color: #ffeaa7;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .bio-tag-id {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .bio-description {
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.7;
-            color: rgba(255, 255, 255, 0.9);
-            overflow-y: auto;
-        }
-
-        .bio-description h4 {
-            color: #ffeaa7;
-            font-size: 16px;
-            margin-bottom: 10px;
-            margin-top: 15px;
-        }
-
-        .bio-description h4:first-child {
-            margin-top: 0;
-        }
-
-        .bio-description p {
-            margin-bottom: 12px;
-        }
-
-        .bio-color-indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
-            border: 2px solid white;
-        }
-
-        /* Meet Us Link in Map Header */
-        .meet-us-link {
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: help;
-            transition: all 0.3s ease;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        .meet-us-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        .curved-arrow {
-            font-size: 24px;
-            margin-left: 5px;
-            display: inline-block;
-            animation: bounceArrow 2s infinite;
-        }
-
-        @keyframes bounceArrow {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-5px);
-            }
-        }
     </style>
 </head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DRQS5YSJJT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DRQS5YSJJT');
+</script>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="https://www.ecoexisttrust.org/" target="_blank">
-                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" height="40" class="me-2">
+            <a class="navbar-brand" href="#">
+                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" height="30" class="me-2">
                 Ecoexist Elephant Tracking Dashboard - Public
             </a>
             <div class="ms-auto d-flex align-items-center">
-                <span class="navbar-text text-white">
+                <span class="navbar-text text-white me-3">
                     Privacy-Protected Animal Movement Data
                 </span>
             </div>
@@ -790,36 +285,12 @@
             <!-- Main Map Column -->
             <div class="col-lg-9">
                 <div class="card" id="map-container">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0" id="mapCardTitle">📍 Animal Movement Map</h5>
-                        <div class="meet-us-link" title="Click on an elephant's name to 'meet it'">
-                            Meet Us <span class="curved-arrow">↷</span>
-                        </div>
+                    <div class="card-header">
+                        <h5 class="mb-1">🐘 Elephant Movement Map</h5>
                     </div>
                     <!-- Map and Legend Container -->
                     <div class="d-flex">
                         <div id="map" style="flex: 1;"></div>
-                        
-                        <!-- Elephant Bio Panel (hidden by default, replaces map) -->
-                        <div id="elephantBioPanel" style="flex: 1;">
-                            <div class="bio-container">
-                                <div class="bio-image-section">
-                                    <img id="bioElephantImage" src="data/ele.png" alt="Elephant Photo">
-                                </div>
-                                <div class="bio-info-section">
-                                    <button class="bio-close-btn" onclick="closeBioPanel()" title="Back to Map">
-                                        <i class="fas fa-arrow-right"></i>
-                                    </button>
-                                    <div class="bio-elephant-name">
-                                        <span id="bioElephantName">Elephant Name</span>
-                                    </div>
-                                    <div class="bio-description" id="bioDescription">
-                                        <!-- Bio content will be inserted here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- Map Legend (right side of map) -->
                         <div class="bg-white border-start" style="width: 100px; padding: 10px;">
                             <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
@@ -828,7 +299,7 @@
                     </div>
 
                     <!-- Time Animation Slider (embedded in map) -->
-                    <div class="card-body border-top" id="animationControls">
+                    <div class="card-body border-top">
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <label class="form-label mb-1">⏱️ Date Range: <span id="animationDateRange">Loading...</span></label>
@@ -859,80 +330,9 @@
 
             <!-- Sidebar -->
             <div class="col-lg-3">
-                <!-- Citizen Science Section -->
+                <!-- Statistics Cards -->
                 <div class="row">
-                    <div class="col-md-12 col-lg-12">
-                        <div class="card citizen-science-card">
-                            <div class="card-body">
-                                <div class="citizen-science-header" id="citizenScienceToggle">
-                                    <i class="fas fa-binoculars"></i>
-                                    <div style="flex: 1;">
-                                        <h6>Have you seen our elephants?</h6>
-                                        <p style="margin: 0; font-size: 12px; color: #6c757d;">Help us monitor their movement by reporting sightings here</p>
-                                    </div>
-                                    <i class="fas fa-chevron-down citizen-science-toggle" id="toggleIcon"></i>
-                                </div>
-
-                                <div class="citizen-science-form" id="citizenScienceForm">
-                                    <form id="sightingForm">
-                                    <!-- Image Upload Area -->
-                                    <div class="upload-area" id="uploadArea">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                        <p><strong>Drop image here or click to browse</strong></p>
-                                        <p style="font-size: 12px;">JPG, PNG (max 5MB)</p>
-                                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                                        <img id="previewImage" class="preview-image" alt="Preview">
-                                    </div>
-
-                                    <!-- Description -->
-                                    <div class="form-group">
-                                        <label for="description">Description *</label>
-                                        <textarea class="form-control" id="description" rows="3" placeholder="Tell us what you saw (number of elephants, behavior, etc.)" required></textarea>
-                                    </div>
-
-                                    <!-- Location -->
-                                    <div class="form-group">
-                                        <label for="location">Location *</label>
-                                        <div class="location-input-wrapper">
-                                            <input type="text" class="form-control" id="location" placeholder="e.g., Near Xakao Village, GPS coordinates, or landmark" required>
-                                            <button type="button" class="btn-gps" id="gpsButton" onclick="getGPSLocation()" title="Get my GPS coordinates">
-                                                <i class="fas fa-map-marker-alt"></i> GPS
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Your Name (optional) -->
-                                    <div class="form-group">
-                                        <label for="reporterName">Your Name (optional)</label>
-                                        <input type="text" class="form-control" id="reporterName" placeholder="Your name">
-                                    </div>
-
-                                    <!-- Your Email (optional) -->
-                                    <div class="form-group">
-                                        <label for="reporterEmail">Your Email (optional - if you want us to contact you about the photo)</label>
-                                        <input type="email" class="form-control" id="reporterEmail" placeholder="your.email@example.com">
-                                    </div>
-
-                                    <!-- Submit Button -->
-                                    <button type="submit" class="btn btn-submit" id="submitBtn">
-                                        <i class="fas fa-paper-plane"></i> Submit Sighting
-                                    </button>
-
-                                    <!-- Success Message -->
-                                    <div class="success-message" id="successMessage">
-                                        <i class="fas fa-check-circle"></i> Thank you! Your elephant sighting has been reported successfully.
-                                    </div>
-
-                                    <!-- Error Message -->
-                                    <div class="error-message" id="errorMessage">
-                                        <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Something went wrong. Please try again.</span>
-                                    </div>
-                                </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-12" id="dateRangeCard">
+                    <div class="col-12">
                         <div class="card stats-card">
                             <div class="card-body">
                                 <h6 class="card-title text-muted">Date Range</h6>
@@ -943,7 +343,7 @@
                 </div>
 
                 <!-- View Mode Selection -->
-                <div class="card" id="viewModeCard">
+                <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">📊 View Mode</h6>
                     </div>
@@ -960,7 +360,7 @@
                 </div>
 
                 <!-- Filters (same width as View Mode) -->
-                <div class="card" id="filtersCard">
+                <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">🔍 Filters</h6>
                     </div>
@@ -1044,76 +444,6 @@
             "8543": "Queenie"
         };
 
-        // Elephant bio information
-        const elephantBios = {
-            "3839": {
-                name: "Shorobe",
-                origin: "Named after the village of Shorobe in the Okavango Delta, where this elephant was first spotted and collared. Shorobe village sits at the edge of the delta, a crossing point between wilderness and community.",
-                description: "Shorobe is one of our most well-traveled elephants, regularly moving between the delta waters and the surrounding mopane woodlands. Known for a calm demeanor, Shorobe often leads small bachelor groups through the region.",
-                facts: "First collared in 2019, Shorobe has provided invaluable data about seasonal migration patterns and corridor usage in the eastern delta region."
-            },
-            "5588": {
-                name: "Larry",
-                origin: "Larry was named by a group of visiting researchers who thought his relaxed, ambling gait reminded them of their colleague Larry back home who was known for his easy-going nature.",
-                description: "True to his namesake, Larry is one of the most docile bulls we track. He tends to avoid conflict and often grazes peacefully at the edges of larger herds. Larry's movements have helped us understand how individual elephants navigate social dynamics.",
-                facts: "Larry has one of the most consistent home ranges in our study, rarely venturing more than 50km from his core territory."
-            },
-            "5589": {
-                name: "Mokolwane",
-                origin: "Named after the Mokolwane palm (Hyphaene petersiana), a tree species that this elephant was frequently seen feeding on during the initial observation period.",
-                description: "Mokolwane is a specialist forager who has shown a particular preference for palm fruits and riverine vegetation. This dietary preference shapes his movement patterns, keeping him close to water sources year-round.",
-                facts: "Mokolwane's tracking data has contributed to our understanding of elephant diet diversity and its impact on habitat use."
-            },
-            "5590": {
-                name: "Ebanaria",
-                origin: "This name combines 'Ebany' with 'Aria', the names of Ecoexist's founders' children.",
-                description: "Ebanaria was collared in the Chanoga area, home of Anna, Graham, Ebany, and Aria.",
-                facts: "Ebanaria is mother to two calves."
-            },
-            "5591": {
-                name: "Grand Grey",
-                origin: "Named for the distinctive light grey coloring and impressive size that made this elephant stand out from the very first sighting. The 'Grand' prefix acknowledges the elephant's commanding presence.",
-                description: "Grand Grey is one of the largest bulls in our tracking program. With tusks that sweep elegantly toward the ground, this elephant is often recognized by local communities and safari guides alike.",
-                facts: "At an estimated 45+ years old, Grand Grey is one of our oldest tracked individuals and provides crucial data on elder bull behavior."
-            },
-            "8537": {
-                name: "Brother",
-                origin: "Brother was collared alongside another male elephant at the same time, and the two were inseparable during the observation period. The research team named them Brother and Bruce, reflecting their apparent bond.",
-                description: "Brother and Bruce (Tag 8538) were frequently seen traveling together, sharing water holes, and even engaging in playful sparring. This close relationship inspired their paired names.",
-                facts: "The relationship between Brother and Bruce has helped researchers understand male elephant friendships and social bonds."
-            },
-            "8538": {
-                name: "Bruce",
-                origin: "Named alongside Brother, Bruce got his name from the research team's observation that he seemed to be the slightly more adventurous of the pair, always leading their explorations into new territory.",
-                description: "Bruce tends to be the first to investigate new areas, with Brother often following his lead. This pioneering behavior has taken the pair into agricultural areas, making their tracking data especially valuable for conflict prevention.",
-                facts: "Bruce's adventurous nature has provided key insights into how elephants discover and establish new routes."
-            },
-            "8539": {
-                name: "Raintree",
-                origin: "Named after the iconic Rain Tree (Philenoptera violacea) under which this elephant was first observed resting during a midday heat. The dappled shade created a memorable scene for the collaring team.",
-                description: "Raintree is a creature of habit, often returning to the same shaded rest spots during the heat of the day. This predictability has made Raintree an excellent subject for studying daily movement patterns.",
-                facts: "Raintree's consistent behavior patterns have helped establish baseline data for elephant thermoregulation studies."
-            },
-            "8540": {
-                name: "Art",
-                origin: "Art was named for the unique, almost artistic pattern of wrinkles and folds on the ears, which the collaring team thought resembled abstract art. Each elephant's ears are as unique as fingerprints.",
-                description: "Art is easily identifiable even from a distance thanks to those distinctive ears. A mid-sized bull, Art tends to maintain a moderate home range and has adapted well to areas with mixed land use.",
-                facts: "Art's ear patterns have been used to help train community scouts in individual elephant identification."
-            },
-            "8542": {
-                name: "Dream",
-                origin: "The collaring of this elephant was long-planned but kept getting delayed due to various circumstances. When the team finally succeeded, they said it was 'like a dream come true' – and the name stuck.",
-                description: "Dream moves with an almost ethereal grace, often appearing and disappearing into the bush with surprising stealth for such a large animal. Tracking Dream has revealed some of the more secluded corridors used by elephants.",
-                facts: "Dream's routes have helped identify previously unknown elephant pathways that are now priorities for conservation."
-            },
-            "8543": {
-                name: "Queenie",
-                origin: "Queenie earned her regal name due to her confident, commanding presence within the herd. When first observed, she was clearly a matriarch-in-training, showing leadership qualities from a young age.",
-                description: "As one of the few females in our tracking program, Queenie provides invaluable data on female elephant movement and herd dynamics. She is often seen leading a family group through the landscape.",
-                facts: "Queenie's data has been instrumental in understanding how female elephants choose routes for their families, prioritizing safety and resources."
-            }
-        };
-
         // Animation variables
         let dateSlider = null;
         let animationInterval = null;
@@ -1122,25 +452,6 @@
         let maxTimestamp = 0;
         let currentAnimationStart = 0;
         let currentAnimationEnd = 0;
-
-        /** Avoid Math.min/max spread on very large arrays (stack overflow). */
-        function getTimestampMinMaxFromPoints(points) {
-            if (!points || points.length === 0) return { min: 0, max: 0 };
-            let min = points[0].timestamp;
-            let max = points[0].timestamp;
-            for (let i = 1; i < points.length; i++) {
-                const t = points[i].timestamp;
-                if (t < min) min = t;
-                if (t > max) max = t;
-            }
-            return { min, max };
-        }
-
-        /** Same tag often appears as number and string in API rows; unify so legend/filter dedupe correctly. */
-        function normalizeTagId(id) {
-            if (id == null || id === '') return '';
-            return String(id).trim();
-        }
 
         // Initialize map
         function initMap() {
@@ -1397,34 +708,34 @@
             // Roads layer removed from public dashboard
         }
 
-        // Load data from public API (no authentication required)
+        // Data still lives in GCS (generate_averaged_data_gcs.js → collar_public), but we load via
+        // Vercel API so the browser gets CORS headers (direct storage.googleapis.com fetch is blocked by default).
+        const AVERAGED_DATA_URL = 'https://ecoexist-api.vercel.app/api/awt-data-public';
+
         async function loadData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
 
             try {
-                // Load from public API endpoint
-                const apiUrl = 'https://ecoexist-api.vercel.app/api/awt-data-public';
-
-                console.log(`Loading data from public API: ${apiUrl}`);
+                console.log(`Loading averaged data: ${AVERAGED_DATA_URL}`);
 
                 try {
-                    console.log('About to call fetch...');
-                    const response = await fetch(apiUrl);
+                    const response = await fetch(AVERAGED_DATA_URL);
 
-                    console.log('Response received');
-                    console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
-                    console.log('Response status text:', response.statusText);
+                    console.log('Response status:', response.status, response.ok);
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.log('Error response body:', errorText);
                         throw new Error(`Failed to load data: ${response.status} ${response.statusText} - ${errorText}`);
                     }
-                    const raw = await response.json();
-                    allData = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.data) ? raw.data : []);
-                    console.log(`Loaded ${allData.length} averaged records from public API`);
+
+                    const json = await response.json();
+                    // API returns a plain array (or chunked { data, total, ... } if using offset/limit)
+                    allData = Array.isArray(json) ? json : (json.data || []);
+                    if (!Array.isArray(allData)) {
+                        throw new Error('Invalid JSON: expected array or { data: array }');
+                    }
+                    console.log(`Loaded ${allData.length} averaged records`);
                     processData();
                 } catch (fetchError) {
                     console.error('Fetch error:', fetchError);
@@ -1460,10 +771,6 @@
                 console.log(`Remaining valid averaged records: ${allData.length}`);
             }
 
-            for (let i = 0; i < allData.length; i++) {
-                allData[i].tagId = normalizeTagId(allData[i].tagId);
-            }
-
             // Update statistics
             updateStatistics();
 
@@ -1484,15 +791,13 @@
         }
 
         function updateStatistics() {
-            if (!allData || allData.length === 0) return;
-            const { min: minTs, max: maxTs } = getTimestampMinMaxFromPoints(allData);
-            const minDate = new Date(minTs * 1000);
-            const maxDate = new Date(maxTs * 1000);
+            // Calculate date range
+            const timestamps = allData.map(d => d.timestamp);
+            const minDate = new Date(Math.min(...timestamps) * 1000);
+            const maxDate = new Date(Math.max(...timestamps) * 1000);
 
-            const dateRangeEl = document.getElementById('dateRange');
-            if (dateRangeEl) {
-                dateRangeEl.textContent = `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
-            }
+            document.getElementById('dateRange').textContent =
+                `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
         }
 
         function populateTagFilter() {
@@ -1524,10 +829,6 @@
 
                 const item = document.createElement('div');
                 item.className = 'tag-legend';
-                item.style.cursor = 'pointer';
-                item.onclick = function() {
-                    showElephantBio(tagId);
-                };
 
                 item.innerHTML = `
                     <span class="tag-color" style="background-color: ${tagColors[tagId]}"></span>
@@ -1536,67 +837,6 @@
 
                 legend.appendChild(item);
             });
-        }
-
-        // Show elephant bio panel
-        function showElephantBio(tagId) {
-            const bioPanel = document.getElementById('elephantBioPanel');
-            const mapElement = document.getElementById('map');
-            const animationControls = document.getElementById('animationControls');
-            const cardTitle = document.getElementById('mapCardTitle');
-            
-            // Get bio data
-            const bio = elephantBios[tagId] || {
-                name: elephantNames[tagId] || `Elephant ${tagId}`,
-                origin: "This elephant is part of our tracking program, helping us understand elephant movement patterns in the region.",
-                description: "This individual contributes valuable data to our conservation efforts, allowing us to better protect elephant corridors and reduce human-elephant conflict.",
-                facts: "Every tracked elephant helps us build a more complete picture of how elephants use the landscape."
-            };
-            
-            // Update bio panel content
-            document.getElementById('bioElephantName').textContent = bio.name;
-            
-            // Build description HTML
-            const descriptionHTML = `
-                <h4>Origin of Name</h4>
-                <p>${bio.origin}</p>
-                
-                <h4>About ${bio.name}</h4>
-                <p>${bio.description}</p>
-                
-                <h4>Research Notes</h4>
-                <p>${bio.facts}</p>
-            `;
-            document.getElementById('bioDescription').innerHTML = descriptionHTML;
-            
-            // Update card title
-            cardTitle.innerHTML = `<img src="data/ele.png" alt="Elephant" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px; filter: brightness(0) invert(1);"> Meet ${bio.name}`;
-            
-            // Hide map, show bio panel
-            mapElement.style.display = 'none';
-            bioPanel.style.display = 'block';
-            animationControls.style.display = 'none';
-        }
-
-        // Close elephant bio panel
-        function closeBioPanel() {
-            const bioPanel = document.getElementById('elephantBioPanel');
-            const mapElement = document.getElementById('map');
-            const animationControls = document.getElementById('animationControls');
-            const cardTitle = document.getElementById('mapCardTitle');
-            
-            // Hide bio panel, show map
-            bioPanel.style.display = 'none';
-            mapElement.style.display = 'block';
-            animationControls.style.display = 'block';
-            
-            // Reset card title
-            cardTitle.innerHTML = '📍 Animal Movement Map';
-            
-            // Invalidate map size to fix any rendering issues
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
         }
 
         function setViewMode(mode) {
@@ -1778,320 +1018,26 @@
         }
 
 
-        // ==================== CITIZEN SCIENCE FUNCTIONS ====================
-        
-        let uploadedImage = null;
-        let uploadedImageName = '';
-
-        function initCitizenScience() {
-            // Initialize EmailJS when form is ready
-            if (typeof emailjs !== 'undefined') {
-                emailjs.init("Yn0Q9DnnxvnV3KZrb");
-            } else {
-                console.error('EmailJS library not loaded');
-                return;
-            }
-
-            // Toggle form visibility
-            const toggleHeader = document.getElementById('citizenScienceToggle');
-            const formContainer = document.getElementById('citizenScienceForm');
-            const toggleIcon = document.getElementById('toggleIcon');
-            const dateRangeCard = document.getElementById('dateRangeCard');
-            const viewModeCard = document.getElementById('viewModeCard');
-            const filtersCard = document.getElementById('filtersCard');
-
-            if (toggleHeader && formContainer && toggleIcon && dateRangeCard && viewModeCard && filtersCard) {
-                toggleHeader.addEventListener('click', function() {
-                    const isExpanding = !formContainer.classList.contains('expanded');
-                    
-                    formContainer.classList.toggle('expanded');
-                    toggleIcon.classList.toggle('expanded');
-                    
-                    // Hide/show other cards when expanding the form
-                    if (isExpanding) {
-                        dateRangeCard.classList.add('hidden');
-                        viewModeCard.classList.add('hidden');
-                        filtersCard.classList.add('hidden');
-                    } else {
-                        dateRangeCard.classList.remove('hidden');
-                        viewModeCard.classList.remove('hidden');
-                        filtersCard.classList.remove('hidden');
-                    }
-                });
-            }
-
-            const uploadArea = document.getElementById('uploadArea');
-            const imageInput = document.getElementById('imageInput');
-            const previewImage = document.getElementById('previewImage');
-            const sightingForm = document.getElementById('sightingForm');
-
-            // Click to upload
-            uploadArea.addEventListener('click', function(e) {
-                if (e.target.tagName !== 'IMG') {
-                    imageInput.click();
-                }
-            });
-
-            // File input change
-            imageInput.addEventListener('change', function(e) {
-                handleImageUpload(e.target.files[0]);
-            });
-
-            // Drag and drop
-            uploadArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-
-            uploadArea.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-            });
-
-            uploadArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                const file = e.dataTransfer.files[0];
-                if (file && file.type.startsWith('image/')) {
-                    handleImageUpload(file);
-                }
-            });
-
-            // Form submission
-            sightingForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitSighting();
-            });
-        }
-
-        function handleImageUpload(file) {
-            if (!file) return;
-
-            // Check file size (5MB max)
-            if (file.size > 5 * 1024 * 1024) {
-                showError('Image size must be less than 5MB');
-                return;
-            }
-
-            // Check file type
-            if (!file.type.startsWith('image/')) {
-                showError('Please upload an image file (JPG, PNG)');
-                return;
-            }
-
-            uploadedImageName = file.name;
-
-            // Read and compress image
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                compressImage(e.target.result, function(compressedImage) {
-                    uploadedImage = compressedImage;
-                    
-                    // Show preview
-                    const previewImage = document.getElementById('previewImage');
-                    previewImage.src = compressedImage;
-                    previewImage.style.display = 'block';
-                    
-                    // Update upload area text
-                    const uploadArea = document.getElementById('uploadArea');
-                    uploadArea.querySelector('p').innerHTML = '<strong>✓ Image uploaded & compressed!</strong> Click to change';
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Compress image to reduce file size for email
-        function compressImage(dataUrl, callback) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Calculate new dimensions (max 600px width to stay under 50KB)
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 600;
-                const maxHeight = 600;
-                
-                if (width > height) {
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
-                } else {
-                    if (height > maxHeight) {
-                        width *= maxHeight / height;
-                        height = maxHeight;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Draw and compress (0.6 = 60% quality for smaller file size)
-                ctx.drawImage(img, 0, 0, width, height);
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                
-                callback(compressedDataUrl);
-            };
-            img.src = dataUrl;
-        }
-
-        function submitSighting() {
-            const description = document.getElementById('description').value.trim();
-            const location = document.getElementById('location').value.trim();
-            const reporterName = document.getElementById('reporterName').value.trim() || 'Anonymous';
-            const reporterEmail = document.getElementById('reporterEmail').value.trim() || 'Not provided';
-            const submitBtn = document.getElementById('submitBtn');
-
-            // Validation
-            if (!description || !location) {
-                showError('Please fill in all required fields');
-                return;
-            }
-
-            // Disable button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-            // Prepare email parameters
-            const templateParams = {
-                reporter_name: reporterName,
-                reporter_email: reporterEmail,
-                description: description,
-                location: location,
-                date_time: new Date().toLocaleString(),
-                has_image: uploadedImage ? 'Yes (see below)' : 'No',
-                image_name: uploadedImageName || 'No image',
-                image_data: uploadedImage || '',  // Compressed image as base64
-                email: reporterEmail,  // For template compatibility
-                name: reporterName  // Some templates expect 'name' instead of 'reporter_name'
-            };
-
-            // Send email using EmailJS (service sends to multiple recipients)
-            emailjs.send('service_m8ag76m', 'template_wrtc4b8', templateParams)
-                .then(function(response) {
-                    console.log('SUCCESS!', response.status, response.text);
-                    showSuccess();
-                    resetForm();
-                }, function(error) {
-                    console.error('FAILED...', error);
-                    showError('Failed to submit sighting. Please try emailing directly to gis@ecoexisttrust.org');
-                })
-                .finally(function() {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Sighting';
-                });
-        }
-
-        function showSuccess() {
-            const successMessage = document.getElementById('successMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'block';
-            
-            setTimeout(function() {
-                successMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        function showError(message) {
-            const successMessage = document.getElementById('successMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            successMessage.style.display = 'none';
-            errorText.textContent = message;
-            errorMessage.style.display = 'block';
-            
-            setTimeout(function() {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        function resetForm() {
-            document.getElementById('sightingForm').reset();
-            document.getElementById('previewImage').style.display = 'none';
-            document.getElementById('uploadArea').querySelector('p').innerHTML = '<strong>Drop image here or click to browse</strong>';
-            uploadedImage = null;
-            uploadedImageName = '';
-        }
-
-        function getGPSLocation() {
-            const gpsButton = document.getElementById('gpsButton');
-            const locationInput = document.getElementById('location');
-            
-            if (!navigator.geolocation) {
-                showError('GPS is not supported by your browser');
-                return;
-            }
-
-            // Disable button and show loading state
-            gpsButton.disabled = true;
-            gpsButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting...';
-
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude.toFixed(6);
-                    const lon = position.coords.longitude.toFixed(6);
-                    const accuracy = Math.round(position.coords.accuracy);
-                    
-                    locationInput.value = `GPS: ${lat}, ${lon} (±${accuracy}m)`;
-                    
-                    // Reset button
-                    gpsButton.disabled = false;
-                    gpsButton.innerHTML = '<i class="fas fa-map-marker-alt"></i> GPS';
-                },
-                function(error) {
-                    let errorMessage = 'Unable to get GPS location. ';
-                    
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage += 'Please enable location permissions in your browser settings.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage += 'Location information is unavailable.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage += 'Location request timed out.';
-                            break;
-                        default:
-                            errorMessage += 'An unknown error occurred.';
-                    }
-                    
-                    showError(errorMessage);
-                    
-                    // Reset button
-                    gpsButton.disabled = false;
-                    gpsButton.innerHTML = '<i class="fas fa-map-marker-alt"></i> GPS';
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
-        }
-
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             loadData();
-            initCitizenScience();
         });
 
-        // // Auto-refresh every 5 minutes
-        // setInterval(function() {
-        //     loadData();
-        // }, 2400000);
+        // Auto-refresh every 5 minutes
+        setInterval(function() {
+            loadData();
+        }, 2400000);
 
         // ==================== ANIMATION FUNCTIONS ====================
 
         function initializeDateSlider() {
             if (!allData || allData.length === 0) return;
 
-            const range = getTimestampMinMaxFromPoints(allData);
-            minTimestamp = range.min;
-            maxTimestamp = range.max;
+            // Get timestamp range from all data
+            const timestamps = allData.map(d => d.timestamp);
+            minTimestamp = Math.min(...timestamps);
+            maxTimestamp = Math.max(...timestamps);
 
             // Initialize slider range to full dataset
             currentAnimationStart = minTimestamp;
@@ -2214,38 +1160,5 @@
             }
         }
     </script>
-
-    <!-- Footer Ribbon -->
-    <footer class="footer-ribbon">
-        <div class="footer-content">
-            <a href="https://www.ecoexisttrust.org/" target="_blank">
-                <img src="data/ecoexist logo white.png" alt="Ecoexist Logo" class="footer-logo">
-            </a>
-            <div class="footer-quote">
-                "Our mission is to support the lives and livelihoods of people who share space with elephants while considering the needs of elephants and their habitats"
-            </div>
-            <div class="footer-contact">
-                <h6>Contact us</h6>
-                <p><strong>Email:</strong> <a href="mailto:info@ecoexisttrust.org">info@ecoexisttrust.org</a></p>
-                <p><strong>Ecoexist Trust</strong></p>
-                <p>P.O.Box 1755, Plot 1278,<br>
-                Sennonori Ward, Maun<br>
-                <strong>Tel:</strong> +267 6865083</p>
-                <div class="social-icons">
-                    <a href="https://www.facebook.com/ecoexistproject" target="_blank" title="Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="https://www.instagram.com/ecoexisttrust/?hl=en" target="_blank" title="Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="https://www.linkedin.com/company/ecoexist-trust/posts/?feedView=all" target="_blank" title="LinkedIn">
-                        <i class="fab fa-linkedin-in"></i>
-                    </a>
-                </div>
-                <a href="login.html?return=admin.html" class="footer-login-link">Team sign in</a>
-            </div>
-        </div>
-    </footer>
 </body>
 </html>
-
