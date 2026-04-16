@@ -22,7 +22,7 @@
             align-items: stretch;
         }
         .app-layout-corridor .app-sidebar {
-            width: 252px;
+            width: 189px;
             flex-shrink: 0;
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
             color: #fff;
@@ -33,7 +33,7 @@
             min-height: 100vh;
         }
         .app-layout-corridor .app-sidebar-inner {
-            padding: 4.25rem 1rem 1.5rem 1rem;
+            padding: 4.25rem 0.65rem 1.5rem 0.65rem;
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
@@ -45,7 +45,7 @@
             padding: 0.25rem 0;
         }
         .app-layout-corridor .app-sidebar-logo img {
-            width: 72px;
+            width: 58px;
             height: auto;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
@@ -56,7 +56,7 @@
         }
         .app-layout-corridor .app-sidebar-nav a {
             display: block;
-            padding: 10px 14px;
+            padding: 10px 10px;
             border-radius: 8px;
             text-decoration: none;
             color: rgba(255,255,255,0.92);
@@ -81,11 +81,12 @@
             flex-direction: column;
             min-height: 100vh;
         }
-        /* Floating user avatar — top-left, above page chrome */
+        /* Floating user avatar — top-right, above page chrome */
         .user-avatar-float {
             position: fixed;
             top: 14px;
-            left: 14px;
+            right: 14px;
+            left: auto;
             z-index: 10060;
         }
         .user-avatar-float .user-avatar-btn {
@@ -128,6 +129,18 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             z-index: 10070;
         }
+        .corridor-page-header {
+            padding: 0.75rem 1rem 0.25rem 1rem;
+            padding-right: 4.5rem;
+            flex-shrink: 0;
+        }
+        .corridor-page-heading {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1a4a2e;
+            letter-spacing: -0.02em;
+        }
         /* Override global styles.css .main-content height (was for top ribbon) */
         body.app-layout-corridor .main-content {
             display: flex;
@@ -137,14 +150,18 @@
             height: auto;
             overflow-y: auto;
         }
-        #map { height: 600px; border-radius: 0 0 0 10px; position: relative; flex: 1; min-width: 0; }
+        #map-container.card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #map { height: 600px; border-radius: 0; position: relative; flex: 1; min-width: 0; }
         #corridor-map-legend-panel {
             width: 132px;
             flex-shrink: 0;
             padding: 10px;
             background: #fff;
             border-left: 1px solid #dee2e6;
-            border-radius: 0 0 10px 0;
+            border-radius: 0;
         }
         #corridor-map-legend-panel .legend-gradient-vertical {
             width: 14px;
@@ -218,7 +235,7 @@
             <span id="userAvatarInitials">··</span>
             <span class="user-status-dot" aria-hidden="true"></span>
         </button>
-        <ul class="dropdown-menu dropdown-menu-start shadow" aria-labelledby="userAvatarMenuBtn">
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
             <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
         </ul>
     </div>
@@ -241,15 +258,15 @@
     </aside>
 
     <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">Corridor monitoring</h1>
+        </header>
     <div class="main-content" style="overflow-y: auto;">
-        <div class="container-fluid mt-4 mb-3">
+        <div class="container-fluid mt-2 mb-3">
             <div class="row">
-                <!-- Map + legend (mirrors dashboard_all_data) -->
+                <!-- Map + legend -->
                 <div class="col-lg-9">
-                    <div class="card" id="map-container">
-                        <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <h5 class="mb-0">🛣️ Corridor monitoring map</h5>
-                        </div>
+                    <div class="card border-0 shadow" id="map-container">
                         <div class="d-flex flex-column">
                             <div class="d-flex" style="min-height: 0;">
                                 <div id="map"></div>
