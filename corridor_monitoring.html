@@ -1,1470 +1,341 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corridor Monitoring | Ecoexist</title>
-    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
-    <script type="module" src="js/firebase-config.js"></script>
-    <script src="js/auth-portal.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        /* App shell: left sidebar + main (ribbon nav removed from top) */
-        body.app-layout-corridor {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: row;
-            align-items: stretch;
-        }
-        .app-layout-corridor .app-sidebar {
-            width: 189px;
-            flex-shrink: 0;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            color: #fff;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.12);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .app-layout-corridor .app-sidebar-inner {
-            padding: 4.25rem 0.65rem 1.5rem 0.65rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            flex: 1;
-        }
-        .app-layout-corridor .app-sidebar-logo {
-            display: block;
-            text-align: center;
-            padding: 0.25rem 0;
-        }
-        .app-layout-corridor .app-sidebar-logo img {
-            width: 58px;
-            height: auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-        .app-layout-corridor .app-sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .app-layout-corridor .app-sidebar-nav a {
-            display: block;
-            padding: 10px 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: rgba(255,255,255,0.92);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: background 0.15s ease, color 0.15s ease;
-            border-left: 3px solid transparent;
-        }
-        .app-layout-corridor .app-sidebar-nav a:hover {
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-        }
-        .app-layout-corridor .app-sidebar-nav a.app-nav-current {
-            background: rgba(39, 174, 96, 0.25);
-            border-left-color: #27ae60;
-            color: #fff;
-        }
-        .app-layout-corridor .app-main-wrap {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        /* Floating user avatar — top-right, above page chrome */
-        .user-avatar-float {
-            position: fixed;
-            top: 14px;
-            right: 14px;
-            left: auto;
-            z-index: 10060;
-        }
-        .user-avatar-float .user-avatar-btn {
-            position: relative;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.95);
-            background: linear-gradient(145deg, #4a7c59, #2c5530);
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-            padding: 0;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .user-avatar-float .user-avatar-btn:hover {
-            transform: scale(1.04);
-            box-shadow: 0 6px 22px rgba(0,0,0,0.28);
-        }
-        .user-avatar-float .user-status-dot {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 11px;
-            height: 11px;
-            background: #22c55e;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .user-avatar-float .dropdown-menu {
-            margin-top: 8px;
-            min-width: 160px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 10070;
-        }
-        .corridor-page-header {
-            padding: 0.75rem 1rem 0.25rem 1rem;
-            padding-right: 4.5rem;
-            flex-shrink: 0;
-        }
-        .corridor-page-heading {
-            margin: 0;
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #1a4a2e;
-            letter-spacing: -0.02em;
-        }
-        /* Override global styles.css .main-content height (was for top ribbon) */
-        body.app-layout-corridor .main-content {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            height: auto;
-            overflow-y: auto;
-        }
-        #map-container.card {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        #map { height: 600px; border-radius: 0; position: relative; flex: 1; min-width: 0; }
-        #corridor-map-legend-panel {
-            width: 132px;
-            flex-shrink: 0;
-            padding: 10px;
-            background: #fff;
-            border-left: 1px solid #dee2e6;
-            border-radius: 0;
-        }
-        #corridor-map-legend-panel .legend-gradient-vertical {
-            width: 14px;
-            min-height: 120px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            background: linear-gradient(to bottom, #ff0000, #ffffff);
-            flex-shrink: 0;
-        }
-        #corridor-map-legend-panel .usage-legend-stack { font-size: 0.68rem; color: #6c757d; line-height: 1.25; }
-        .elephant-filter-menu { min-width: 100%; }
-        .elephant-filter-menu table { table-layout: fixed; width: 100%; margin-bottom: 0; font-size: 0.8125rem; }
-        .elephant-filter-menu th,
-        .elephant-filter-menu td {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding: 0.35rem 0.5rem;
-            vertical-align: middle;
-        }
-        .elephant-filter-menu th:nth-child(1),
-        .elephant-filter-menu td:nth-child(1) { width: 44%; }
-        .elephant-filter-menu th:nth-child(2),
-        .elephant-filter-menu td:nth-child(2) { width: 26%; }
-        .elephant-filter-menu th:nth-child(3),
-        .elephant-filter-menu td:nth-child(3) { width: 30%; text-align: right; }
-        .elephant-filter-row { cursor: pointer; }
-        .elephant-filter-row:hover { background-color: #f8f9fa; }
-        .elephant-filter-row.selected { background-color: #e8f5e9; }
-        .btn-custom { background: linear-gradient(135deg, #2c5530, #4a7c59); border: none; color: white; }
-        .btn-custom:hover { color: white; background: linear-gradient(135deg, #1a4a2e, #2c5530); }
-        .btn-toggle.active { box-shadow: inset 0 2px 6px rgba(0,0,0,0.25); opacity: 1; }
-        .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .card-header { background: linear-gradient(135deg, #2c5530, #4a7c59); color: white; border-radius: 10px 10px 0 0 !important; font-weight: bold; }
-        .stats-card { background: linear-gradient(135deg, #ffffff, #f8f9fa); border-left: 4px solid #2c5530; }
-        .view-mode-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-        .view-mode-buttons button { flex: 1; min-width: 120px; }
-        .info-icon-btn { width: 2rem; height: 2rem; padding: 0; border-radius: 50%; font-weight: 700; font-size: 0.95rem; line-height: 1; }
-    </style>
-    <script>
-      (async function() {
-        try {
-          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring.html');
-          if (result && result.role !== 'admin') {
-            window.location.replace('dashboard_public_firebase.html');
-            return;
-          }
-        } catch (e) {
-          window.location.replace('login.html?return=corridor_monitoring.html');
-          return;
-        }
-        function doInit() {
-          var overlay = document.getElementById('auth-overlay');
-          if (overlay) overlay.remove();
-          if (typeof window.updateCorridorUserAvatar === 'function') window.updateCorridorUserAvatar();
-          window.dispatchEvent(new CustomEvent('authReady'));
-          if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
-        }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', doInit);
-        } else { doInit(); }
-      })();
-    </script>
-</head>
-<body class="app-layout-corridor">
-    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+/**
+ * Sync AWT cumulative tracking points from GCS (awt_tracking_data_cumulative.json) → ArcGIS Online hosted feature layer.
+ *
+ * GCS (same as awt-data-gcs-cumulative / road-crossings-process):
+ *   GOOGLE_APPLICATION_CREDENTIALS, GCS_PROJECT_ID, GCS_BUCKET_NAME (or AWT_GCS_BUCKET_NAME)
+ *   AWT_CUMULATIVE_GCS_PATH — optional; default awt_data/awt_tracking_data_cumulative.json
+ *
+ * ArcGIS Online:
+ *   ARCGIS_PORTAL_URL          default https://www.arcgis.com
+ *   ARCGIS_USERNAME, ARCGIS_PASSWORD, ARCGIS_REFERER (same as road-crossings sync)
+ *   ARCGIS_CUMULATIVE_LAYER_URL — full hosted layer URL, e.g. .../FeatureServer/0
+ *       (use a dedicated layer; do not reuse the road-crossings layer URL)
+ *
+ * Optional:
+ *   ARCGIS_SYNC_SECRET, CRON_SECRET — Bearer auth (same pattern as arcgis-sync-road-crossings)
+ *   ARCGIS_SYNC_REPLACE — if "1"/"true" or ?replace=1, delete all features (where 1=1) before add
+ *   ARCGIS_CUMULATIVE_FIELD_MAP — JSON mapping our keys → your AGOL field names
+ *   ARCGIS_ADD_BATCH_SIZE — default 400
+ *
+ * Dates: source `timestamp` is usually Unix **seconds** (see dashboards: new Date(ts * 1000)).
+ * ArcGIS **Date** fields expect **epoch milliseconds** in addFeatures. This script converts:
+ *   - values &lt; 1e11 → treated as seconds → multiplied by 1000
+ *   - values ≥ 1e11 → treated as already milliseconds (unchanged)
+ *
+ * Default attribute keys: track_pt_id, ele_tag_id, ele_name, observation_time
+ * Create the layer in AGOL as a point layer (WGS 84), with fields below — or set ARCGIS_CUMULATIVE_FIELD_MAP.
+ *
+ * Invoke: GET or POST /api/arcgis-sync-awt-cumulative
+ */
+const crypto = require('crypto');
+const { Storage } = require('@google-cloud/storage');
 
-    <!-- Floating above layout: initials + online dot; click for Log out -->
-    <div class="dropdown user-avatar-float">
-        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
-            <span id="userAvatarInitials">··</span>
-            <span class="user-status-dot" aria-hidden="true"></span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
-            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
-        </ul>
-    </div>
+let gcsStorage;
+try {
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+        gcsStorage = new Storage({
+            projectId: process.env.GCS_PROJECT_ID || credentials.project_id,
+            credentials
+        });
+    } else {
+        gcsStorage = new Storage({ projectId: process.env.GCS_PROJECT_ID });
+    }
+} catch (e) {
+    console.error('arcgis-sync-awt-cumulative: GCS init', e && e.message);
+}
 
-    <aside class="app-sidebar" aria-label="Main navigation">
-        <div class="app-sidebar-inner">
-            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
-                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
-            </a>
-            <nav class="app-sidebar-nav">
-                <a href="admin.html">Admin</a>
-                <a href="vehicle-tracker.html">Vehicle Tracker</a>
-                <a href="dashboard_all_data.html">Wildlife Map</a>
-                <a href="corridor_monitoring.html" class="app-nav-current">Corridor monitoring</a>
-                <a href="ngamiland-lucis.html">Ngamiland LUCIS</a>
-                <a href="hec.html">HEC</a>
-                <a href="kaza/land_use_conflict.html">Land Use Conflict</a>
-            </nav>
-        </div>
-    </aside>
+function getCumulativeGcsPath() {
+    return (process.env.AWT_CUMULATIVE_GCS_PATH || 'awt_data/awt_tracking_data_cumulative.json').trim();
+}
 
-    <div class="app-main-wrap">
-        <header class="corridor-page-header">
-            <h1 class="corridor-page-heading">Corridor monitoring</h1>
-        </header>
-    <div class="main-content" style="overflow-y: auto;">
-        <div class="container-fluid mt-2 mb-3">
-            <div class="row">
-                <!-- Map + legend -->
-                <div class="col-lg-9">
-                    <div class="card border-0 shadow" id="map-container">
-                        <div class="d-flex flex-column">
-                            <div class="d-flex" style="min-height: 0;">
-                                <div id="map"></div>
-                                <div id="corridor-map-legend-panel" class="bg-white border-start">
-                                    <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
-                                    <div class="d-flex gap-2 align-items-stretch justify-content-center" title="Corridor usage scale">
-                                        <div class="d-flex flex-column justify-content-between text-end usage-legend-stack py-0" style="flex: 1; min-width: 0; min-height: 120px;">
-                                            <span>Red = most</span>
-                                            <span>White = no crossings</span>
-                                        </div>
-                                        <div class="legend-gradient-vertical" aria-hidden="true"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+function getBucketName() {
+    const b = (process.env.GCS_BUCKET_NAME || process.env.AWT_GCS_BUCKET_NAME || '').trim();
+    if (!b) throw new Error('GCS_BUCKET_NAME (or AWT_GCS_BUCKET_NAME) is required');
+    return b;
+}
 
-                <!-- Sidebar: stats → map controls → filters (mirrors dashboard_all_data) -->
-                <div class="col-lg-3">
-                    <div class="row">
-                        <div class="col-md-6 col-lg-6">
-                            <div class="card stats-card">
-                                <div class="card-body py-3">
-                                    <h6 class="card-title text-muted small mb-1">Total road crossings</h6>
-                                    <h3 class="text-success mb-0" id="figTotalCrossings">—</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-6">
-                            <div class="card stats-card">
-                                <div class="card-body py-3">
-                                    <h6 class="card-title text-muted small mb-1">Inside corridors</h6>
-                                    <h3 class="text-primary mb-0" id="figInsideCorridors">—</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-12">
-                            <div class="card stats-card">
-                                <div class="card-body py-3">
-                                    <h6 class="card-title text-muted small mb-1">Outside corridors</h6>
-                                    <h3 class="text-dark mb-0" id="figOutsideCorridors">—</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+function getStorage() {
+    if (!gcsStorage) throw new Error('GCS not configured');
+    return gcsStorage;
+}
 
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <h6 class="mb-0">📊 Map controls</h6>
-                            <button type="button" class="btn btn-sm btn-light info-icon-btn" title="How this page works" data-bs-toggle="modal" data-bs-target="#corridorInfoModal" aria-label="Page information">i</button>
-                        </div>
-                        <div class="card-body">
-                            <div class="view-mode-buttons mb-0">
-                                <button type="button" class="btn btn-sm btn-custom btn-toggle flex-grow-1" id="btnHotspots" onclick="toggleHotspotView()">Hotspot view</button>
-                                <button type="button" class="btn btn-sm btn-custom btn-toggle flex-grow-1" id="btnCorridorUsage" onclick="toggleCorridorUsage()">Corridor usage</button>
-                            </div>
-                            <p class="small text-muted mb-0 mt-2" id="statsLine"></p>
-                        </div>
-                    </div>
+async function loadGcsJson(storage, bucketName, filePath) {
+    const [buf] = await storage.bucket(bucketName).file(filePath).download();
+    return JSON.parse(buf.toString('utf8'));
+}
 
-                    <div class="card">
-                        <div class="card-header py-2">
-                            <h6 class="mb-0">🔍 Filters</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label" for="filterYear">Year</label>
-                                <select class="form-select form-select-sm" id="filterYear">
-                                    <option value="">All years</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="filterMonth">Month</label>
-                                <select class="form-select form-select-sm" id="filterMonth">
-                                    <option value="">All months</option>
-                                    <option value="1">January</option>
-                                    <option value="2">February</option>
-                                    <option value="3">March</option>
-                                    <option value="4">April</option>
-                                    <option value="5">May</option>
-                                    <option value="6">June</option>
-                                    <option value="7">July</option>
-                                    <option value="8">August</option>
-                                    <option value="9">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                            </div>
-                            <button type="button" class="btn btn-custom w-100 mb-3" onclick="applyDateFilter()">Apply Filters</button>
-                            <p class="small text-muted mb-3" id="statusLine"></p>
-                            <div class="mb-0">
-                                <label class="form-label" for="elephantFilterBtn">Crossings per elephant</label>
-                                <div class="dropdown w-100 elephant-filter-dropdown">
-                                    <button class="form-select form-select-sm text-start d-flex justify-content-between align-items-center w-100" type="button" id="elephantFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-haspopup="true" aria-controls="elephantFilterMenu">
-                                        <span id="elephantFilterButtonLabel" class="text-truncate me-1">All elephants</span>
-                                    </button>
-                                    <div class="dropdown-menu shadow elephant-filter-menu p-0 w-100" id="elephantFilterMenu" aria-labelledby="elephantFilterBtn" style="max-height: 280px; overflow-y: auto;">
-                                        <table class="table table-sm mb-0">
-                                            <thead class="table-light sticky-top">
-                                                <tr>
-                                                    <th scope="col">Ele name</th>
-                                                    <th scope="col">Ele ID</th>
-                                                    <th scope="col">No. crossings</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="elephantFilterTableBody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <input type="hidden" id="elephantFilterKey" value="">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
+function coerceLatLon(r) {
+    if (!r || typeof r !== 'object') return null;
+    const lat = r.latitude ?? r.lat ?? r.Latitude;
+    const lon = r.longitude ?? r.lng ?? r.Longitude ?? r.lon;
+    const la = lat != null ? Number(lat) : NaN;
+    const lo = lon != null ? Number(lon) : NaN;
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
+    return { ...r, _lat: la, _lon: lo };
+}
 
-    <div class="modal fade" id="corridorInfoModal" tabindex="-1" aria-labelledby="corridorInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="corridorInfoModalLabel">Corridor monitoring — how it works</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body small">
-                    <h3 class="h6">Filters (Year / Month / Apply)</h3>
-                    <p class="mb-3">Crossings are <strong>not</strong> read from Firebase Realtime Database. They come from <strong>Google Cloud Storage</strong> (<code>awt_data/road_crossings.json</code>) either via a <strong>public HTTPS URL</strong> to that object, or via the <strong>road-crossings-process</strong> API (Bearer or Basic auth), which reads the same GCS file server-side. <strong>Year</strong> and <strong>Month</strong> restrict which crossings are used by each crossing’s <code>estimated_crossing_time</code> (Unix seconds → calendar date). <strong>Apply filter</strong> refreshes the map and any active usage view using only crossings that pass the filter.</p>
+function getTagId(r) {
+    const v = r.tagId ?? r.tag_id ?? r.animalId ?? r.ele_tag_id;
+    if (v == null) return '';
+    return String(v).trim();
+}
 
-                    <h3 class="h6">Hotspot view vs point view</h3>
-                    <p class="mb-3"><strong>Hotspot view</strong> draws a heat layer (density) instead of individual markers. <strong>Point view</strong> shows a small circle for each crossing. These only apply when <strong>Corridor usage</strong> is off; in usage mode, crossing markers and the heat layer are hidden so the corridor and band symbology stay readable.</p>
+/** Unix seconds (typical) or ms; returns ms for ArcGIS Date fields. */
+function timestampToEpochMs(ts) {
+    const n = Number(ts);
+    if (!Number.isFinite(n)) return null;
+    if (Math.abs(n) >= 1e11) return Math.floor(n);
+    return Math.floor(n * 1000);
+}
 
-                    <h3 class="h6">Corridor usage mode</h3>
-                    <p class="mb-2">When turned on:</p>
-                    <ul class="mb-3">
-                        <li>Each <strong>corridor polygon</strong> is filled using a <strong>count of filtered crossings</strong> whose points fall inside that polygon.</li>
-                        <li><strong>Outside-corridor bands</strong> summarize crossings that lie <em>outside</em> every corridor (see cluster rules below).</li>
-                        <li>The <strong>white → red</strong> legend is a linear scale: for each feature, intensity is <code>count ÷ maxCount</code>, where <code>maxCount</code> is the largest crossing count among all corridor polygons and among all <em>displayed</em> outside bands (so the red end always matches the busiest visible polygon or band).</li>
-                    </ul>
+function stableTrackPtId(r, index) {
+    if (r.id != null && String(r.id).trim() !== '') {
+        return String(r.id).slice(0, 255);
+    }
+    const tag = getTagId(r) || 'unknown';
+    const ts = r.timestamp != null ? String(r.timestamp) : String(index);
+    const la = r._lat != null ? r._lat.toFixed(5) : '';
+    const lo = r._lon != null ? r._lon.toFixed(5) : '';
+    const h = crypto.createHash('sha256').update(`${tag}|${ts}|${la}|${lo}`).digest('hex');
+    return h.slice(0, 40);
+}
 
-                    <h3 class="h6">Outside clusters and corridor bands (the maths)</h3>
-                    <ol class="mb-3">
-                        <li>Start with each <strong>outside-corridor</strong> crossing (for the current filter).</li>
-                        <li>Place a <strong>100&nbsp;m radius buffer</strong> (0.1&nbsp;km) around each crossing point (Turf <code>buffer</code> in kilometers).</li>
-                        <li><strong>Merge</strong> buffers that <strong>intersect</strong> or whose <strong>centroids are within ~220&nbsp;m</strong> of each other (pairwise union until stable) so touching or nearly-touching clusters become one polygon.</li>
-                        <li>Count how many <strong>filtered crossing points</strong> fall inside each merged polygon.</li>
-                        <li>Draw a <strong>corridor band</strong> only if that count is <strong>greater than 2</strong> (i.e. <strong>three or more</strong> crossings in the cluster). Single and double-crossing clusters are not shown as bands.</li>
-                        <li>For each band shown: take the <strong>centroid</strong> of the merged buffer polygon. Pick the <strong>crossing in that cluster closest to the centroid</strong> as the reference point. Find the nearest <strong>NG_Roads</strong> line segment; the road <strong>bearing</strong> along that segment defines the road direction. Build a line <strong>through the centroid</strong>, <strong>perpendicular</strong> to the road, and extend it <strong>1&nbsp;km on each side</strong> along the ground (rhumb line). Finally, <strong>buffer that line</strong> by a half-width equal to the <strong>maximum distance</strong> from the centroid to the <strong>boundary</strong> of the merged 100&nbsp;m cluster (distance to each edge segment; the worst case sets the width). That buffered corridor is what you see; crossing counts and colors still refer to points inside the <em>original</em> merged cluster polygon.</li>
-                    </ol>
+function parseFieldMap() {
+    const s = (process.env.ARCGIS_CUMULATIVE_FIELD_MAP || process.env.ARCGIS_FIELD_MAP || '').trim();
+    if (!s) return null;
+    try {
+        return JSON.parse(s);
+    } catch (e) {
+        return null;
+    }
+}
 
-                    <h3 class="h6">Layers (bottom to top)</h3>
-                    <p class="mb-0">Satellite basemap → <strong>NG_Roads</strong> (reference road geometry, bottom vector layer) → corridors / usage fills → outside corridor bands → crossing markers or heat (when usage is off).</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
+function buildAttributes(r, index, fieldMap) {
+    const tsMs = timestampToEpochMs(r.timestamp);
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    const base = {
+        track_pt_id: stableTrackPtId(r, index),
+        ele_tag_id: getTagId(r),
+        ele_name: r.ele_name != null ? String(r.ele_name).slice(0, 255) : '',
+        observation_time: tsMs
+    };
+    if (!fieldMap) return base;
+    const out = {};
+    for (const [k, v] of Object.entries(base)) {
+        const key = fieldMap[k] || k;
+        out[key] = v;
+    }
+    return out;
+}
 
-    <script>
-        const ROAD_API = 'https://ecoexist-api.vercel.app/api/road-crossings-process';
-        /**
-         * Crossings come from GCS (via API or public URL), not RTDB. Pick one:
-         * (1) PUBLIC_ROAD_CROSSINGS_JSON_URL — public HTTPS URL to road_crossings.json (bucket CORS required).
-         * (2) Else API: Bearer ROAD_CROSSINGS_ADMIN_SECRET, or Basic user/password, or (default) Firebase ID token if signed in.
-         */
-        const PUBLIC_ROAD_CROSSINGS_JSON_URL = '';
-        const ROAD_CROSSINGS_ADMIN_SECRET = '';
-        const ROAD_CROSSINGS_BASIC_USER = '';
-        const ROAD_CROSSINGS_BASIC_PASSWORD = '';
+function rowToEsriFeature(r, index, fieldMap) {
+    const lon = Number(r._lon);
+    const lat = Number(r._lat);
+    return {
+        geometry: {
+            x: lon,
+            y: lat,
+            spatialReference: { wkid: 4326 }
+        },
+        attributes: buildAttributes(r, index, fieldMap)
+    };
+}
 
-        function initialsFromFirebaseUser(user) {
-            if (!user) return '?';
-            const name = (user.displayName || '').trim();
-            if (name) {
-                const parts = name.split(/\s+/).filter(Boolean);
-                if (parts.length >= 2) {
-                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-                }
-                if (parts.length === 1 && parts[0].length >= 2) {
-                    return parts[0].substring(0, 2).toUpperCase();
-                }
-                return (parts[0].charAt(0) || '?').toUpperCase();
-            }
-            const local = (user.email || '').split('@')[0] || '';
-            if (local) {
-                const bits = local.split(/[._-]+/).filter(Boolean);
-                if (bits.length >= 2) {
-                    return (bits[0].charAt(0) + bits[1].charAt(0)).toUpperCase();
-                }
-                return local.substring(0, 2).toUpperCase();
-            }
-            return '?';
+async function arcgisGenerateToken() {
+    const portal = (process.env.ARCGIS_PORTAL_URL || 'https://www.arcgis.com').replace(/\/$/, '');
+    const user = (process.env.ARCGIS_USERNAME || '').trim();
+    const pass = (process.env.ARCGIS_PASSWORD || '').trim();
+    const referer = (process.env.ARCGIS_REFERER || 'https://www.arcgis.com').trim();
+    if (!user || !pass) throw new Error('ARCGIS_USERNAME and ARCGIS_PASSWORD are required');
+
+    const tokenUrl = `${portal}/sharing/rest/generateToken`;
+    const body = new URLSearchParams({
+        username: user,
+        password: pass,
+        referer,
+        client: 'referer',
+        expiration: '60',
+        f: 'json'
+    });
+
+    const res = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+    const j = await res.json();
+    if (!res.ok || j.error) {
+        throw new Error(j.error?.message || j.message || `Token HTTP ${res.status}`);
+    }
+    if (!j.token) throw new Error('ArcGIS token response missing token');
+    return j.token;
+}
+
+async function arcgisPostForm(url, params) {
+    const body = new URLSearchParams(params);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+    const text = await res.text();
+    let j;
+    try {
+        j = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`ArcGIS non-JSON: ${text.slice(0, 200)}`);
+    }
+    return { ok: res.ok, json: j };
+}
+
+async function deleteAllFeatures(layerUrl, token) {
+    const base = layerUrl.replace(/\/$/, '');
+    const deleteUrl = `${base}/deleteFeatures`;
+    const { ok, json } = await arcgisPostForm(deleteUrl, {
+        f: 'json',
+        token,
+        where: '1=1'
+    });
+    if (!ok) throw new Error('deleteFeatures HTTP error');
+    if (json.error) throw new Error(json.error.message || JSON.stringify(json.error));
+    const n = Array.isArray(json.deleteResults) ? json.deleteResults.length : null;
+    return { deleteResults: n, raw: json.success !== false };
+}
+
+async function addFeaturesBatch(layerUrl, token, features, batchSize) {
+    const base = layerUrl.replace(/\/$/, '');
+    const addUrl = `${base}/addFeatures`;
+    const size = Math.min(Math.max(batchSize || 400, 50), 2000);
+    let added = 0;
+    const errors = [];
+    for (let i = 0; i < features.length; i += size) {
+        const chunk = features.slice(i, i + size);
+        const { ok, json } = await arcgisPostForm(addUrl, {
+            f: 'json',
+            token,
+            features: JSON.stringify(chunk)
+        });
+        if (!ok) errors.push({ batchStart: i, status: 'http_error', detail: json });
+        if (json.error) errors.push({ batchStart: i, error: json.error });
+        const results = json.addResults || [];
+        for (const r of results) {
+            if (r.success) added++;
+            else if (r.error) errors.push({ objectId: r.objectId, error: r.error });
         }
+    }
+    return { added, errors };
+}
 
-        window.updateCorridorUserAvatar = function () {
-            const el = document.getElementById('userAvatarInitials');
-            if (!el) return;
-            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
-            el.textContent = initialsFromFirebaseUser(user);
-        };
-
-        function wireCorridorShellUi() {
-            window.updateCorridorUserAvatar();
-            var auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
-            var oasc = window.firebasePortal && window.firebasePortal.onAuthStateChanged;
-            if (auth && oasc && !auth._corridorMonAvatarBound) {
-                auth._corridorMonAvatarBound = true;
-                oasc(auth, function () {
-                    window.updateCorridorUserAvatar();
-                });
-            }
-            var so = document.getElementById('userAvatarSignOut');
-            if (so && !so._corridorSignOutBound) {
-                so._corridorSignOutBound = true;
-                so.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    var a = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
-                    var signOutFn = window.firebasePortal && window.firebasePortal.signOut;
-                    if (a && signOutFn) {
-                        signOutFn(a)
-                            .then(function () {
-                                window.location.href = 'login.html';
-                            })
-                            .catch(function () {
-                                window.location.href = 'login.html';
-                            });
-                    } else {
-                        window.location.href = 'login.html';
-                    }
-                });
-            }
-        }
-
-        async function getAuthToken(forceRefresh) {
-            const user = window.firebasePortal?.auth?.currentUser;
-            if (!user) return null;
+function mergeRequestQuery(req) {
+    const out = {};
+    const url = typeof req.url === 'string' ? req.url : '';
+    const qi = url.indexOf('?');
+    if (qi !== -1) {
+        const part = url.slice(qi + 1);
+        for (const pair of part.split('&')) {
+            if (!pair) continue;
+            const eq = pair.indexOf('=');
+            const k = eq === -1 ? pair : pair.slice(0, eq);
+            const v = eq === -1 ? '' : pair.slice(eq + 1);
             try {
-                return await user.getIdToken(!!forceRefresh);
+                out[decodeURIComponent(k.replace(/\+/g, ' '))] = decodeURIComponent(v.replace(/\+/g, ' '));
             } catch (e) {
-                return null;
+                out[k] = v;
             }
         }
+    }
+    if (req.query && typeof req.query === 'object') Object.assign(out, req.query);
+    return out;
+}
 
-        /** Wait for module auth so list fetch has a Bearer token (avoids 401 right after authReady). */
-        async function waitForFirebaseUser(maxMs) {
-            const cap = maxMs != null ? maxMs : 5000;
-            const start = Date.now();
-            while (Date.now() - start < cap) {
-                const u = window.firebasePortal?.auth?.currentUser;
-                if (u) return u;
-                await new Promise(function (r) {
-                    setTimeout(r, 80);
-                });
-            }
-            return window.firebasePortal?.auth?.currentUser || null;
+function verifySyncAuth(req) {
+    const arcgisSec = (process.env.ARCGIS_SYNC_SECRET || '').trim();
+    const cronSec = (process.env.CRON_SECRET || '').trim();
+    const h = req.headers && req.headers.authorization;
+    if (!h || !h.startsWith('Bearer ')) {
+        if (!arcgisSec && !cronSec) return { ok: true };
+        return { ok: false };
+    }
+    const t = h.slice(7).trim();
+    if (cronSec && t === cronSec) return { ok: true };
+    if (arcgisSec && t === arcgisSec) return { ok: true };
+    if (!arcgisSec && !cronSec) return { ok: true };
+    return { ok: false };
+}
+
+module.exports = async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const auth = verifySyncAuth(req);
+    if (!auth.ok) {
+        return res.status(401).json({
+            error:
+                'Authorization: Bearer <ARCGIS_SYNC_SECRET> or <CRON_SECRET> (Vercel Cron). Or leave both unset only for local testing.'
+        });
+    }
+
+    const layerUrl = (process.env.ARCGIS_CUMULATIVE_LAYER_URL || '').trim();
+    if (!layerUrl) {
+        return res.status(500).json({ error: 'ARCGIS_CUMULATIVE_LAYER_URL is not set' });
+    }
+
+    const q = mergeRequestQuery(req);
+    const replace =
+        process.env.ARCGIS_SYNC_REPLACE === '1' ||
+        process.env.ARCGIS_SYNC_REPLACE === 'true' ||
+        String(q.replace || '') === '1' ||
+        String(q.replace || '').toLowerCase() === 'true';
+
+    try {
+        const storage = getStorage();
+        const bucket = getBucketName();
+        const path = getCumulativeGcsPath();
+        const parsed = await loadGcsJson(storage, bucket, path);
+        let arr = Array.isArray(parsed) ? parsed : parsed.data;
+        if (!Array.isArray(arr)) {
+            return res.status(500).json({ error: 'Cumulative JSON must be an array or { data: array }' });
         }
 
-        /** Accept lat/lon, latitude/longitude, etc. (matches API coerce + legacy GCS). */
-        function normalizeCrossingCoords(c) {
-            if (!c || typeof c !== 'object') return null;
-            const lat = c.lat != null ? c.lat : c.latitude != null ? c.latitude : c.Latitude;
-            const lon = c.lon != null ? c.lon : c.longitude != null ? c.longitude : c.lng != null ? c.lng : c.Longitude;
-            const la = Number(lat);
-            const lo = Number(lon);
-            if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
-            var out = {};
-            for (var k in c) {
-                if (Object.prototype.hasOwnProperty.call(c, k)) out[k] = c[k];
-            }
-            out.lat = la;
-            out.lon = lo;
-            return out;
+        const fieldMap = parseFieldMap();
+        const features = [];
+        for (let i = 0; i < arr.length; i++) {
+            const row = coerceLatLon(arr[i]);
+            if (!row) continue;
+            if (timestampToEpochMs(row.timestamp) == null) continue;
+            features.push(rowToEsriFeature(row, i, fieldMap));
         }
 
-        function roadCrossingsAuthHeaders() {
-            if (ROAD_CROSSINGS_ADMIN_SECRET) return { Authorization: 'Bearer ' + ROAD_CROSSINGS_ADMIN_SECRET };
-            return null;
+        const batchSize = parseInt(process.env.ARCGIS_ADD_BATCH_SIZE || '400', 10);
+        const token = await arcgisGenerateToken();
+        let deleteResult = null;
+        if (replace) {
+            deleteResult = await deleteAllFeatures(layerUrl, token);
         }
 
-        function roadCrossingsBasicAuthHeaders() {
-            if (ROAD_CROSSINGS_BASIC_USER && ROAD_CROSSINGS_BASIC_PASSWORD) {
-                return {
-                    Authorization: 'Basic ' + btoa(ROAD_CROSSINGS_BASIC_USER + ':' + ROAD_CROSSINGS_BASIC_PASSWORD)
-                };
-            }
-            return null;
-        }
+        const { added, errors } = await addFeaturesBatch(layerUrl, token, features, batchSize);
 
-        /** Same shapes as in GCS: { crossings: { id: {...} } } or { crossings: [...] } */
-        function normalizeCrossingsPayload(raw) {
-            if (!raw) return [];
-            const cr = raw.crossings;
-            if (!cr) return [];
-            if (Array.isArray(cr)) return cr;
-            if (typeof cr === 'object') {
-                return Object.entries(cr).map(([id, data]) => ({ id, ...data }));
-            }
-            return [];
-        }
-        const CORRIDOR_PATHS = ['data/Corridors.geojson', 'data/Corridor.geojson'];
-        const ROADS_PATHS = ['data/NG_Roads.geojson', '../data/NG_Roads.geojson'];
-
-        let map;
-        let corridorGeoJson = null;
-        let allCrossings = [];
-        let crossings = [];
-        let corridorLayer = null;
-        let usageCorridorLayer = null;
-        let usageBufferLayer = null;
-        let pointLayerGroup = null;
-        let heatLayer = null;
-        let hotspotMode = false;
-        let usageMode = false;
-        const BUFFER_KM = 0.1;
-        const MAX_OUTSIDE_FOR_MERGE = 800;
-        const MERGE_TOUCH_KM = 0.22;
-        const CORRIDOR_BAND_HALF_KM = 1;
-        let roadsGeoJson = null;
-        let roadsLoadPromise = null;
-        let roadLayer = null;
-        /** Outside corridor bands are drawn only when merged cluster has this many crossings or more. */
-        const MIN_OUTSIDE_CLUSTER_FOR_BAND = 3;
-
-        function escapeHtml(s) {
-            if (s == null) return '';
-            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        function elephantGroupKey(c) {
-            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
-            if (tag) return 'id:' + tag;
-            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
-            if (name) return 'name:' + name.toLowerCase();
-            return 'unknown';
-        }
-
-        function elephantDisplayLabel(c) {
-            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
-            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
-            if (name && tag) return name + ' (' + tag + ')';
-            if (name) return name;
-            if (tag) return 'Tag ' + tag;
-            return 'Unknown';
-        }
-
-        function elephantNameCell(c) {
-            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
-            return name || '—';
-        }
-
-        function elephantIdCell(c) {
-            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
-            return tag || '—';
-        }
-
-        function escapeAttr(s) {
-            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-        }
-
-        /** Date-filtered crossings, optionally narrowed by elephant picker. */
-        function activeCrossings() {
-            const keyInp = document.getElementById('elephantFilterKey');
-            const key = keyInp && keyInp.value ? String(keyInp.value) : '';
-            if (!key) return crossings;
-            return crossings.filter(function (c) {
-                return elephantGroupKey(c) === key;
-            });
-        }
-
-        function markElephantFilterSelection() {
-            const keyVal = document.getElementById('elephantFilterKey');
-            const key = keyVal && keyVal.value ? keyVal.value : '';
-            document.querySelectorAll('#elephantFilterTableBody .elephant-filter-row').forEach(function (tr) {
-                const k = tr.getAttribute('data-key') != null ? tr.getAttribute('data-key') : '';
-                tr.classList.toggle('selected', k === key);
-            });
-        }
-
-        function updateElephantFilterButtonLabelFromTable() {
-            const span = document.getElementById('elephantFilterButtonLabel');
-            const keyInp = document.getElementById('elephantFilterKey');
-            if (!span || !keyInp) return;
-            const key = keyInp.value ? String(keyInp.value) : '';
-            if (!key) {
-                span.textContent = 'All elephants';
-                return;
-            }
-            let trFound = null;
-            document.querySelectorAll('#elephantFilterTableBody .elephant-filter-row').forEach(function (tr) {
-                const k = tr.getAttribute('data-key') != null ? tr.getAttribute('data-key') : '';
-                if (k === key) trFound = tr;
-            });
-            if (!trFound) {
-                span.textContent = 'All elephants';
-                return;
-            }
-            const tds = trFound.querySelectorAll('td');
-            if (tds.length < 3) return;
-            span.textContent =
-                tds[0].textContent.trim() + ' · ' + tds[1].textContent.trim() + ' · ' + tds[2].textContent.trim();
-        }
-
-        function populateElephantTable() {
-            const tbody = document.getElementById('elephantFilterTableBody');
-            const keyInp = document.getElementById('elephantFilterKey');
-            if (!tbody || !keyInp) return;
-            const prev = keyInp.value ? String(keyInp.value) : '';
-            const byKey = new Map();
-            for (let i = 0; i < crossings.length; i++) {
-                const c = crossings[i];
-                const k = elephantGroupKey(c);
-                if (!byKey.has(k)) byKey.set(k, { sample: c, count: 0 });
-                byKey.get(k).count++;
-            }
-            const sorted = [...byKey.entries()].sort((a, b) => {
-                if (b[1].count !== a[1].count) return b[1].count - a[1].count;
-                return elephantDisplayLabel(a[1].sample).localeCompare(elephantDisplayLabel(b[1].sample), undefined, { sensitivity: 'base' });
-            });
-
-            let html =
-                '<tr class="elephant-filter-row" data-key=""><td><em>All elephants</em></td><td>—</td><td>—</td></tr>';
-            for (let i = 0; i < sorted.length; i++) {
-                const k = sorted[i][0];
-                const v = sorted[i][1];
-                const nm = escapeHtml(elephantNameCell(v.sample));
-                const idCell = escapeHtml(elephantIdCell(v.sample));
-                html +=
-                    '<tr class="elephant-filter-row" data-key="' +
-                    escapeAttr(k) +
-                    '"><td>' +
-                    nm +
-                    '</td><td>' +
-                    idCell +
-                    '</td><td>' +
-                    v.count +
-                    '</td></tr>';
-            }
-            tbody.innerHTML = html;
-
-            let nextKey = '';
-            if (prev && sorted.some(function (r) { return r[0] === prev; })) nextKey = prev;
-            keyInp.value = nextKey;
-            markElephantFilterSelection();
-            updateElephantFilterButtonLabelFromTable();
-        }
-
-        function ensureElephantFilterTableBound() {
-            const tbody = document.getElementById('elephantFilterTableBody');
-            if (!tbody || tbody._corridorRowClickBound) return;
-            tbody._corridorRowClickBound = true;
-            tbody.addEventListener('click', function (e) {
-                const tr = e.target.closest('.elephant-filter-row');
-                if (!tr) return;
-                e.preventDefault();
-                const raw = tr.getAttribute('data-key');
-                const key = raw != null ? String(raw) : '';
-                const inp = document.getElementById('elephantFilterKey');
-                if (inp) inp.value = key;
-                markElephantFilterSelection();
-                updateElephantFilterButtonLabelFromTable();
-                const btn = document.getElementById('elephantFilterBtn');
-                if (btn && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                    const dd = bootstrap.Dropdown.getInstance(btn);
-                    if (dd) dd.hide();
-                }
-                onElephantFilterChange();
-            });
-        }
-
-        function onElephantFilterChange() {
-            updateCrossingStatsFigures();
-            redrawCrossingDisplay();
-            if (usageMode) void applyCorridorUsage();
-        }
-
-        function updateCrossingStatsFigures() {
-            const elTotal = document.getElementById('figTotalCrossings');
-            const elIn = document.getElementById('figInsideCorridors');
-            const elOut = document.getElementById('figOutsideCorridors');
-            if (!elTotal || !elIn || !elOut) return;
-
-            const list = activeCrossings();
-            const total = list.length;
-            elTotal.textContent = String(total);
-
-            if (!corridorGeoJson || !corridorGeoJson.features || !corridorGeoJson.features.length) {
-                elIn.textContent = '—';
-                elOut.textContent = '—';
-            } else {
-                let inside = 0;
-                for (let i = 0; i < list.length; i++) {
-                    const c = list[i];
-                    if (pointInsideCorridors(Number(c.lon), Number(c.lat), corridorGeoJson)) inside++;
-                }
-                elIn.textContent = String(inside);
-                elOut.textContent = String(Math.max(0, total - inside));
-            }
-        }
-
-        function colorWhiteToRed(count, maxCount) {
-            if (maxCount <= 0 || count <= 0) {
-                return { fillColor: '#ffffff', color: '#bbbbbb', fillOpacity: 0.35, weight: 1 };
-            }
-            const t = Math.min(1, count / maxCount);
-            const g = Math.round(255 * (1 - t));
-            const b = Math.round(255 * (1 - t));
-            return {
-                fillColor: `rgb(255,${g},${b})`,
-                color: `rgb(${Math.round(180 - 80 * t)},0,0)`,
-                fillOpacity: 0.35 + 0.45 * t,
-                weight: 1 + Math.round(2 * t)
-            };
-        }
-
-        function pointInsideCorridors(lon, lat, fc) {
-            const pt = turf.point([lon, lat]);
-            for (let i = 0; i < fc.features.length; i++) {
-                try {
-                    if (turf.booleanPointInPolygon(pt, fc.features[i])) return true;
-                } catch (e) { /* invalid geom */ }
-            }
-            return false;
-        }
-
-        function buffersShouldMerge(a, b) {
-            try {
-                if (turf.booleanIntersects(a, b)) return true;
-                const c1 = turf.centroid(a);
-                const c2 = turf.centroid(b);
-                return turf.distance(c1, c2, { units: 'kilometers' }) <= MERGE_TOUCH_KM;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function mergeOverlappingPolygons(features) {
-            let list = features.filter(f => f && f.geometry).map(f => {
-                try {
-                    return turf.feature(f.geometry, f.properties || {});
-                } catch (e) {
-                    return f;
-                }
-            });
-            let guard = 0;
-            const maxGuard = 12000;
-            while (list.length > 1 && guard < maxGuard) {
-                guard++;
-                let mergedThisRound = false;
-                outer: for (let i = 0; i < list.length; i++) {
-                    for (let j = i + 1; j < list.length; j++) {
-                        try {
-                            if (!buffersShouldMerge(list[i], list[j])) continue;
-                            const u = turf.union(list[i], list[j]);
-                            if (!u || !u.geometry) continue;
-                            if (u.geometry.type !== 'Polygon' && u.geometry.type !== 'MultiPolygon') continue;
-                            list.splice(j, 1);
-                            list.splice(i, 1);
-                            list.push(u);
-                            mergedThisRound = true;
-                            break outer;
-                        } catch (e) { /* skip bad pair */ }
-                    }
-                }
-                if (!mergedThisRound) break;
-            }
-            return list;
-        }
-
-        function normalizeBearing(deg) {
-            let b = deg % 360;
-            if (b < 0) b += 360;
-            return b;
-        }
-
-        function roadLineFeaturesInBbox(bboxPoly) {
-            if (!roadsGeoJson || !roadsGeoJson.features) return [];
-            const bb = turf.bbox(bboxPoly);
-            const pad = 0.02;
-            const minLon = bb[0] - pad, minLat = bb[1] - pad, maxLon = bb[2] + pad, maxLat = bb[3] + pad;
-            const out = [];
-            for (const f of roadsGeoJson.features) {
-                const g = f.geometry;
-                if (!g || !g.coordinates) continue;
-                const addLine = (coords) => {
-                    if (!coords || coords.length < 2) return;
-                    const line = turf.lineString(coords);
-                    try {
-                        const b = turf.bbox(line);
-                        if (b[2] < minLon || b[0] > maxLon || b[3] < minLat || b[1] > maxLat) return;
-                        out.push(line);
-                    } catch (e) { /* skip */ }
-                };
-                if (g.type === 'LineString') addLine(g.coordinates);
-                else if (g.type === 'MultiLineString') g.coordinates.forEach(addLine);
-            }
-            return out;
-        }
-
-        function nearestRoadBearingAtPoint(ptFeature, bboxHintPoly) {
-            const lines = roadLineFeaturesInBbox(bboxHintPoly);
-            let best = null;
-            let bestDist = Infinity;
-            for (const line of lines) {
-                try {
-                    const snap = turf.nearestPointOnLine(line, ptFeature, { units: 'kilometers' });
-                    const d = snap.properties.dist;
-                    if (d >= bestDist) continue;
-                    const idx = snap.properties.index;
-                    const coords = line.geometry.coordinates;
-                    if (idx == null || idx + 1 >= coords.length) continue;
-                    const a = turf.point(coords[idx]);
-                    const b = turf.point(coords[idx + 1]);
-                    const brg = turf.bearing(a, b);
-                    bestDist = d;
-                    best = brg;
-                } catch (e) { /* skip */ }
-            }
-            return best;
-        }
-
-        function maxDistCentroidToPolygonBoundaryKm(centroid, polygonFeat) {
-            const pt = centroid;
-            let maxD = 0;
-            const ringEdges = (ring) => {
-                for (let i = 0; i < ring.length - 1; i++) {
-                    try {
-                        const seg = turf.lineString([ring[i], ring[i + 1]]);
-                        const d = turf.pointToLineDistance(pt, seg, { units: 'kilometers' });
-                        if (d > maxD) maxD = d;
-                    } catch (e) { /* skip */ }
-                }
-            };
-            const g = polygonFeat.geometry;
-            if (g.type === 'Polygon') g.coordinates.forEach(ringEdges);
-            else if (g.type === 'MultiPolygon') g.coordinates.forEach(poly => poly.forEach(ringEdges));
-            return maxD > 0 ? maxD : 0.05;
-        }
-
-        function crossingRefPointForBand(insidePtsFc, centroid) {
-            if (!insidePtsFc || !insidePtsFc.features.length) return centroid;
-            let best = insidePtsFc.features[0];
-            let bestD = Infinity;
-            for (const f of insidePtsFc.features) {
-                try {
-                    const d = turf.distance(centroid, f, { units: 'kilometers' });
-                    if (d < bestD) {
-                        bestD = d;
-                        best = f;
-                    }
-                } catch (e) { /* skip */ }
-            }
-            return best;
-        }
-
-        function mergedPolygonToUsageBand(mergedPoly, ptsFc) {
-            let inside;
-            try {
-                inside = turf.pointsWithinPolygon(ptsFc, mergedPoly);
-            } catch (e) {
-                return mergedPoly;
-            }
-            const C = turf.centroid(mergedPoly);
-            const refPt = crossingRefPointForBand(inside, C);
-            let perpBearing;
-            const roadBearing = nearestRoadBearingAtPoint(refPt, mergedPoly);
-            if (roadBearing != null && Number.isFinite(roadBearing)) {
-                perpBearing = normalizeBearing(roadBearing + 90);
-            } else {
-                try {
-                    perpBearing = normalizeBearing(turf.bearing(C, refPt) + 90);
-                } catch (e) {
-                    return mergedPoly;
-                }
-            }
-            let p1, p2;
-            try {
-                p1 = turf.rhumbDestination(C, CORRIDOR_BAND_HALF_KM, perpBearing, { units: 'kilometers' });
-                p2 = turf.rhumbDestination(C, CORRIDOR_BAND_HALF_KM, normalizeBearing(perpBearing + 180), { units: 'kilometers' });
-            } catch (e) {
-                return mergedPoly;
-            }
-            const axis = turf.lineString([p2.geometry.coordinates, p1.geometry.coordinates]);
-            const widthKm = maxDistCentroidToPolygonBoundaryKm(C, mergedPoly);
-            let band;
-            try {
-                band = turf.buffer(axis, widthKm, { units: 'kilometers', steps: 24 });
-            } catch (e) {
-                return mergedPoly;
-            }
-            if (!band || !band.geometry) return mergedPoly;
-            return band;
-        }
-
-        function ensureRoadsLoaded() {
-            if (roadsGeoJson) return Promise.resolve(true);
-            if (roadsLoadPromise) return roadsLoadPromise;
-            roadsLoadPromise = (async () => {
-                for (const p of ROADS_PATHS) {
-                    try {
-                        const res = await fetch(p);
-                        if (res.ok) {
-                            roadsGeoJson = await res.json();
-                            return true;
-                        }
-                    } catch (e) { /* try next */ }
-                }
-                roadsGeoJson = null;
-                return false;
-            })();
-            return roadsLoadPromise;
-        }
-
-        async function loadCorridors() {
-            for (const p of CORRIDOR_PATHS) {
-                try {
-                    const res = await fetch(p);
-                    if (res.ok) {
-                        corridorGeoJson = await res.json();
-                        return true;
-                    }
-                } catch (e) { /* try next */ }
-            }
-            return false;
-        }
-
-        async function loadCrossings() {
-            let list = [];
-
-            if (PUBLIC_ROAD_CROSSINGS_JSON_URL && String(PUBLIC_ROAD_CROSSINGS_JSON_URL).trim()) {
-                const res = await fetch(String(PUBLIC_ROAD_CROSSINGS_JSON_URL).trim());
-                if (!res.ok) throw new Error('Public crossings JSON ' + res.status);
-                const raw = await res.json();
-                list = normalizeCrossingsPayload(raw);
-            } else {
-                let headers = roadCrossingsAuthHeaders() || roadCrossingsBasicAuthHeaders();
-                if (!headers) {
-                    if (typeof window.AuthPortal !== 'undefined' && typeof window.AuthPortal.waitForFirebase === 'function') {
-                        await window.AuthPortal.waitForFirebase(10000);
-                    } else {
-                        await waitForFirebaseUser(10000);
-                    }
-                    let authToken = await getAuthToken();
-                    if (!authToken) {
-                        await new Promise(function (r) {
-                            setTimeout(r, 800);
-                        });
-                        authToken = await getAuthToken();
-                    }
-                    if (!authToken) {
-                        authToken = await getAuthToken(true);
-                    }
-                    if (authToken) headers = { Authorization: 'Bearer ' + authToken };
-                }
-                if (!headers) {
-                    throw new Error(
-                        'Sign in as admin, or set PUBLIC_ROAD_CROSSINGS_JSON_URL, or ROAD_CROSSINGS_ADMIN_SECRET / Basic credentials in this page'
-                    );
-                }
-                let res = await fetch(ROAD_API + '?action=list', { headers });
-                if (res.status === 401) {
-                    const retryToken = await getAuthToken(true);
-                    if (retryToken) {
-                        res = await fetch(ROAD_API + '?action=list', {
-                            headers: { Authorization: 'Bearer ' + retryToken }
-                        });
-                    }
-                }
-                if (!res.ok) {
-                    var detail = '';
-                    try {
-                        var errBody = await res.json();
-                        if (errBody && errBody.error) detail = ': ' + errBody.error;
-                        else if (errBody && errBody.details) detail = ': ' + errBody.details;
-                    } catch (e1) {
-                        /* ignore */
-                    }
-                    throw new Error('Crossings API ' + res.status + detail);
-                }
-                const j = await res.json();
-                list = j.crossings || [];
-            }
-
-            list = (list || []).map(normalizeCrossingCoords).filter(function (x) {
-                return x != null;
-            });
-            allCrossings = list;
-            populateYearDropdown();
-            crossings = getFilteredCrossingsFromAll();
-            return crossings.length;
-        }
-
-        function populateYearDropdown() {
-            const sel = document.getElementById('filterYear');
-            const cur = sel.value;
-            const years = new Set();
-            allCrossings.forEach(c => {
-                const ts = Number(c.estimated_crossing_time);
-                if (Number.isFinite(ts)) years.add(new Date(ts * 1000).getFullYear());
-            });
-            const sorted = [...years].sort((a, b) => b - a);
-            sel.innerHTML = '<option value="">All years</option>';
-            sorted.forEach(y => {
-                const o = document.createElement('option');
-                o.value = String(y);
-                o.textContent = String(y);
-                sel.appendChild(o);
-            });
-            if (cur && sorted.includes(Number(cur))) sel.value = cur;
-        }
-
-        function getFilteredCrossingsFromAll() {
-            const year = document.getElementById('filterYear').value;
-            const month = document.getElementById('filterMonth').value;
-            return allCrossings.filter(c => {
-                if (!year && month === '') return true;
-                const ts = Number(c.estimated_crossing_time);
-                if (!Number.isFinite(ts)) return false;
-                const d = new Date(ts * 1000);
-                if (year && d.getFullYear() !== Number(year)) return false;
-                if (month !== '' && (d.getMonth() + 1) !== Number(month)) return false;
-                return true;
-            });
-        }
-
-        function applyDateFilter() {
-            crossings = getFilteredCrossingsFromAll();
-            const keyInp = document.getElementById('elephantFilterKey');
-            if (keyInp) keyInp.value = '';
-            populateElephantTable();
-            const statusEl = document.getElementById('statusLine');
-            if (statusEl) statusEl.textContent = '';
-            updateCrossingStatsFigures();
-            redrawCrossingDisplay();
-            if (usageMode) void applyCorridorUsage();
-        }
-
-        function buildPointsFeatureCollection() {
-            const list = activeCrossings();
-            return turf.featureCollection(list.map(c =>
-                turf.point([Number(c.lon), Number(c.lat)], { id: c.id })
-            ));
-        }
-
-        function drawBaseCorridors() {
-            if (corridorLayer) {
-                map.removeLayer(corridorLayer);
-                corridorLayer = null;
-            }
-            if (!corridorGeoJson) return;
-            corridorLayer = L.geoJSON(corridorGeoJson, {
-                style: {
-                    color: '#1a4a2e',
-                    weight: 1.5,
-                    fillColor: '#4a7c59',
-                    fillOpacity: 0.12
-                }
-            });
-            corridorLayer.addTo(map);
-        }
-
-        function drawRoadsLayer() {
-            if (!map || !roadsGeoJson || !roadsGeoJson.features || !roadsGeoJson.features.length) return;
-            if (roadLayer) {
-                map.removeLayer(roadLayer);
-                roadLayer = null;
-            }
-            roadLayer = L.geoJSON(roadsGeoJson, {
-                pane: 'roadsPane',
-                style: {
-                    color: '#facc15',
-                    weight: 1,
-                    opacity: 0.65,
-                    fillOpacity: 0
-                }
-            });
-            roadLayer.addTo(map);
-        }
-
-        function clearUsageLayers() {
-            if (usageCorridorLayer) {
-                map.removeLayer(usageCorridorLayer);
-                usageCorridorLayer = null;
-            }
-            if (usageBufferLayer) {
-                map.removeLayer(usageBufferLayer);
-                usageBufferLayer = null;
-            }
-            if (corridorLayer) corridorLayer.addTo(map);
-        }
-
-        function styleBufferUsage(f, globalMax) {
-            const n = f.properties._usageCount || 0;
-            const s = colorWhiteToRed(n, globalMax);
-            return {
-                fillColor: s.fillColor,
-                color: '#b45309',
-                weight: 2,
-                fillOpacity: Math.min(0.92, (s.fillOpacity || 0.5) + 0.15),
-                opacity: 0.95
-            };
-        }
-
-        async function applyCorridorUsage() {
-            if (!corridorGeoJson) return;
-            const displayList = activeCrossings();
-            if (!displayList.length) {
-                document.getElementById('statsLine').textContent = 'No crossings in current filter — adjust month/year, elephant, or load data.';
-                return;
-            }
-
-            await ensureRoadsLoaded();
-
-            if (corridorLayer && map.hasLayer(corridorLayer)) map.removeLayer(corridorLayer);
-            if (usageBufferLayer) {
-                map.removeLayer(usageBufferLayer);
-                usageBufferLayer = null;
-            }
-            if (usageCorridorLayer) {
-                map.removeLayer(usageCorridorLayer);
-                usageCorridorLayer = null;
-            }
-
-            const ptsFc = buildPointsFeatureCollection();
-            let maxCorridor = 0;
-            const corridorFeatures = corridorGeoJson.features.map((f, idx) => {
-                let n = 0;
-                try {
-                    const inside = turf.pointsWithinPolygon(ptsFc, f);
-                    n = inside.features.length;
-                } catch (e) { n = 0; }
-                maxCorridor = Math.max(maxCorridor, n);
-                const feat = JSON.parse(JSON.stringify(f));
-                feat.properties = feat.properties || {};
-                feat.properties._usageCount = n;
-                feat.properties._usageIdx = idx;
-                return feat;
-            });
-
-            const outsideBuffers = [];
-            let outsideCount = 0;
-            for (const c of displayList) {
-                const lon = Number(c.lon), lat = Number(c.lat);
-                if (pointInsideCorridors(lon, lat, corridorGeoJson)) continue;
-                outsideCount++;
-                if (outsideBuffers.length >= MAX_OUTSIDE_FOR_MERGE) continue;
-                try {
-                    const buf = turf.buffer(turf.point([lon, lat]), BUFFER_KM, { units: 'kilometers' });
-                    if (buf && buf.geometry) outsideBuffers.push(buf);
-                } catch (e) { /* skip */ }
-            }
-
-            let bufferFeatures = [];
-            let mergedClusterCount = 0;
-            let maxBuf = 0;
-            if (outsideBuffers.length) {
-                const merged = mergeOverlappingPolygons(outsideBuffers);
-                mergedClusterCount = merged.length;
-                const allBands = merged.map((poly, idx) => {
-                    let n = 0;
-                    try {
-                        const inside = turf.pointsWithinPolygon(ptsFc, poly);
-                        n = inside.features.length;
-                    } catch (e) { n = 0; }
-                    const displayPoly = mergedPolygonToUsageBand(poly, ptsFc);
-                    const feat = JSON.parse(JSON.stringify(displayPoly));
-                    feat.properties = feat.properties || {};
-                    feat.properties._usageCount = n;
-                    feat.properties._bufIdx = idx;
-                    return feat;
-                });
-                bufferFeatures = allBands.filter(f => (f.properties._usageCount || 0) >= MIN_OUTSIDE_CLUSTER_FOR_BAND);
-                bufferFeatures.forEach(f => {
-                    maxBuf = Math.max(maxBuf, f.properties._usageCount || 0);
-                });
-            }
-
-            const globalMax = Math.max(maxCorridor, maxBuf, 1);
-
-            usageCorridorLayer = L.geoJSON({ type: 'FeatureCollection', features: corridorFeatures }, {
-                pane: 'corridorUsagePane',
-                style(f) {
-                    return colorWhiteToRed(f.properties._usageCount || 0, globalMax);
-                },
-                onEachFeature(f, layer) {
-                    const n = f.properties._usageCount || 0;
-                    layer.bindPopup('<strong>Corridor</strong><br>Road crossings (filtered): ' + n);
-                }
-            });
-            usageCorridorLayer.addTo(map);
-
-            if (bufferFeatures.length) {
-                usageBufferLayer = L.geoJSON({ type: 'FeatureCollection', features: bufferFeatures }, {
-                    pane: 'usageBufferPane',
-                    style(f) {
-                        return styleBufferUsage(f, globalMax);
-                    },
-                    onEachFeature(f, layer) {
-                        const n = f.properties._usageCount || 0;
-                        const nz = bufferFeatures.length;
-                        layer.bindPopup(
-                            '<strong>Corridor band</strong> (clusters with ' + MIN_OUTSIDE_CLUSTER_FOR_BAND + '+ crossings; perpendicular to road, 1&nbsp;km each side; width from centroid to cluster edge) · ' +
-                            nz + ' zone' + (nz === 1 ? '' : 's') + ' shown<br>' +
-                            'Road crossings in this merged 100&nbsp;m cluster: <strong>' + n + '</strong>'
-                        );
-                    }
-                });
-                usageBufferLayer.addTo(map);
-            }
-
-            let msg = displayList.length + ' crossings · ' + corridorGeoJson.features.length + ' corridors';
-            if (outsideCount === 0) {
-                msg += ' · All crossings fall inside corridors (no outside buffer polygons).';
-            } else {
-                msg += ' · ' + outsideCount + ' outside corridor' + (outsideCount > MAX_OUTSIDE_FOR_MERGE ? ' (capped ' + MAX_OUTSIDE_FOR_MERGE + ' for merge)' : '');
-                msg += ' · ' + mergedClusterCount + ' merged cluster' + (mergedClusterCount === 1 ? '' : 's');
-                msg += ' · ' + bufferFeatures.length + ' band' + (bufferFeatures.length === 1 ? '' : 's') + ' shown (≥' + MIN_OUTSIDE_CLUSTER_FOR_BAND + ' crossings)';
-            }
-            document.getElementById('statsLine').textContent = msg;
-
-            redrawCrossingDisplay();
-        }
-
-        function redrawCrossingDisplay() {
-            if (pointLayerGroup) {
-                map.removeLayer(pointLayerGroup);
-                pointLayerGroup = null;
-            }
-            if (heatLayer) {
-                map.removeLayer(heatLayer);
-                heatLayer = null;
-            }
-            const displayList = activeCrossings();
-            if (!displayList.length) return;
-            if (usageMode) return;
-
-            if (hotspotMode) {
-                const heatData = displayList.map(c => [Number(c.lat), Number(c.lon), 0.6]);
-                heatLayer = L.heatLayer(heatData, {
-                    radius: 28, blur: 22, maxZoom: 17, max: 0.8,
-                    gradient: { 0.2: 'blue', 0.5: 'lime', 0.7: 'yellow', 1: 'red' },
-                    pane: 'crossingMarkersPane'
-                });
-                heatLayer.addTo(map);
-            } else {
-                pointLayerGroup = L.layerGroup();
-                displayList.forEach(c => {
-                    const m = L.circleMarker([Number(c.lat), Number(c.lon)], {
-                        radius: 4,
-                        color: '#7c3aed',
-                        weight: 1,
-                        fillColor: '#c4b5fd',
-                        fillOpacity: 0.85,
-                        pane: 'crossingMarkersPane'
-                    });
-                    m.bindPopup(
-                        '<strong>' + escapeHtml(c.ele_name || ('Tag ' + (c.ele_tag_id || ''))) + '</strong><br>' +
-                        escapeHtml(c.road_name || '') + '<br><small>' +
-                        (c.estimated_crossing_time ? new Date(Number(c.estimated_crossing_time) * 1000).toLocaleString() : '') + '</small>'
-                    );
-                    pointLayerGroup.addLayer(m);
-                });
-                pointLayerGroup.addTo(map);
-            }
-        }
-
-        function toggleHotspotView() {
-            if (!hotspotMode && typeof L.heatLayer !== 'function') {
-                alert('Heat map script did not load. Check your network and refresh.');
-                return;
-            }
-            hotspotMode = !hotspotMode;
-            const btn = document.getElementById('btnHotspots');
-            btn.classList.toggle('active', hotspotMode);
-            btn.textContent = hotspotMode ? 'Point view' : 'Hotspot view';
-            redrawCrossingDisplay();
-        }
-
-        function toggleCorridorUsage() {
-            usageMode = !usageMode;
-            const btn = document.getElementById('btnCorridorUsage');
-            btn.classList.toggle('active', usageMode);
-            if (!usageMode) {
-                clearUsageLayers();
-                drawBaseCorridors();
-                document.getElementById('statsLine').textContent = '';
-                redrawCrossingDisplay();
-                return;
-            }
-            document.getElementById('statusLine').textContent = 'Computing usage…';
-            btn.disabled = true;
-            setTimeout(function() {
-                (async function() {
-                    try {
-                        await applyCorridorUsage();
-                        document.getElementById('statusLine').textContent =
-                            'Usage: corridors + corridor bands outside corridors (white→red). Crossing points hidden in this mode.';
-                    } catch (e) {
-                        console.error(e);
-                        document.getElementById('statusLine').textContent = 'Usage error: ' + e.message;
-                        usageMode = false;
-                        btn.classList.remove('active');
-                        drawBaseCorridors();
-                        redrawCrossingDisplay();
-                    } finally {
-                        btn.disabled = false;
-                    }
-                })();
-            }, 50);
-        }
-
-        function initMap() {
-            map = L.map('map', { zoomControl: true }).setView([-19.0, 22.5], 7);
-            map.createPane('roadsPane');
-            map.getPane('roadsPane').style.zIndex = 230;
-            map.getPane('roadsPane').style.pointerEvents = 'none';
-            map.createPane('corridorUsagePane');
-            map.getPane('corridorUsagePane').style.zIndex = 420;
-            map.getPane('corridorUsagePane').style.pointerEvents = 'auto';
-            map.createPane('usageBufferPane');
-            map.getPane('usageBufferPane').style.zIndex = 480;
-            map.getPane('usageBufferPane').style.pointerEvents = 'auto';
-            map.createPane('crossingMarkersPane');
-            map.getPane('crossingMarkersPane').style.zIndex = 560;
-            map.getPane('crossingMarkersPane').style.pointerEvents = 'auto';
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri',
-                maxZoom: 18,
-                opacity: 0.75
-            }).addTo(map);
-            L.control.scale({ metric: true, imperial: false }).addTo(map);
-        }
-
-        async function boot() {
-            initMap();
-            ensureElephantFilterTableBound();
-            const statusEl0 = document.getElementById('statusLine');
-            if (statusEl0) statusEl0.textContent = 'Loading corridors…';
-            const okCor = await loadCorridors();
-            if (!okCor || !corridorGeoJson) {
-                if (statusEl0) statusEl0.textContent = 'Could not load Corridors.geojson (expected under data/).';
-                return;
-            }
-            drawBaseCorridors();
-            await ensureRoadsLoaded();
-            drawRoadsLayer();
-            try {
-                const n = await loadCrossings();
-                console.log(
-                    'Corridor monitoring: loaded',
-                    corridorGeoJson.features.length,
-                    'corridors,',
-                    n,
-                    'crossings.'
-                );
-                const statusElOk = document.getElementById('statusLine');
-                if (statusElOk) statusElOk.textContent = '';
-                populateElephantTable();
-                updateCrossingStatsFigures();
-                redrawCrossingDisplay();
-                const b = corridorLayer.getBounds();
-                if (b.isValid()) map.fitBounds(b.pad(0.08));
-            } catch (e) {
-                crossings = [];
-                const statusErr = document.getElementById('statusLine');
-                if (statusErr) statusErr.textContent = 'Corridors OK; crossings: ' + e.message;
-                populateElephantTable();
-                updateCrossingStatsFigures();
-                redrawCrossingDisplay();
-            }
-            setTimeout(function() { map.invalidateSize(); }, 200);
-        }
-
-        function runAfterAuth() {
-            wireCorridorShellUi();
-            if (window._corridorMonInit) return;
-            window._corridorMonInit = true;
-            requestAnimationFrame(boot);
-        }
-        window.runAfterAuth = runAfterAuth;
-        document.addEventListener('authReady', runAfterAuth, { once: true });
-        if (document.getElementById('auth-overlay') === null) runAfterAuth();
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function () {
-                wireCorridorShellUi();
-            });
-        } else {
-            wireCorridorShellUi();
-        }
-    </script>
-</body>
-</html>
+        return res.status(200).json({
+            ok: true,
+            source: `gs://${bucket}/${path}`,
+            rowsInGcs: arr.length,
+            pointsWithCoords: features.length,
+            sent: features.length,
+            added,
+            replaceMode: replace,
+            deleteResult,
+            addErrors: errors.length ? errors.slice(0, 20) : undefined,
+            addErrorCount: errors.length
+        });
+    } catch (e) {
+        console.error('arcgis-sync-awt-cumulative error:', e);
+        return res.status(500).json({
+            error: e.message || String(e)
+        });
+    }
+};
