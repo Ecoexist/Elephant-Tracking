@@ -238,7 +238,7 @@
                         <div class="card border-0 shadow" id="lightmap-map-container">
                             <div id="lightmapMap"></div>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell (each GPS fix counts toward that cell). The map uses a ~30% transparent dark veil over satellite imagery. Only the <strong>top 25% of cells by intersection count</strong> are drawn, in solid white.</p>
+                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell; average speed uses each point’s <code>speed</code> (km/h) when present, otherwise segment speed from consecutive points per elephant tag. Cells shown are in the <strong>top 50% by intersection count</strong> and the <strong>top 50% by average speed</strong> (among cells with speed data), in solid white over a ~30% transparent dark veil.</p>
                     </div>
                 </div>
             </div>
@@ -262,8 +262,10 @@
         const AWT_DATA_API = 'https://ecoexist-api.vercel.app/api/awt-data';
         const CELL_M = 100;
         const R_MAJOR = 6378137;
-        /** Fraction of nonempty grid cells to show (highest intersection counts first). */
-        const TOP_CELL_FRACTION = 0.25;
+        /** Top fraction of nonempty cells by intersection count (rank). */
+        const TOP_CELL_FRACTION = 0.5;
+        /** Top fraction of cells with speed by mean speed (km/h, rank). */
+        const TOP_VELOCITY_FRACTION = 0.5;
         /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
         const DARK_VEIL_OPACITY = 0.7;
 
@@ -465,6 +467,45 @@
             return { lat: lat, lon: lon };
         }
 
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) *
+                    Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        /** Unix seconds (handles ms timestamps). */
+        function getTimestampSec(p) {
+            if (!p) return null;
+            const t = p.timestamp ?? p.time ?? p.observation_time;
+            if (t == null) return null;
+            const n = Number(t);
+            if (!Number.isFinite(n)) return null;
+            return n > 1e12 ? n / 1000 : n;
+        }
+
+        function getTagId(p) {
+            if (!p) return '_';
+            const id = p.tagId ?? p.tag_id ?? p.ele_tag_id ?? p.eleTagId ?? p.animalId;
+            return id != null && id !== '' ? String(id) : '_';
+        }
+
+        /** Speed in km/h from the point, or null. */
+        function getPointSpeedKmh(p) {
+            if (!p) return null;
+            let s = p.speed ?? p.Speed ?? p.velocity_kmh ?? p.velocityKm ?? p.velocity;
+            if (s == null) return null;
+            s = Number(s);
+            if (!Number.isFinite(s) || s < 0) return null;
+            return s;
+        }
+
         async function getIdTokenForApi(forceRefresh) {
             const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
             if (!user) return null;
@@ -523,28 +564,117 @@
         }
 
         /**
-         * Count intersections (GPS fixes) per 100 m Web Mercator grid cell.
-         * Each valid point increments the cell that contains it.
+         * Per 100 m cell: intersection count + mean speed (km/h).
+         * Speed: explicit `speed` on each point; else segment speed from previous point with same tag
+         * when timestamps are present (0 < dt < 6 h, capped km/h).
          */
-        async function countIntersectionsPer100mCells(points) {
-            const counts = new Map();
+        async function aggregateCellsIntersectionsAndVelocity(points) {
+            const cellStats = new Map();
+            const lastByTag = new Map();
+            function getOrCreate(key) {
+                if (!cellStats.has(key)) {
+                    cellStats.set(key, { count: 0, sumSpeed: 0, nSpeed: 0 });
+                }
+                return cellStats.get(key);
+            }
             const chunk = 30000;
             for (let start = 0; start < points.length; start += chunk) {
                 const end = Math.min(start + chunk, points.length);
                 for (let i = start; i < end; i++) {
-                    const pt = normalizePoint(points[i]);
+                    const p = points[i];
+                    const pt = normalizePoint(p);
                     if (!pt) continue;
                     const xy = latLonToMercatorXY(pt.lat, pt.lon);
                     const ix = Math.floor(xy.x / CELL_M);
                     const iy = Math.floor(xy.y / CELL_M);
                     const key = ix + ',' + iy;
-                    counts.set(key, (counts.get(key) || 0) + 1);
+                    const st = getOrCreate(key);
+                    st.count++;
+
+                    let sp = getPointSpeedKmh(p);
+                    const tag = getTagId(p);
+                    const ts = getTimestampSec(p);
+                    if (sp == null && lastByTag.has(tag) && ts != null) {
+                        const prev = lastByTag.get(tag);
+                        if (prev.ts != null && ts > prev.ts) {
+                            const dt = ts - prev.ts;
+                            if (dt > 0 && dt < 6 * 3600) {
+                                const dist = haversineKm(prev.lat, prev.lon, pt.lat, pt.lon);
+                                const kmh = (dist / dt) * 3600;
+                                if (kmh >= 0 && kmh < 200) sp = kmh;
+                            }
+                        }
+                    }
+                    if (sp != null && Number.isFinite(sp)) {
+                        st.sumSpeed += sp;
+                        st.nSpeed++;
+                    }
+                    if (ts != null) {
+                        lastByTag.set(tag, { lat: pt.lat, lon: pt.lon, ts: ts });
+                    }
                 }
                 document.getElementById('lightmapStatus').textContent =
-                    '100 m grid: counting intersections… ' + Math.min(end, points.length).toLocaleString() + ' / ' + points.length.toLocaleString();
+                    '100 m grid: intersections + speed… ' + Math.min(end, points.length).toLocaleString() + ' / ' + points.length.toLocaleString();
                 await new Promise(function (r) { setTimeout(r, 0); });
             }
-            return counts;
+            const rows = [];
+            cellStats.forEach(function (st, key) {
+                if (st.count === 0) return;
+                const avgVel = st.nSpeed > 0 ? st.sumSpeed / st.nSpeed : null;
+                rows.push({ key: key, rawCount: st.count, avgVelocity: avgVel });
+            });
+            return rows;
+        }
+
+        /**
+         * Cells in global top TOP_CELL_FRACTION by intersection count AND
+         * global top TOP_VELOCITY_FRACTION by mean speed (among cells with velocity samples).
+         */
+        function filterTopCountAndTopVelocity(cellRows) {
+            const n = cellRows.length;
+            if (n === 0) {
+                return { filtered: [], kCount: 0, kVel: 0, minCountCut: null, minVelCut: null };
+            }
+            const byCount = cellRows.slice().sort(function (a, b) {
+                return b.rawCount - a.rawCount;
+            });
+            const kCount = Math.max(1, Math.ceil(n * TOP_CELL_FRACTION));
+            const countSet = new Set();
+            for (let i = 0; i < kCount; i++) countSet.add(byCount[i].key);
+            const minCountCut = byCount[kCount - 1].rawCount;
+
+            const withVel = cellRows.filter(function (x) {
+                return x.avgVelocity != null && Number.isFinite(x.avgVelocity);
+            });
+            if (withVel.length === 0) {
+                return {
+                    filtered: [],
+                    kCount: kCount,
+                    kVel: 0,
+                    minCountCut: minCountCut,
+                    minVelCut: null
+                };
+            }
+            withVel.sort(function (a, b) {
+                return b.avgVelocity - a.avgVelocity;
+            });
+            const kVel = Math.max(1, Math.ceil(withVel.length * TOP_VELOCITY_FRACTION));
+            const velSet = new Set();
+            for (let j = 0; j < kVel; j++) velSet.add(withVel[j].key);
+            const minVelCut = withVel[kVel - 1].avgVelocity;
+
+            const filtered = [];
+            for (let i = 0; i < cellRows.length; i++) {
+                const r = cellRows[i];
+                if (countSet.has(r.key) && velSet.has(r.key)) filtered.push(r);
+            }
+            return {
+                filtered: filtered,
+                kCount: kCount,
+                kVel: kVel,
+                minCountCut: minCountCut,
+                minVelCut: minVelCut
+            };
         }
 
         function addDarkVeilOverImagery(map) {
@@ -565,32 +695,19 @@
             ).addTo(map);
         }
 
-        function buildMapLayers(map, counts) {
-            let maxIntersections = 0;
-            counts.forEach(function (v) {
-                if (v > maxIntersections) maxIntersections = v;
-            });
+        function buildMapLayers(map, entries, meta) {
+            const maxIntersections = meta.maxIntersections;
+            const nonemptyCells = meta.nonemptyCells;
+            const fr = meta.filterResult;
 
-            const nonempty = [];
-            counts.forEach(function (rawCount, key) {
-                if (rawCount > 0) nonempty.push({ key: key, rawCount: rawCount });
-            });
-            if (nonempty.length === 0) {
+            if (!entries || entries.length === 0) {
                 hideLoadingUi();
                 return;
             }
 
-            nonempty.sort(function (a, b) {
-                return b.rawCount - a.rawCount;
-            });
-            const kTop = Math.max(1, Math.ceil(nonempty.length * TOP_CELL_FRACTION));
-            const topCells = nonempty.slice(0, kTop);
-            const minCountInTop = topCells.length ? topCells[topCells.length - 1].rawCount : 0;
-
             const group = L.layerGroup();
             let idx = 0;
             const batch = 400;
-            const entries = topCells;
 
             function addSlice() {
                 const end = Math.min(idx + batch, entries.length);
@@ -601,7 +718,8 @@
                     const iy = parseInt(parts[1], 10);
                     const bounds = cellIndexToRectangleBounds(ix, iy);
                     const normalized = maxIntersections > 0 ? e.rawCount / maxIntersections : 0;
-                    /* markerPane (z-index 600) is above the dark veil custom pane (250) — custom panes at 400 sat under overlay and were invisible. */
+                    const velStr =
+                        e.avgVelocity != null && Number.isFinite(e.avgVelocity) ? e.avgVelocity.toFixed(2) + ' km/h' : '—';
                     L.rectangle(
                         bounds,
                         {
@@ -613,15 +731,16 @@
                         }
                     )
                         .bindPopup(
-                            '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% · 100 m cell</strong><br>' +
+                            '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% count ∩ top ' + Math.round(TOP_VELOCITY_FRACTION * 100) + '% speed</strong><br>' +
                             'Intersections: ' + e.rawCount.toLocaleString() + '<br>' +
-                            'Vs max cell: ' + normalized.toFixed(4) + ' (0–1)<br>' +
-                            'Nonempty cells: ' + nonempty.length.toLocaleString() + ' · showing ' + kTop.toLocaleString()
+                            'Mean speed: ' + velStr + '<br>' +
+                            'Vs max intersections (0–1): ' + normalized.toFixed(4) + '<br>' +
+                            'Nonempty cells: ' + nonemptyCells.toLocaleString() + ' · drawn: ' + entries.length.toLocaleString()
                         )
                         .addTo(group);
                 }
                 document.getElementById('lightmapStatus').textContent =
-                    'Drawing top cells… ' + Math.min(idx, entries.length).toLocaleString() + ' / ' + entries.length.toLocaleString();
+                    'Drawing cells… ' + Math.min(idx, entries.length).toLocaleString() + ' / ' + entries.length.toLocaleString();
                 if (idx < entries.length) {
                     requestAnimationFrame(addSlice);
                 } else {
@@ -638,14 +757,21 @@
                         } catch (err) { /* ignore */ }
                     }
                     document.getElementById('lightmapStatus').textContent =
-                        nonempty.length.toLocaleString() + ' nonempty cells · max ' + maxIntersections.toLocaleString() +
-                        ' intersections · showing top ' + kTop.toLocaleString() + ' (~' + Math.round(TOP_CELL_FRACTION * 100) +
-                        '%, cutoff ≥ ' + minCountInTop.toLocaleString() + ' intersections)';
+                        nonemptyCells.toLocaleString() +
+                        ' nonempty cells · max ' +
+                        maxIntersections.toLocaleString() +
+                        ' intersections · showing ' +
+                        entries.length.toLocaleString() +
+                        ' (count ≥ ' +
+                        (fr.minCountCut != null ? fr.minCountCut.toLocaleString() : '—') +
+                        ' & speed ≥ ' +
+                        (fr.minVelCut != null ? fr.minVelCut.toFixed(2) + ' km/h' : '—') +
+                        ')';
                     hideLoadingUi();
                 }
             }
             document.getElementById('lightmapStatus').textContent =
-                'Drawing top ' + Math.round(TOP_CELL_FRACTION * 100) + '% (' + kTop.toLocaleString() + ' of ' + nonempty.length.toLocaleString() + ' cells)…';
+                'Drawing ' + entries.length.toLocaleString() + ' filtered cells…';
             addSlice();
         }
 
@@ -666,8 +792,21 @@
             if (raw === null) {
                 return;
             }
-            document.getElementById('lightmapStatus').textContent = 'Binning ' + raw.length.toLocaleString() + ' points into 100 m cells…';
-            const counts = await countIntersectionsPer100mCells(raw);
+            document.getElementById('lightmapStatus').textContent =
+                'Binning ' + raw.length.toLocaleString() + ' points into 100 m cells (intersections + speed)…';
+            const cellRows = await aggregateCellsIntersectionsAndVelocity(raw);
+
+            if (cellRows.length === 0) {
+                document.getElementById('lightmapStatus').textContent = 'No valid points after filters.';
+                hideLoadingUi();
+                return;
+            }
+
+            const fr = filterTopCountAndTopVelocity(cellRows);
+            let maxIntersections = 0;
+            for (let i = 0; i < cellRows.length; i++) {
+                if (cellRows[i].rawCount > maxIntersections) maxIntersections = cellRows[i].rawCount;
+            }
 
             map = L.map('lightmapMap', { zoomControl: true }).setView([-19.0, 22.5], 7);
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -678,12 +817,28 @@
             addDarkVeilOverImagery(map);
             L.control.scale({ metric: true, imperial: false }).addTo(map);
 
-            if (counts.size === 0) {
-                document.getElementById('lightmapStatus').textContent = 'No valid points after filters.';
+            if (fr.filtered.length === 0) {
+                const st = document.getElementById('lightmapStatus');
+                if (fr.kVel === 0) {
+                    st.textContent =
+                        'No per-cell average speed (need `speed` on points, or `timestamp` + elephant tag for segment speed). Cannot apply the speed filter.';
+                } else {
+                    st.textContent =
+                        'No cells in the overlap of top ' +
+                        Math.round(TOP_CELL_FRACTION * 100) +
+                        '% by intersections and top ' +
+                        Math.round(TOP_VELOCITY_FRACTION * 100) +
+                        '% by mean speed.';
+                }
                 hideLoadingUi();
                 return;
             }
-            buildMapLayers(map, counts);
+
+            buildMapLayers(map, fr.filtered, {
+                maxIntersections: maxIntersections,
+                nonemptyCells: cellRows.length,
+                filterResult: fr
+            });
         }
 
         function runAfterAuth() {
