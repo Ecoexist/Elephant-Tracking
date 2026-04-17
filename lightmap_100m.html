@@ -238,7 +238,7 @@
                         <div class="card border-0 shadow" id="lightmap-map-container">
                             <div id="lightmapMap"></div>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell; average speed uses each point’s <code>speed</code> (km/h) when present, otherwise segment speed from consecutive points per elephant tag. Cells shown are in the <strong>top 50% by intersection count</strong> and the <strong>top 50% by average speed</strong> (among cells with speed data), in solid white over a ~30% transparent dark veil.</p>
+                        <p class="small text-muted mt-2 mb-0">Intersections = GPS fixes per 100&nbsp;m cell. Mean speed per cell = average of segment speeds (point&nbsp;A→B: haversine km ÷ Δt) for each track segment whose path crosses that cell in Web Mercator space. Shown cells: <strong>top 50% by intersection count</strong> and <strong>top 10% by mean segment speed</strong>, solid white on a ~30% transparent dark veil.</p>
                     </div>
                 </div>
             </div>
@@ -264,8 +264,8 @@
         const R_MAJOR = 6378137;
         /** Top fraction of nonempty cells by intersection count (rank). */
         const TOP_CELL_FRACTION = 0.5;
-        /** Top fraction of cells with speed by mean speed (km/h, rank). */
-        const TOP_VELOCITY_FRACTION = 0.5;
+        /** Top fraction of cells with segment-derived mean speed (km/h, rank). */
+        const TOP_VELOCITY_FRACTION = 0.1;
         /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
         const DARK_VEIL_OPACITY = 0.7;
 
@@ -496,14 +496,28 @@
             return id != null && id !== '' ? String(id) : '_';
         }
 
-        /** Speed in km/h from the point, or null. */
-        function getPointSpeedKmh(p) {
-            if (!p) return null;
-            let s = p.speed ?? p.Speed ?? p.velocity_kmh ?? p.velocityKm ?? p.velocity;
-            if (s == null) return null;
-            s = Number(s);
-            if (!Number.isFinite(s) || s < 0) return null;
-            return s;
+        /**
+         * 100 m Mercator grid cells whose interior the segment (x0,y0)→(x1,y1) crosses (meters).
+         * Uses dense sampling along the chord so thin diagonal crossings are not missed.
+         */
+        function mercatorCellsAlongSegment(x0, y0, x1, y1) {
+            const keys = new Set();
+            const dx = x1 - x0;
+            const dy = y1 - y0;
+            const len = Math.hypot(dx, dy);
+            if (len < 1e-9) {
+                keys.add(Math.floor(x0 / CELL_M) + ',' + Math.floor(y0 / CELL_M));
+                return keys;
+            }
+            const stepM = CELL_M / 4;
+            const n = Math.min(80000, Math.max(2, Math.ceil(len / stepM)));
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                const x = x0 + t * dx;
+                const y = y0 + t * dy;
+                keys.add(Math.floor(x / CELL_M) + ',' + Math.floor(y / CELL_M));
+            }
+            return keys;
         }
 
         async function getIdTokenForApi(forceRefresh) {
@@ -564,19 +578,19 @@
         }
 
         /**
-         * Per 100 m cell: intersection count + mean speed (km/h).
-         * Speed: explicit `speed` on each point; else segment speed from previous point with same tag
-         * when timestamps are present (0 < dt < 6 h, capped km/h).
+         * Per 100 m cell: intersection count (points) + mean segment speed (km/h).
+         * Speed = distance(A,B)/Δt per consecutive points per tag (haversine km, Δt seconds).
+         * Each segment’s speed is averaged into every 100 m Mercator cell the segment line crosses.
          */
         async function aggregateCellsIntersectionsAndVelocity(points) {
             const cellStats = new Map();
-            const lastByTag = new Map();
             function getOrCreate(key) {
                 if (!cellStats.has(key)) {
-                    cellStats.set(key, { count: 0, sumSpeed: 0, nSpeed: 0 });
+                    cellStats.set(key, { count: 0, sumSegSpeed: 0, nSeg: 0 });
                 }
                 return cellStats.get(key);
             }
+            const byTag = new Map();
             const chunk = 30000;
             for (let start = 0; start < points.length; start += chunk) {
                 const end = Math.min(start + chunk, points.length);
@@ -588,39 +602,55 @@
                     const ix = Math.floor(xy.x / CELL_M);
                     const iy = Math.floor(xy.y / CELL_M);
                     const key = ix + ',' + iy;
-                    const st = getOrCreate(key);
-                    st.count++;
+                    getOrCreate(key).count++;
 
-                    let sp = getPointSpeedKmh(p);
-                    const tag = getTagId(p);
                     const ts = getTimestampSec(p);
-                    if (sp == null && lastByTag.has(tag) && ts != null) {
-                        const prev = lastByTag.get(tag);
-                        if (prev.ts != null && ts > prev.ts) {
-                            const dt = ts - prev.ts;
-                            if (dt > 0 && dt < 6 * 3600) {
-                                const dist = haversineKm(prev.lat, prev.lon, pt.lat, pt.lon);
-                                const kmh = (dist / dt) * 3600;
-                                if (kmh >= 0 && kmh < 200) sp = kmh;
-                            }
-                        }
-                    }
-                    if (sp != null && Number.isFinite(sp)) {
-                        st.sumSpeed += sp;
-                        st.nSpeed++;
-                    }
                     if (ts != null) {
-                        lastByTag.set(tag, { lat: pt.lat, lon: pt.lon, ts: ts });
+                        const tag = getTagId(p);
+                        if (!byTag.has(tag)) byTag.set(tag, []);
+                        byTag.get(tag).push({ lat: pt.lat, lon: pt.lon, ts: ts });
                     }
                 }
                 document.getElementById('lightmapStatus').textContent =
-                    '100 m grid: intersections + speed… ' + Math.min(end, points.length).toLocaleString() + ' / ' + points.length.toLocaleString();
+                    '100 m grid: counting intersections… ' + Math.min(end, points.length).toLocaleString() + ' / ' + points.length.toLocaleString();
                 await new Promise(function (r) { setTimeout(r, 0); });
             }
+
+            document.getElementById('lightmapStatus').textContent = 'Segment speed + grid crossing…';
+            let segProcessed = 0;
+            byTag.forEach(function (arr) {
+                arr.sort(function (a, b) {
+                    return a.ts - b.ts;
+                });
+                for (let j = 0; j < arr.length - 1; j++) {
+                    const A = arr[j];
+                    const B = arr[j + 1];
+                    const dt = B.ts - A.ts;
+                    if (dt <= 0 || dt >= 6 * 3600) continue;
+                    const dist = haversineKm(A.lat, A.lon, B.lat, B.lon);
+                    const kmh = (dist / dt) * 3600;
+                    if (!Number.isFinite(kmh) || kmh < 0 || kmh >= 200) continue;
+                    const m0 = latLonToMercatorXY(A.lat, A.lon);
+                    const m1 = latLonToMercatorXY(B.lat, B.lon);
+                    const cells = mercatorCellsAlongSegment(m0.x, m0.y, m1.x, m1.y);
+                    cells.forEach(function (cellKey) {
+                        if (!cellStats.has(cellKey)) return;
+                        const st = cellStats.get(cellKey);
+                        st.sumSegSpeed += kmh;
+                        st.nSeg++;
+                    });
+                    segProcessed++;
+                    if (segProcessed % 5000 === 0) {
+                        document.getElementById('lightmapStatus').textContent =
+                            'Segment speed… ' + segProcessed.toLocaleString() + ' segments';
+                    }
+                }
+            });
+
             const rows = [];
             cellStats.forEach(function (st, key) {
                 if (st.count === 0) return;
-                const avgVel = st.nSpeed > 0 ? st.sumSpeed / st.nSpeed : null;
+                const avgVel = st.nSeg > 0 ? st.sumSegSpeed / st.nSeg : null;
                 rows.push({ key: key, rawCount: st.count, avgVelocity: avgVel });
             });
             return rows;
@@ -733,7 +763,7 @@
                         .bindPopup(
                             '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% count ∩ top ' + Math.round(TOP_VELOCITY_FRACTION * 100) + '% speed</strong><br>' +
                             'Intersections: ' + e.rawCount.toLocaleString() + '<br>' +
-                            'Mean speed: ' + velStr + '<br>' +
+                            'Mean segment speed (A→B): ' + velStr + '<br>' +
                             'Vs max intersections (0–1): ' + normalized.toFixed(4) + '<br>' +
                             'Nonempty cells: ' + nonemptyCells.toLocaleString() + ' · drawn: ' + entries.length.toLocaleString()
                         )
@@ -821,7 +851,7 @@
                 const st = document.getElementById('lightmapStatus');
                 if (fr.kVel === 0) {
                     st.textContent =
-                        'No per-cell average speed (need `speed` on points, or `timestamp` + elephant tag for segment speed). Cannot apply the speed filter.';
+                        'No mean segment speed per cell (need `timestamp` + elephant tag on points, and at least one valid A→B segment crossing a grid cell).';
                 } else {
                     st.textContent =
                         'No cells in the overlap of top ' +
