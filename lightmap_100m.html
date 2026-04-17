@@ -238,7 +238,7 @@
                         <div class="card border-0 shadow" id="lightmap-map-container">
                             <div id="lightmapMap"></div>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell (each GPS fix counts toward that cell), normalized to 0–1 by dividing by the busiest cell. Satellite view is darkened; only the top 5% band (normalized ≥ 0.95) is drawn in white.</p>
+                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell (each GPS fix counts toward that cell). The map uses a ~30% transparent dark veil over satellite imagery. Only the <strong>top 5% of cells by intersection count</strong> are drawn, in solid white.</p>
                     </div>
                 </div>
             </div>
@@ -262,8 +262,10 @@
         const AWT_DATA_API = 'https://ecoexist-api.vercel.app/api/awt-data';
         const CELL_M = 100;
         const R_MAJOR = 6378137;
-        /** Normalized values in [HIGHLIGHT_MIN_NORM, 1] render as white on the dark basemap. */
-        const HIGHLIGHT_MIN_NORM = 0.95;
+        /** Fraction of nonempty grid cells to show (highest intersection counts first). */
+        const TOP_CELL_FRACTION = 0.05;
+        /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
+        const DARK_VEIL_OPACITY = 0.7;
 
         const JOKE_PAIRS = [
             { q: 'Why are elephants always so broke?', a: 'They work for peanuts.' },
@@ -531,7 +533,7 @@
                     interactive: false,
                     stroke: false,
                     fillColor: '#000000',
-                    fillOpacity: 0.92
+                    fillOpacity: DARK_VEIL_OPACITY
                 }
             ).addTo(map);
         }
@@ -541,38 +543,36 @@
             counts.forEach(function (v) {
                 if (v > maxIntersections) maxIntersections = v;
             });
-            if (maxIntersections <= 0) maxIntersections = 1;
 
             map.createPane('lightmapWhiteRaster');
             const rasterPane = map.getPane('lightmapWhiteRaster');
             rasterPane.style.zIndex = 400;
 
-            const group = L.layerGroup();
-            const entries = [];
+            const nonempty = [];
             counts.forEach(function (rawCount, key) {
-                const normalized = Math.min(1, rawCount / maxIntersections);
-                entries.push({ key: key, rawCount: rawCount, normalized: normalized });
+                if (rawCount > 0) nonempty.push({ key: key, rawCount: rawCount });
             });
-            if (entries.length === 0) {
+            if (nonempty.length === 0) {
                 hideLoadingUi();
                 return;
             }
 
-            const highlightBand = 1 - HIGHLIGHT_MIN_NORM;
+            nonempty.sort(function (a, b) {
+                return b.rawCount - a.rawCount;
+            });
+            const kTop = Math.max(1, Math.ceil(nonempty.length * TOP_CELL_FRACTION));
+            const topCells = nonempty.slice(0, kTop);
+            const minCountInTop = topCells.length ? topCells[topCells.length - 1].rawCount : 0;
+
+            const group = L.layerGroup();
             let idx = 0;
             const batch = 400;
-            let drawnHigh = 0;
+            const entries = topCells;
 
             function addSlice() {
                 const end = Math.min(idx + batch, entries.length);
                 for (; idx < end; idx++) {
                     const e = entries[idx];
-                    if (e.normalized < HIGHLIGHT_MIN_NORM) continue;
-                    drawnHigh++;
-                    const withinBand = highlightBand > 0
-                        ? Math.min(1, Math.max(0, (e.normalized - HIGHLIGHT_MIN_NORM) / highlightBand))
-                        : 1;
-                    const fillOpacity = 0.25 + 0.75 * withinBand;
                     const parts = e.key.split(',');
                     const ix = parseInt(parts[0], 10);
                     const iy = parseInt(parts[1], 10);
@@ -586,6 +586,7 @@
                     const north = Math.max(sw.lat, ne.lat);
                     const west = Math.min(sw.lon, ne.lon);
                     const east = Math.max(sw.lon, ne.lon);
+                    const normalized = maxIntersections > 0 ? e.rawCount / maxIntersections : 0;
                     L.rectangle(
                         [[south, west], [north, east]],
                         {
@@ -593,38 +594,40 @@
                             color: '#ffffff',
                             weight: 0,
                             fillColor: '#ffffff',
-                            fillOpacity: fillOpacity,
+                            fillOpacity: 1,
                             interactive: true
                         }
                     )
                         .bindPopup(
-                            '<strong>Intersections (100 m cell)</strong><br>' +
-                            'Count: ' + e.rawCount.toLocaleString() + '<br>' +
-                            'Normalized (0–1): ' + e.normalized.toFixed(4) + '<br>' +
-                            'Max in any cell: ' + maxIntersections.toLocaleString()
+                            '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% · 100 m cell</strong><br>' +
+                            'Intersections: ' + e.rawCount.toLocaleString() + '<br>' +
+                            'Vs max cell: ' + normalized.toFixed(4) + ' (0–1)<br>' +
+                            'Nonempty cells: ' + nonempty.length.toLocaleString() + ' · showing ' + kTop.toLocaleString()
                         )
                         .addTo(group);
                 }
                 document.getElementById('lightmapStatus').textContent =
-                    'Drawing highlights… ' + Math.min(idx, entries.length).toLocaleString() + ' / ' + entries.length.toLocaleString();
+                    'Drawing top cells… ' + Math.min(idx, entries.length).toLocaleString() + ' / ' + entries.length.toLocaleString();
                 if (idx < entries.length) {
                     requestAnimationFrame(addSlice);
                 } else {
                     group.addTo(map);
-                    if (drawnHigh > 0) {
+                    if (entries.length > 0) {
                         try {
                             const b = group.getBounds();
                             if (b.isValid()) map.fitBounds(b.pad(0.05));
                         } catch (err) { /* ignore */ }
                     }
                     document.getElementById('lightmapStatus').textContent =
-                        entries.length + ' cells · max ' + maxIntersections.toLocaleString() + ' intersections/cell · ' +
-                        drawnHigh.toLocaleString() + ' cells in top band (normalized ≥ ' + HIGHLIGHT_MIN_NORM + ')';
+                        nonempty.length.toLocaleString() + ' nonempty cells · max ' + maxIntersections.toLocaleString() +
+                        ' intersections · showing top ' + kTop.toLocaleString() + ' (~' + Math.round(TOP_CELL_FRACTION * 100) +
+                        '%, cutoff ≥ ' + minCountInTop.toLocaleString() + ' intersections)';
                     hideLoadingUi();
                     setTimeout(function () { map.invalidateSize(); }, 100);
                 }
             }
-            document.getElementById('lightmapStatus').textContent = 'Drawing ' + entries.length.toLocaleString() + ' cells (white layer ≥ ' + HIGHLIGHT_MIN_NORM + ')…';
+            document.getElementById('lightmapStatus').textContent =
+                'Drawing top ' + Math.round(TOP_CELL_FRACTION * 100) + '% (' + kTop.toLocaleString() + ' of ' + nonempty.length.toLocaleString() + ' cells)…';
             addSlice();
         }
 
