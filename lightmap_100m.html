@@ -258,7 +258,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const CUMULATIVE_API = 'https://ecoexist-api.vercel.app/api/awt-data-gcs-cumulative';
+        /** Same primary dataset as dashboard_all_data.html (GCS awt_tracking_data_cumulative.json via /api/awt-data). */
+        const AWT_DATA_API = 'https://ecoexist-api.vercel.app/api/awt-data';
         const CELL_M = 100;
         const R_MAJOR = 6378137;
 
@@ -440,26 +441,61 @@
             return { fill: 'rgb(255,' + g + ',' + b + ')', stroke: '#b45309' };
         }
 
-        async function fetchAllCumulative(token) {
-            const all = [];
-            let offset = 0;
-            const limit = 20000;
-            while (true) {
-                const url = CUMULATIVE_API + '?offset=' + offset + '&limit=' + limit;
-                const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-                if (!res.ok) {
-                    const txt = await res.text();
-                    throw new Error('Cumulative API ' + res.status + ': ' + txt.slice(0, 200));
-                }
-                const j = await res.json();
-                const chunk = j.data || [];
-                for (let i = 0; i < chunk.length; i++) all.push(chunk[i]);
-                if (!j.hasMore) break;
-                offset += chunk.length;
-                document.getElementById('lightmapStatus').textContent =
-                    'Loading tracking data… ' + all.length.toLocaleString() + ' points';
+        async function getIdTokenForApi(forceRefresh) {
+            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
+            if (!user) return null;
+            try {
+                return await user.getIdToken(!!forceRefresh);
+            } catch (e) {
+                return null;
             }
-            return all;
+        }
+
+        /**
+         * Loads the same JSON array as dashboard_all_data (single GET, Bearer admin).
+         */
+        async function fetchAwtDataSameAsDashboard() {
+            const statusEl = document.getElementById('lightmapStatus');
+            let authToken = await getIdTokenForApi(false);
+            if (!authToken) {
+                await new Promise(function (r) { setTimeout(r, 800); });
+                authToken = await getIdTokenForApi(false);
+            }
+            if (!authToken) {
+                window.location.replace('login.html?return=lightmap_100m.html');
+                return null;
+            }
+
+            let response = await fetch(AWT_DATA_API, {
+                method: 'GET',
+                headers: { Authorization: 'Bearer ' + authToken }
+            });
+
+            if (response.status === 401) {
+                authToken = await getIdTokenForApi(true);
+                response = await fetch(AWT_DATA_API, {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + authToken }
+                });
+            }
+
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert('Admin access required to view wildlife tracking data.');
+                    window.location.replace('dashboard_public_firebase.html');
+                    return null;
+                }
+                const errorText = await response.text();
+                throw new Error('AWT data: ' + response.status + ' — ' + errorText.slice(0, 280));
+            }
+
+            const liveData = await response.json();
+            const arr = Array.isArray(liveData) ? liveData : (liveData && Array.isArray(liveData.data) ? liveData.data : null);
+            if (!Array.isArray(arr)) {
+                throw new Error('Expected JSON array from awt-data');
+            }
+            if (statusEl) statusEl.textContent = 'Loaded ' + arr.length.toLocaleString() + ' records (same source as Wildlife Map)';
+            return arr;
         }
 
         async function binPointsTo100mCells(points) {
@@ -566,20 +602,10 @@
                 jn.addEventListener('click', onJokeNext);
             }
 
-            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
-            if (!user) {
-                document.getElementById('lightmapStatus').textContent = 'Not signed in.';
+            const raw = await fetchAwtDataSameAsDashboard();
+            if (raw === null) {
                 return;
             }
-            let token;
-            try {
-                token = await user.getIdToken();
-            } catch (e) {
-                document.getElementById('lightmapStatus').textContent = 'Could not get auth token.';
-                return;
-            }
-
-            const raw = await fetchAllCumulative(token);
             document.getElementById('lightmapStatus').textContent = 'Binning ' + raw.length.toLocaleString() + ' points…';
             const counts = await binPointsTo100mCells(raw);
 
