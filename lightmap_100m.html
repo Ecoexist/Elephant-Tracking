@@ -238,7 +238,7 @@
                         <div class="card border-0 shadow" id="lightmap-map-container">
                             <div id="lightmapMap"></div>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell (each GPS fix counts toward that cell). The map uses a ~30% transparent dark veil over satellite imagery. Only the <strong>top 5% of cells by intersection count</strong> are drawn, in solid white.</p>
+                        <p class="small text-muted mt-2 mb-0">Intersections per 100&nbsp;m Web Mercator cell (each GPS fix counts toward that cell). The map uses a ~30% transparent dark veil over satellite imagery. Only the <strong>top 25% of cells by intersection count</strong> are drawn, in solid white.</p>
                     </div>
                 </div>
             </div>
@@ -263,7 +263,7 @@
         const CELL_M = 100;
         const R_MAJOR = 6378137;
         /** Fraction of nonempty grid cells to show (highest intersection counts first). */
-        const TOP_CELL_FRACTION = 0.05;
+        const TOP_CELL_FRACTION = 0.25;
         /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
         const DARK_VEIL_OPACITY = 0.7;
 
@@ -429,6 +429,32 @@
             return { lat: lat, lon: lon };
         }
 
+        /** LatLng bounds for one 100 m Mercator cell (four corners — avoids invalid diagonals). */
+        function cellIndexToRectangleBounds(ix, iy) {
+            const x0 = ix * CELL_M;
+            const y0 = iy * CELL_M;
+            const x1 = (ix + 1) * CELL_M;
+            const y1 = (iy + 1) * CELL_M;
+            const corners = [
+                mercatorXYToLatLon(x0, y0),
+                mercatorXYToLatLon(x1, y0),
+                mercatorXYToLatLon(x0, y1),
+                mercatorXYToLatLon(x1, y1)
+            ];
+            let south = corners[0].lat;
+            let north = corners[0].lat;
+            let west = corners[0].lon;
+            let east = corners[0].lon;
+            for (let i = 1; i < 4; i++) {
+                const c = corners[i];
+                if (c.lat < south) south = c.lat;
+                if (c.lat > north) north = c.lat;
+                if (c.lon < west) west = c.lon;
+                if (c.lon > east) east = c.lon;
+            }
+            return [[south, west], [north, east]];
+        }
+
         function normalizePoint(p) {
             if (!p || typeof p !== 'object') return null;
             const lat = Number(p.latitude != null ? p.latitude : p.lat != null ? p.lat : p.Latitude);
@@ -524,7 +550,8 @@
         function addDarkVeilOverImagery(map) {
             map.createPane('lightmapDarkVeil');
             const veilPane = map.getPane('lightmapDarkVeil');
-            veilPane.style.zIndex = 250;
+            /* Between tilePane (200) and overlayPane (400); white cells use markerPane (600). */
+            veilPane.style.zIndex = '250';
             veilPane.style.pointerEvents = 'none';
             L.rectangle(
                 [[-85, -179.99], [85, 179.99]],
@@ -543,10 +570,6 @@
             counts.forEach(function (v) {
                 if (v > maxIntersections) maxIntersections = v;
             });
-
-            map.createPane('lightmapWhiteRaster');
-            const rasterPane = map.getPane('lightmapWhiteRaster');
-            rasterPane.style.zIndex = 400;
 
             const nonempty = [];
             counts.forEach(function (rawCount, key) {
@@ -576,23 +599,14 @@
                     const parts = e.key.split(',');
                     const ix = parseInt(parts[0], 10);
                     const iy = parseInt(parts[1], 10);
-                    const x0 = ix * CELL_M;
-                    const y0 = iy * CELL_M;
-                    const x1 = (ix + 1) * CELL_M;
-                    const y1 = (iy + 1) * CELL_M;
-                    const sw = mercatorXYToLatLon(x0, y0);
-                    const ne = mercatorXYToLatLon(x1, y1);
-                    const south = Math.min(sw.lat, ne.lat);
-                    const north = Math.max(sw.lat, ne.lat);
-                    const west = Math.min(sw.lon, ne.lon);
-                    const east = Math.max(sw.lon, ne.lon);
+                    const bounds = cellIndexToRectangleBounds(ix, iy);
                     const normalized = maxIntersections > 0 ? e.rawCount / maxIntersections : 0;
+                    /* markerPane (z-index 600) is above the dark veil custom pane (250) — custom panes at 400 sat under overlay and were invisible. */
                     L.rectangle(
-                        [[south, west], [north, east]],
+                        bounds,
                         {
-                            pane: 'lightmapWhiteRaster',
-                            color: '#ffffff',
-                            weight: 0,
+                            pane: 'markerPane',
+                            stroke: false,
                             fillColor: '#ffffff',
                             fillOpacity: 1,
                             interactive: true
@@ -615,7 +629,12 @@
                     if (entries.length > 0) {
                         try {
                             const b = group.getBounds();
-                            if (b.isValid()) map.fitBounds(b.pad(0.05));
+                            if (b.isValid()) {
+                                requestAnimationFrame(function () {
+                                    map.fitBounds(b.pad(0.08), { maxZoom: 16, animate: false });
+                                    map.invalidateSize();
+                                });
+                            }
                         } catch (err) { /* ignore */ }
                     }
                     document.getElementById('lightmapStatus').textContent =
@@ -623,7 +642,6 @@
                         ' intersections · showing top ' + kTop.toLocaleString() + ' (~' + Math.round(TOP_CELL_FRACTION * 100) +
                         '%, cutoff ≥ ' + minCountInTop.toLocaleString() + ' intersections)';
                     hideLoadingUi();
-                    setTimeout(function () { map.invalidateSize(); }, 100);
                 }
             }
             document.getElementById('lightmapStatus').textContent =
