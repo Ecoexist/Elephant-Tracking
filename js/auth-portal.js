@@ -98,7 +98,7 @@ async function signInWithPin(email, pin) {
   return data;
 }
 
-const ALLOWED_RETURN_PAGES = ['firebasemap.html', 'dashboard.html', 'dashboard_public_firebase.html', 'admin.html', 'vehicle-tracker.html', 'ngamiland-lucis.html', 'hec.html', 'land_use_conflict.html','lightmap_100m.html'];
+const ALLOWED_RETURN_PAGES = ['firebasemap.html', 'dashboard.html', 'dashboard_public_firebase.html', 'admin.html', 'vehicle-tracker.html', 'ngamiland-lucis.html', 'hec.html', 'land_use_conflict.html','lightmap_100m.html','corridor-mon2.html'];
 
 function redirectByRole(role, returnUrl) {
   const isAdmin = role === 'admin';
