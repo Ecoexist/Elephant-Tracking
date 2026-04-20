@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corridor monitoring (GCS + AGOL) | Ecoexist</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* App shell: left sidebar + main (ribbon nav removed from top) */
+        body.app-layout-corridor {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+        }
+        .app-layout-corridor .app-sidebar {
+            width: 189px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: #fff;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .app-layout-corridor .app-sidebar-inner {
+            padding: 0.85rem 0.65rem 1.5rem 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            flex: 1;
+        }
+        .app-layout-corridor .app-sidebar-logo {
+            display: block;
+            text-align: center;
+            padding: 0.25rem 0;
+        }
+        .app-layout-corridor .app-sidebar-logo img {
+            width: 58px;
+            height: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        .app-layout-corridor .app-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .app-layout-corridor .app-sidebar-nav a {
+            display: block;
+            padding: 10px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.92);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease, color 0.15s ease;
+            border-left: 3px solid transparent;
+        }
+        .app-layout-corridor .app-sidebar-nav a:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .app-layout-corridor .app-sidebar-nav a.app-nav-current {
+            background: rgba(39, 174, 96, 0.25);
+            border-left-color: #27ae60;
+            color: #fff;
+        }
+        .app-layout-corridor .app-main-wrap {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        /* Floating user avatar — top-right, above page chrome */
+        .user-avatar-float {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            left: auto;
+            z-index: 10060;
+        }
+        .user-avatar-float .user-avatar-btn {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.95);
+            background: linear-gradient(145deg, #4a7c59, #2c5530);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .user-avatar-float .user-avatar-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.28);
+        }
+        .user-avatar-float .user-status-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 11px;
+            height: 11px;
+            background: #22c55e;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .user-avatar-float .dropdown-menu {
+            margin-top: 8px;
+            min-width: 160px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 10070;
+        }
+        .corridor-page-header {
+            padding: 0.75rem 1rem 0.25rem 1rem;
+            padding-right: 4.5rem;
+            flex-shrink: 0;
+        }
+        .corridor-page-heading {
+            margin: 0;
+            font-size: 1.6875rem;
+            font-weight: 700;
+            color: #1a4a2e;
+            letter-spacing: -0.02em;
+        }
+        /* Override global styles.css .main-content height (was for top ribbon) */
+        body.app-layout-corridor .main-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            height: auto;
+            overflow-y: auto;
+        }
+        #map-container.card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #map { height: 600px; border-radius: 0; position: relative; flex: 1; min-width: 0; }
+        #corridor-map-legend-panel {
+            width: 96px;
+            flex-shrink: 0;
+            padding: 8px 6px;
+            background: #fff;
+            border-left: 1px solid #dee2e6;
+            border-radius: 0;
+        }
+        #corridor-map-legend-panel .corridor-legend-scale {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            text-align: center;
+        }
+        #corridor-map-legend-panel .legend-label-above,
+        #corridor-map-legend-panel .legend-label-below {
+            font-size: 0.58rem;
+            color: #6c757d;
+            line-height: 1.15;
+            width: 100%;
+        }
+        #corridor-map-legend-panel .legend-gradient-vertical {
+            width: 9px;
+            min-height: 88px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: linear-gradient(to bottom, #ff0000, #ffffff);
+            flex-shrink: 0;
+        }
+        .elephant-filter-menu { min-width: 100%; }
+        .elephant-filter-menu table { table-layout: fixed; width: 100%; margin-bottom: 0; font-size: 0.8125rem; }
+        .elephant-filter-menu th,
+        .elephant-filter-menu td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0.35rem 0.5rem;
+            vertical-align: middle;
+        }
+        .elephant-filter-menu th:nth-child(1),
+        .elephant-filter-menu td:nth-child(1) { width: 44%; }
+        .elephant-filter-menu th:nth-child(2),
+        .elephant-filter-menu td:nth-child(2) { width: 26%; }
+        .elephant-filter-menu th:nth-child(3),
+        .elephant-filter-menu td:nth-child(3) { width: 30%; text-align: right; }
+        .elephant-filter-row { cursor: pointer; }
+        .elephant-filter-row:hover { background-color: #f8f9fa; }
+        .elephant-filter-row.selected { background-color: #e8f5e9; }
+        .btn-custom { background: linear-gradient(135deg, #2c5530, #4a7c59); border: none; color: white; }
+        .btn-custom:hover { color: white; background: linear-gradient(135deg, #1a4a2e, #2c5530); }
+        .btn-toggle.active { box-shadow: inset 0 2px 6px rgba(0,0,0,0.25); opacity: 1; }
+        .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card-header { background: linear-gradient(135deg, #2c5530, #4a7c59); color: white; border-radius: 10px 10px 0 0 !important; font-weight: bold; }
+        .stats-card { background: linear-gradient(135deg, #ffffff, #f8f9fa); border-left: 4px solid #2c5530; }
+        .view-mode-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .view-mode-buttons button { flex: 1; min-width: 120px; }
+        .info-icon-btn { width: 2rem; height: 2rem; padding: 0; border-radius: 50%; font-weight: 700; font-size: 0.95rem; line-height: 1; }
+        .corridor-last-ele { font-size: 0.7rem; line-height: 1.25; }
+    </style>
+    <script>
+      (async function() {
+        try {
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring_agol.html');
+          if (result && result.role !== 'admin') {
+            window.location.replace('dashboard_public_firebase.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html?return=corridor_monitoring_agol.html');
+          return;
+        }
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else { doInit(); }
+      })();
+    </script>
+</head>
+<body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+
+    <!-- Floating above layout: initials + online dot; click for Log out -->
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
+    </div>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav">
+                <a href="admin.html">Admin</a>
+                <a href="vehicle-tracker.html">Vehicle Tracker</a>
+                <a href="dashboard_all_data.html">Wildlife Map</a>
+                <a href="corridor_monitoring.html">Corridor monitoring</a>
+                <a href="corridor_monitoring_agol.html" class="app-nav-current">Corridor (AGOL)</a>
+                <a href="lightmap_100m.html">Light map (100&nbsp;m)</a>
+                <a href="ngamiland-lucis.html">Ngamiland LUCIS</a>
+                <a href="hec.html">HEC</a>
+                <a href="kaza/land_use_conflict.html">Land Use Conflict</a>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">Corridor monitoring <span class="text-muted" style="font-size:0.65em;font-weight:600;">· GCS + AGOL</span></h1>
+        </header>
+    <div class="main-content" style="overflow-y: auto;">
+        <div class="container-fluid mt-2 mb-3">
+            <div class="row">
+                <!-- Map + legend -->
+                <div class="col-lg-9">
+                    <div class="card border-0 shadow" id="map-container">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex" style="min-height: 0;">
+                                <div id="map"></div>
+                                <div id="corridor-map-legend-panel" class="bg-white border-start">
+                                    <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
+                                    <div class="corridor-legend-scale" title="Corridor usage scale">
+                                        <span class="legend-label-above">More crossings</span>
+                                        <div class="legend-gradient-vertical" aria-hidden="true"></div>
+                                        <span class="legend-label-below">Less crossings</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar: stats → map controls → filters (mirrors dashboard_all_data) -->
+                <div class="col-lg-3">
+                    <div class="row">
+                        <div class="col-md-6 col-lg-6">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">Road crossings (GCS)</h6>
+                                    <h3 class="text-success mb-0" id="figTotalCrossings">—</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-6">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">Inside corridors</h6>
+                                    <h3 class="text-primary mb-0" id="figInsideCorridors">—</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-6">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">Outside corridors</h6>
+                                    <h3 class="text-dark mb-0" id="figOutsideCorridors">—</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-6">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">AGOL points</h6>
+                                    <h3 class="text-info mb-0" id="figAgolCount">—</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-12">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">Last GCS crossing</h6>
+                                    <div class="fs-6 fw-semibold text-dark lh-sm mb-0" id="figLastCrossingDate">—</div>
+                                    <div class="text-muted mt-1 mb-0 corridor-last-ele" id="figLastCrossingEle"></div>
+                                    <div class="text-muted mt-2 mb-0 corridor-last-ele small" id="figLastAgolMeta"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center py-2">
+                            <h6 class="mb-0">📊 Map controls</h6>
+                            <button type="button" class="btn btn-sm btn-light info-icon-btn" title="How this page works" data-bs-toggle="modal" data-bs-target="#corridorInfoModal" aria-label="Page information">i</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="view-mode-buttons mb-0">
+                                <button type="button" class="btn btn-sm btn-custom btn-toggle flex-grow-1" id="btnHotspots" onclick="toggleHotspotView()">Hotspot view</button>
+                                <button type="button" class="btn btn-sm btn-custom btn-toggle flex-grow-1" id="btnCorridorUsage" onclick="toggleCorridorUsage()">Corridor usage</button>
+                            </div>
+                            <p class="small text-muted mb-0 mt-2" id="statsLine"></p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0">🔍 Filters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label" for="filterYear">Year</label>
+                                <select class="form-select form-select-sm" id="filterYear">
+                                    <option value="">All years</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="filterMonth">Month</label>
+                                <select class="form-select form-select-sm" id="filterMonth">
+                                    <option value="">All months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-custom w-100 mb-3" onclick="applyDateFilter()">Apply Filters</button>
+                            <p class="small text-muted mb-3" id="statusLine"></p>
+                            <div class="mb-0">
+                                <label class="form-label" for="elephantFilterBtn">Crossings per elephant <span class="text-muted fw-normal">(GCS only)</span></label>
+                                <div class="dropdown w-100 elephant-filter-dropdown">
+                                    <button class="form-select form-select-sm text-start d-flex justify-content-between align-items-center w-100" type="button" id="elephantFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-haspopup="true" aria-controls="elephantFilterMenu">
+                                        <span id="elephantFilterButtonLabel" class="text-truncate me-1">All elephants</span>
+                                    </button>
+                                    <div class="dropdown-menu shadow elephant-filter-menu p-0 w-100" id="elephantFilterMenu" aria-labelledby="elephantFilterBtn" style="max-height: 280px; overflow-y: auto;">
+                                        <table class="table table-sm mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th scope="col">Ele name</th>
+                                                    <th scope="col">Ele ID</th>
+                                                    <th scope="col">No. crossings</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="elephantFilterTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="elephantFilterKey" value="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="modal fade" id="corridorInfoModal" tabindex="-1" aria-labelledby="corridorInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="corridorInfoModalLabel">Corridor monitoring (GCS + AGOL) — how it works</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body small">
+                    <h3 class="h6">Data sources</h3>
+                    <p class="mb-3"><strong>Road crossings</strong> load the same way as the main corridor page: <strong>Google Cloud Storage</strong> (<code>road_crossings.json</code>) via public URL and/or the <strong>road-crossings-process</strong> API with your admin sign-in. <strong>ArcGIS Online</strong> points load from the configured <code>FeatureServer</code> layer (query <code>f=json</code>, paginated).</p>
+                    <p class="mb-3">Corridor polygons and <strong>NG_Roads</strong> are local GeoJSON. AGOL uses the public <strong>Elephant_Corridors_Monitoring_Form_view</strong> service (layer 0). If you switch to a private layer and see <strong>Token Required</strong>, set <code>AGOL_PORTAL_TOKEN</code> in the script.</p>
+
+                    <h3 class="h6">Filters and elephant list</h3>
+                    <p class="mb-3"><strong>Year / Month</strong> apply to <em>both</em> GCS crossings and AGOL features (when a parseable date exists on each record). The <strong>Crossings per elephant</strong> table lists <strong>GCS-only</strong> counts and only filters GCS points on the map; AGOL points always match the date filter and are always shown.</p>
+
+                    <h3 class="h6">Map and corridor usage</h3>
+                    <p class="mb-3">GCS crossings are drawn in <strong>purple</strong>; AGOL points in <strong>orange</strong>. <strong>Corridor usage</strong> counts <strong>all</strong> filtered points (GCS + AGOL) inside each corridor and builds outside-corridor bands from the combined set (same rules as the main corridor page).</p>
+
+                    <h3 class="h6">Stats</h3>
+                    <p class="mb-0"><strong>Road crossings / inside / outside / last crossing</strong> refer to the GCS subset (with elephant filter). <strong>AGOL points</strong> is the date-filtered AGOL count. The footer under “Last GCS crossing” can show the latest AGOL time when available.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        /**
+         * ArcGIS Online hosted feature layer (loaded together with GCS road crossings).
+         * Base URL through …/FeatureServer (no trailing slash). Default layer is public; set AGOL_PORTAL_TOKEN only if you point at a secured service.
+         */
+        /** Public hosted layer: Elephant_Corridors_Monitoring_Form (layer 0). Max record count 1000 per request. */
+        const AGOL_FEATURESERVER_BASE =
+            'https://services2.arcgis.com/yQ7Kef2Q14sLNyEQ/arcgis/rest/services/Elephant_Corridors_Monitoring_Form_view/FeatureServer';
+        const AGOL_LAYER_ID = 0;
+        /** Only needed if the service is secured; this Form view is public */
+        const AGOL_PORTAL_TOKEN = '';
+        const AGOL_PAGE_SIZE = 1000;
+
+        const ROAD_API = 'https://ecoexist-api.vercel.app/api/road-crossings-process';
+        const PUBLIC_ROAD_CROSSINGS_JSON_URL = '';
+        const ROAD_CROSSINGS_ADMIN_SECRET = '';
+        const ROAD_CROSSINGS_BASIC_USER = '';
+        const ROAD_CROSSINGS_BASIC_PASSWORD = '';
+
+        /** Firestore users/{uid}.name — custom-token users often have no displayName on the Auth object */
+        window._corridorProfileNameForInitials = '';
+
+        function initialsFromFirebaseUser(user) {
+            if (!user) return '?';
+            const name = (user.displayName || window._corridorProfileNameForInitials || '').trim();
+            if (name) {
+                const parts = name.split(/\s+/).filter(Boolean);
+                if (parts.length >= 2) {
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                }
+                if (parts.length === 1 && parts[0].length >= 2) {
+                    return parts[0].substring(0, 2).toUpperCase();
+                }
+                return (parts[0].charAt(0) || '?').toUpperCase();
+            }
+            var emailStr = user.email || '';
+            if (!emailStr && user.providerData && user.providerData.length) {
+                emailStr = user.providerData[0].email || '';
+            }
+            const local = emailStr.split('@')[0] || '';
+            if (local) {
+                const bits = local.split(/[._-]+/).filter(Boolean);
+                if (bits.length >= 2) {
+                    return (bits[0].charAt(0) + bits[1].charAt(0)).toUpperCase();
+                }
+                if (local.length >= 2) return local.substring(0, 2).toUpperCase();
+                return (local.charAt(0) + local.charAt(0)).toUpperCase();
+            }
+            return user.uid ? user.uid.substring(0, 2).toUpperCase() : '?';
+        }
+
+        window.updateCorridorUserAvatar = function () {
+            const el = document.getElementById('userAvatarInitials');
+            if (!el) return;
+            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
+            el.textContent = initialsFromFirebaseUser(user);
+        };
+
+        async function fetchCorridorUserProfileForInitials() {
+            window._corridorProfileNameForInitials = '';
+            const auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+            const db = window.firebasePortal && window.firebasePortal.db ? window.firebasePortal.db : null;
+            const docFn = window.firebasePortal && window.firebasePortal.doc ? window.firebasePortal.doc : null;
+            const getDocFn = window.firebasePortal && window.firebasePortal.getDoc ? window.firebasePortal.getDoc : null;
+            if (!auth || !auth.currentUser || !db || !docFn || !getDocFn) return;
+            try {
+                const snap = await getDocFn(docFn(db, 'users', auth.currentUser.uid));
+                if (snap.exists()) {
+                    const d = snap.data();
+                    let n = (d.name || d.displayName || '').trim();
+                    if (!n) {
+                        const em = (d.email || auth.currentUser.email || '').trim();
+                        if (em) {
+                            const local = em.split('@')[0];
+                            const parts = local.split(/[._-]+/).filter(Boolean);
+                            if (parts.length >= 2) {
+                                n = parts[0] + ' ' + parts[parts.length - 1];
+                            } else {
+                                n = local;
+                            }
+                        }
+                    }
+                    if (n) window._corridorProfileNameForInitials = n;
+                }
+            } catch (e) {
+                /* ignore */
+            }
+        }
+
+        function wireCorridorShellUiCore() {
+            window.updateCorridorUserAvatar();
+            fetchCorridorUserProfileForInitials().then(function () {
+                window.updateCorridorUserAvatar();
+            });
+            var auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+            var oasc = window.firebasePortal && window.firebasePortal.onAuthStateChanged;
+            if (auth && oasc && !auth._corridorMonAvatarBound) {
+                auth._corridorMonAvatarBound = true;
+                oasc(auth, function (u) {
+                    window._corridorProfileNameForInitials = '';
+                    if (u) {
+                        fetchCorridorUserProfileForInitials().then(function () {
+                            window.updateCorridorUserAvatar();
+                        });
+                    } else {
+                        window.updateCorridorUserAvatar();
+                    }
+                });
+            }
+            var so = document.getElementById('userAvatarSignOut');
+            if (so && !so._corridorSignOutBound) {
+                so._corridorSignOutBound = true;
+                so.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var a = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+                    var signOutFn = window.firebasePortal && window.firebasePortal.signOut;
+                    if (a && signOutFn) {
+                        signOutFn(a)
+                            .then(function () {
+                                window.location.href = 'login.html';
+                            })
+                            .catch(function () {
+                                window.location.href = 'login.html';
+                            });
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+        }
+
+        function wireCorridorShellUi() {
+            if (window.AuthPortal && typeof window.AuthPortal.waitForFirebase === 'function') {
+                window.AuthPortal.waitForFirebase()
+                    .then(function () {
+                        wireCorridorShellUiCore();
+                    })
+                    .catch(function () {
+                        wireCorridorShellUiCore();
+                    });
+            } else {
+                setTimeout(wireCorridorShellUi, 80);
+            }
+        }
+
+        async function getAuthToken(forceRefresh) {
+            const user = window.firebasePortal?.auth?.currentUser;
+            if (!user) return null;
+            try {
+                return await user.getIdToken(!!forceRefresh);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /** Wait for module auth so list fetch has a Bearer token (avoids 401 right after authReady). */
+        async function waitForFirebaseUser(maxMs) {
+            const cap = maxMs != null ? maxMs : 5000;
+            const start = Date.now();
+            while (Date.now() - start < cap) {
+                const u = window.firebasePortal?.auth?.currentUser;
+                if (u) return u;
+                await new Promise(function (r) {
+                    setTimeout(r, 80);
+                });
+            }
+            return window.firebasePortal?.auth?.currentUser || null;
+        }
+
+        /** Accept lat/lon, latitude/longitude, etc. (matches API coerce + legacy GCS). */
+        function normalizeCrossingCoords(c) {
+            if (!c || typeof c !== 'object') return null;
+            const lat = c.lat != null ? c.lat : c.latitude != null ? c.latitude : c.Latitude;
+            const lon = c.lon != null ? c.lon : c.longitude != null ? c.longitude : c.lng != null ? c.lng : c.Longitude;
+            const la = Number(lat);
+            const lo = Number(lon);
+            if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
+            var out = {};
+            for (var k in c) {
+                if (Object.prototype.hasOwnProperty.call(c, k)) out[k] = c[k];
+            }
+            out.lat = la;
+            out.lon = lo;
+            return out;
+        }
+
+        function roadCrossingsAuthHeaders() {
+            if (ROAD_CROSSINGS_ADMIN_SECRET) return { Authorization: 'Bearer ' + ROAD_CROSSINGS_ADMIN_SECRET };
+            return null;
+        }
+
+        function roadCrossingsBasicAuthHeaders() {
+            if (ROAD_CROSSINGS_BASIC_USER && ROAD_CROSSINGS_BASIC_PASSWORD) {
+                return {
+                    Authorization: 'Basic ' + btoa(ROAD_CROSSINGS_BASIC_USER + ':' + ROAD_CROSSINGS_BASIC_PASSWORD)
+                };
+            }
+            return null;
+        }
+
+        /** Same shapes as in GCS: { crossings: { id: {...} } } or { crossings: [...] } */
+        function normalizeCrossingsPayload(raw) {
+            if (!raw) return [];
+            const cr = raw.crossings;
+            if (!cr) return [];
+            if (Array.isArray(cr)) return cr;
+            if (typeof cr === 'object') {
+                return Object.entries(cr).map(([id, data]) => ({ id, ...data }));
+            }
+            return [];
+        }
+
+        function agolQueryParams(extra) {
+            const p = new URLSearchParams();
+            p.set('where', '1=1');
+            p.set('outFields', '*');
+            p.set('f', 'json');
+            p.set('returnGeometry', 'true');
+            p.set('outSR', '4326');
+            p.set('resultRecordCount', String(AGOL_PAGE_SIZE));
+            if (AGOL_PORTAL_TOKEN && String(AGOL_PORTAL_TOKEN).trim()) {
+                p.set('token', String(AGOL_PORTAL_TOKEN).trim());
+            }
+            if (extra) {
+                Object.keys(extra).forEach(function (k) {
+                    if (extra[k] != null) p.set(k, String(extra[k]));
+                });
+            }
+            return p.toString();
+        }
+
+        function latLonFromEsriGeometry(geom) {
+            if (!geom) return null;
+            if (geom.x != null && geom.y != null) {
+                const lo = Number(geom.x);
+                const la = Number(geom.y);
+                if (Number.isFinite(la) && Number.isFinite(lo)) return { lat: la, lon: lo };
+            }
+            if (geom.type === 'Point' && Array.isArray(geom.coordinates)) {
+                const lo = Number(geom.coordinates[0]);
+                const la = Number(geom.coordinates[1]);
+                if (Number.isFinite(la) && Number.isFinite(lo)) return { lat: la, lon: lo };
+            }
+            return null;
+        }
+
+        function agolTimeUnixSeconds(attrs) {
+            if (!attrs || typeof attrs !== 'object') return null;
+            function tryNum(v) {
+                const n = Number(v);
+                if (!Number.isFinite(n)) return null;
+                if (n > 1e12) return Math.floor(n / 1000);
+                if (n > 1e9 && n < 1e12) return Math.floor(n);
+                return null;
+            }
+            const prefer = [
+                'estimated_crossing_time',
+                'Estimated_Crossing_Time',
+                'crossing_time',
+                'ObservationDate',
+                'observation_date',
+                'CreationDate',
+                'EditDate',
+                'DATE',
+                'date'
+            ];
+            for (let i = 0; i < prefer.length; i++) {
+                const k = prefer[i];
+                if (attrs[k] != null) {
+                    const t = tryNum(attrs[k]);
+                    if (t != null) return t;
+                }
+            }
+            const keys = Object.keys(attrs);
+            for (let j = 0; j < keys.length; j++) {
+                const k = keys[j];
+                if (/date|time|timestamp/i.test(k) && attrs[k] != null) {
+                    const t = tryNum(attrs[k]);
+                    if (t != null) return t;
+                }
+            }
+            return null;
+        }
+
+        function agolFeatureToObservation(feat, idx) {
+            const attrs = feat.attributes || {};
+            const ll = latLonFromEsriGeometry(feat.geometry);
+            if (!ll) return null;
+            const id = attrs.OBJECTID != null ? attrs.OBJECTID : attrs.FID != null ? attrs.FID : idx;
+            const t = agolTimeUnixSeconds(attrs);
+            const rec = {
+                id: 'agol-' + id,
+                lat: ll.lat,
+                lon: ll.lon,
+                estimated_crossing_time: t,
+                ele_name: attrs.ele_name || attrs.Ele_Name || attrs.name || attrs.Name || '',
+                ele_tag_id: attrs.ele_tag_id || attrs.Ele_Tag || attrs.Tag || '',
+                road_name: attrs.road_name || attrs.Road_Name || '',
+                _agolAttrs: attrs,
+                _source: 'agol'
+            };
+            return normalizeCrossingCoords(rec);
+        }
+
+        function popupHtmlFromAgolRecord(c) {
+            const lines = [];
+            const a = c._agolAttrs || {};
+            const keys = Object.keys(a).filter(function (k) {
+                return !/^shape$/i.test(k) && !/^st_geometry/i.test(k);
+            });
+            const cap = 8;
+            for (let i = 0; i < Math.min(keys.length, cap); i++) {
+                const k = keys[i];
+                let v = a[k];
+                if (v == null) continue;
+                if (typeof v === 'number' && v > 1e12) {
+                    try {
+                        v = new Date(v).toLocaleString();
+                    } catch (e) { /* keep */ }
+                }
+                lines.push('<strong>' + escapeHtml(k) + ':</strong> ' + escapeHtml(String(v)));
+            }
+            if (keys.length > cap) lines.push('<em>+' + (keys.length - cap) + ' fields…</em>');
+            const dt =
+                c.estimated_crossing_time != null
+                    ? new Date(Number(c.estimated_crossing_time) * 1000).toLocaleString()
+                    : '';
+            let head = '<strong>Observation</strong>';
+            if (dt) head += '<br><small>' + escapeHtml(dt) + '</small>';
+            if (!lines.length) return head;
+            return head + '<br>' + lines.join('<br>');
+        }
+        const CORRIDOR_PATHS = ['data/Corridors.geojson', 'data/Corridor.geojson'];
+        const ROADS_PATHS = ['data/NG_Roads.geojson', '../data/NG_Roads.geojson'];
+
+        let map;
+        let corridorGeoJson = null;
+        let allCrossings = [];
+        let crossings = [];
+        let allAgolCrossings = [];
+        let agolCrossings = [];
+        let corridorLayer = null;
+        let usageCorridorLayer = null;
+        let usageBufferLayer = null;
+        let pointLayerGroup = null;
+        let heatLayer = null;
+        let hotspotMode = false;
+        let usageMode = false;
+        const BUFFER_KM = 0.1;
+        const MAX_OUTSIDE_FOR_MERGE = 800;
+        const MERGE_TOUCH_KM = 0.22;
+        const CORRIDOR_BAND_HALF_KM = 1;
+        let roadsGeoJson = null;
+        let roadsLoadPromise = null;
+        let roadLayer = null;
+        /** Outside corridor bands are drawn only when merged cluster has this many crossings or more. */
+        const MIN_OUTSIDE_CLUSTER_FOR_BAND = 3;
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function elephantGroupKey(c) {
+            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
+            if (tag) return 'id:' + tag;
+            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
+            if (name) return 'name:' + name.toLowerCase();
+            return 'unknown';
+        }
+
+        function elephantDisplayLabel(c) {
+            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
+            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
+            if (name && tag) return name + ' (' + tag + ')';
+            if (name) return name;
+            if (tag) return 'Tag ' + tag;
+            return 'Unknown';
+        }
+
+        function elephantNameCell(c) {
+            const name = c.ele_name != null && String(c.ele_name).trim() !== '' ? String(c.ele_name).trim() : '';
+            return name || '—';
+        }
+
+        function elephantIdCell(c) {
+            const tag = c.ele_tag_id != null && String(c.ele_tag_id).trim() !== '' ? String(c.ele_tag_id).trim() : '';
+            return tag || '—';
+        }
+
+        function escapeAttr(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
+        /** GCS rows after date filter, then elephant picker (AGOL is not elephant-filtered). */
+        function gcsActiveOnly() {
+            const keyInp = document.getElementById('elephantFilterKey');
+            const key = keyInp && keyInp.value ? String(keyInp.value) : '';
+            if (!key) return crossings;
+            return crossings.filter(function (c) {
+                return elephantGroupKey(c) === key;
+            });
+        }
+
+        /** Map + corridor usage: GCS (with elephant filter) plus all date-filtered AGOL points. */
+        function activeCrossings() {
+            return gcsActiveOnly().concat(agolCrossings);
+        }
+
+        function markElephantFilterSelection() {
+            const keyVal = document.getElementById('elephantFilterKey');
+            const key = keyVal && keyVal.value ? keyVal.value : '';
+            document.querySelectorAll('#elephantFilterTableBody .elephant-filter-row').forEach(function (tr) {
+                const k = tr.getAttribute('data-key') != null ? tr.getAttribute('data-key') : '';
+                tr.classList.toggle('selected', k === key);
+            });
+        }
+
+        function updateElephantFilterButtonLabelFromTable() {
+            const span = document.getElementById('elephantFilterButtonLabel');
+            const keyInp = document.getElementById('elephantFilterKey');
+            if (!span || !keyInp) return;
+            const key = keyInp.value ? String(keyInp.value) : '';
+            if (!key) {
+                span.textContent = 'All elephants';
+                return;
+            }
+            let trFound = null;
+            document.querySelectorAll('#elephantFilterTableBody .elephant-filter-row').forEach(function (tr) {
+                const k = tr.getAttribute('data-key') != null ? tr.getAttribute('data-key') : '';
+                if (k === key) trFound = tr;
+            });
+            if (!trFound) {
+                span.textContent = 'All elephants';
+                return;
+            }
+            const tds = trFound.querySelectorAll('td');
+            if (tds.length < 3) return;
+            span.textContent =
+                tds[0].textContent.trim() + ' · ' + tds[1].textContent.trim() + ' · ' + tds[2].textContent.trim();
+        }
+
+        function populateElephantTable() {
+            const tbody = document.getElementById('elephantFilterTableBody');
+            const keyInp = document.getElementById('elephantFilterKey');
+            if (!tbody || !keyInp) return;
+            const prev = keyInp.value ? String(keyInp.value) : '';
+            const byKey = new Map();
+            for (let i = 0; i < crossings.length; i++) {
+                const c = crossings[i];
+                const k = elephantGroupKey(c);
+                if (!byKey.has(k)) byKey.set(k, { sample: c, count: 0 });
+                byKey.get(k).count++;
+            }
+            const sorted = [...byKey.entries()].sort((a, b) => {
+                if (b[1].count !== a[1].count) return b[1].count - a[1].count;
+                return elephantDisplayLabel(a[1].sample).localeCompare(elephantDisplayLabel(b[1].sample), undefined, { sensitivity: 'base' });
+            });
+
+            let html =
+                '<tr class="elephant-filter-row" data-key=""><td><em>All elephants</em></td><td>—</td><td>—</td></tr>';
+            for (let i = 0; i < sorted.length; i++) {
+                const k = sorted[i][0];
+                const v = sorted[i][1];
+                const nm = escapeHtml(elephantNameCell(v.sample));
+                const idCell = escapeHtml(elephantIdCell(v.sample));
+                html +=
+                    '<tr class="elephant-filter-row" data-key="' +
+                    escapeAttr(k) +
+                    '"><td>' +
+                    nm +
+                    '</td><td>' +
+                    idCell +
+                    '</td><td>' +
+                    v.count +
+                    '</td></tr>';
+            }
+            tbody.innerHTML = html;
+
+            let nextKey = '';
+            if (prev && sorted.some(function (r) { return r[0] === prev; })) nextKey = prev;
+            keyInp.value = nextKey;
+            markElephantFilterSelection();
+            updateElephantFilterButtonLabelFromTable();
+        }
+
+        function ensureElephantFilterTableBound() {
+            const tbody = document.getElementById('elephantFilterTableBody');
+            if (!tbody || tbody._corridorRowClickBound) return;
+            tbody._corridorRowClickBound = true;
+            tbody.addEventListener('click', function (e) {
+                const tr = e.target.closest('.elephant-filter-row');
+                if (!tr) return;
+                e.preventDefault();
+                const raw = tr.getAttribute('data-key');
+                const key = raw != null ? String(raw) : '';
+                const inp = document.getElementById('elephantFilterKey');
+                if (inp) inp.value = key;
+                markElephantFilterSelection();
+                updateElephantFilterButtonLabelFromTable();
+                const btn = document.getElementById('elephantFilterBtn');
+                if (btn && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                    const dd = bootstrap.Dropdown.getInstance(btn);
+                    if (dd) dd.hide();
+                }
+                onElephantFilterChange();
+            });
+        }
+
+        function onElephantFilterChange() {
+            updateCrossingStatsFigures();
+            redrawCrossingDisplay();
+            if (usageMode) void applyCorridorUsage();
+        }
+
+        function updateCrossingStatsFigures() {
+            const elTotal = document.getElementById('figTotalCrossings');
+            const elIn = document.getElementById('figInsideCorridors');
+            const elOut = document.getElementById('figOutsideCorridors');
+            const elLastDt = document.getElementById('figLastCrossingDate');
+            const elLastEl = document.getElementById('figLastCrossingEle');
+            const elAgol = document.getElementById('figAgolCount');
+            const elAgolMeta = document.getElementById('figLastAgolMeta');
+            if (!elTotal || !elIn || !elOut) return;
+
+            const gcsList = gcsActiveOnly();
+            const total = gcsList.length;
+            elTotal.textContent = String(total);
+            if (elAgol) elAgol.textContent = String(agolCrossings.length);
+
+            if (!corridorGeoJson || !corridorGeoJson.features || !corridorGeoJson.features.length) {
+                elIn.textContent = '—';
+                elOut.textContent = '—';
+            } else {
+                let inside = 0;
+                for (let i = 0; i < gcsList.length; i++) {
+                    const c = gcsList[i];
+                    if (pointInsideCorridors(Number(c.lon), Number(c.lat), corridorGeoJson)) inside++;
+                }
+                elIn.textContent = String(inside);
+                elOut.textContent = String(Math.max(0, total - inside));
+            }
+
+            let latestTs = -Infinity;
+            let latestC = null;
+            for (let i = 0; i < gcsList.length; i++) {
+                const c = gcsList[i];
+                const ts = Number(c.estimated_crossing_time);
+                if (!Number.isFinite(ts)) continue;
+                if (ts > latestTs) {
+                    latestTs = ts;
+                    latestC = c;
+                }
+            }
+            if (elLastDt && elLastEl) {
+                if (latestC != null && Number.isFinite(latestTs) && latestTs > -Infinity) {
+                    const dt = new Date(latestTs * 1000);
+                    elLastDt.textContent = dt.toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    });
+                    const elLabel = elephantDisplayLabel(latestC);
+                    elLastEl.textContent = elLabel ? elLabel : '';
+                } else {
+                    elLastDt.textContent = '—';
+                    elLastEl.textContent = '';
+                }
+            }
+
+            if (elAgolMeta) {
+                let agLatest = -Infinity;
+                let agSample = null;
+                for (let j = 0; j < agolCrossings.length; j++) {
+                    const c = agolCrossings[j];
+                    const ts = Number(c.estimated_crossing_time);
+                    if (!Number.isFinite(ts)) continue;
+                    if (ts > agLatest) {
+                        agLatest = ts;
+                        agSample = c;
+                    }
+                }
+                if (agSample != null && agLatest > -Infinity) {
+                    elAgolMeta.textContent =
+                        'Latest AGOL: ' +
+                        new Date(agLatest * 1000).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                        });
+                } else {
+                    elAgolMeta.textContent =
+                        agolCrossings.length > 0 ? 'Latest AGOL: (no date field on filtered rows)' : '';
+                }
+            }
+        }
+
+        function colorWhiteToRed(count, maxCount) {
+            if (maxCount <= 0 || count <= 0) {
+                return { fillColor: '#ffffff', color: '#bbbbbb', fillOpacity: 0.35, weight: 1 };
+            }
+            const t = Math.min(1, count / maxCount);
+            const g = Math.round(255 * (1 - t));
+            const b = Math.round(255 * (1 - t));
+            return {
+                fillColor: `rgb(255,${g},${b})`,
+                color: `rgb(${Math.round(180 - 80 * t)},0,0)`,
+                fillOpacity: 0.35 + 0.45 * t,
+                weight: 1 + Math.round(2 * t)
+            };
+        }
+
+        function pointInsideCorridors(lon, lat, fc) {
+            const pt = turf.point([lon, lat]);
+            for (let i = 0; i < fc.features.length; i++) {
+                try {
+                    if (turf.booleanPointInPolygon(pt, fc.features[i])) return true;
+                } catch (e) { /* invalid geom */ }
+            }
+            return false;
+        }
+
+        function buffersShouldMerge(a, b) {
+            try {
+                if (turf.booleanIntersects(a, b)) return true;
+                const c1 = turf.centroid(a);
+                const c2 = turf.centroid(b);
+                return turf.distance(c1, c2, { units: 'kilometers' }) <= MERGE_TOUCH_KM;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function mergeOverlappingPolygons(features) {
+            let list = features.filter(f => f && f.geometry).map(f => {
+                try {
+                    return turf.feature(f.geometry, f.properties || {});
+                } catch (e) {
+                    return f;
+                }
+            });
+            let guard = 0;
+            const maxGuard = 12000;
+            while (list.length > 1 && guard < maxGuard) {
+                guard++;
+                let mergedThisRound = false;
+                outer: for (let i = 0; i < list.length; i++) {
+                    for (let j = i + 1; j < list.length; j++) {
+                        try {
+                            if (!buffersShouldMerge(list[i], list[j])) continue;
+                            const u = turf.union(list[i], list[j]);
+                            if (!u || !u.geometry) continue;
+                            if (u.geometry.type !== 'Polygon' && u.geometry.type !== 'MultiPolygon') continue;
+                            list.splice(j, 1);
+                            list.splice(i, 1);
+                            list.push(u);
+                            mergedThisRound = true;
+                            break outer;
+                        } catch (e) { /* skip bad pair */ }
+                    }
+                }
+                if (!mergedThisRound) break;
+            }
+            return list;
+        }
+
+        function normalizeBearing(deg) {
+            let b = deg % 360;
+            if (b < 0) b += 360;
+            return b;
+        }
+
+        function roadLineFeaturesInBbox(bboxPoly) {
+            if (!roadsGeoJson || !roadsGeoJson.features) return [];
+            const bb = turf.bbox(bboxPoly);
+            const pad = 0.02;
+            const minLon = bb[0] - pad, minLat = bb[1] - pad, maxLon = bb[2] + pad, maxLat = bb[3] + pad;
+            const out = [];
+            for (const f of roadsGeoJson.features) {
+                const g = f.geometry;
+                if (!g || !g.coordinates) continue;
+                const addLine = (coords) => {
+                    if (!coords || coords.length < 2) return;
+                    const line = turf.lineString(coords);
+                    try {
+                        const b = turf.bbox(line);
+                        if (b[2] < minLon || b[0] > maxLon || b[3] < minLat || b[1] > maxLat) return;
+                        out.push(line);
+                    } catch (e) { /* skip */ }
+                };
+                if (g.type === 'LineString') addLine(g.coordinates);
+                else if (g.type === 'MultiLineString') g.coordinates.forEach(addLine);
+            }
+            return out;
+        }
+
+        function nearestRoadBearingAtPoint(ptFeature, bboxHintPoly) {
+            const lines = roadLineFeaturesInBbox(bboxHintPoly);
+            let best = null;
+            let bestDist = Infinity;
+            for (const line of lines) {
+                try {
+                    const snap = turf.nearestPointOnLine(line, ptFeature, { units: 'kilometers' });
+                    const d = snap.properties.dist;
+                    if (d >= bestDist) continue;
+                    const idx = snap.properties.index;
+                    const coords = line.geometry.coordinates;
+                    if (idx == null || idx + 1 >= coords.length) continue;
+                    const a = turf.point(coords[idx]);
+                    const b = turf.point(coords[idx + 1]);
+                    const brg = turf.bearing(a, b);
+                    bestDist = d;
+                    best = brg;
+                } catch (e) { /* skip */ }
+            }
+            return best;
+        }
+
+        function maxDistCentroidToPolygonBoundaryKm(centroid, polygonFeat) {
+            const pt = centroid;
+            let maxD = 0;
+            const ringEdges = (ring) => {
+                for (let i = 0; i < ring.length - 1; i++) {
+                    try {
+                        const seg = turf.lineString([ring[i], ring[i + 1]]);
+                        const d = turf.pointToLineDistance(pt, seg, { units: 'kilometers' });
+                        if (d > maxD) maxD = d;
+                    } catch (e) { /* skip */ }
+                }
+            };
+            const g = polygonFeat.geometry;
+            if (g.type === 'Polygon') g.coordinates.forEach(ringEdges);
+            else if (g.type === 'MultiPolygon') g.coordinates.forEach(poly => poly.forEach(ringEdges));
+            return maxD > 0 ? maxD : 0.05;
+        }
+
+        function crossingRefPointForBand(insidePtsFc, centroid) {
+            if (!insidePtsFc || !insidePtsFc.features.length) return centroid;
+            let best = insidePtsFc.features[0];
+            let bestD = Infinity;
+            for (const f of insidePtsFc.features) {
+                try {
+                    const d = turf.distance(centroid, f, { units: 'kilometers' });
+                    if (d < bestD) {
+                        bestD = d;
+                        best = f;
+                    }
+                } catch (e) { /* skip */ }
+            }
+            return best;
+        }
+
+        function mergedPolygonToUsageBand(mergedPoly, ptsFc) {
+            let inside;
+            try {
+                inside = turf.pointsWithinPolygon(ptsFc, mergedPoly);
+            } catch (e) {
+                return mergedPoly;
+            }
+            const C = turf.centroid(mergedPoly);
+            const refPt = crossingRefPointForBand(inside, C);
+            let perpBearing;
+            const roadBearing = nearestRoadBearingAtPoint(refPt, mergedPoly);
+            if (roadBearing != null && Number.isFinite(roadBearing)) {
+                perpBearing = normalizeBearing(roadBearing + 90);
+            } else {
+                try {
+                    perpBearing = normalizeBearing(turf.bearing(C, refPt) + 90);
+                } catch (e) {
+                    return mergedPoly;
+                }
+            }
+            let p1, p2;
+            try {
+                p1 = turf.rhumbDestination(C, CORRIDOR_BAND_HALF_KM, perpBearing, { units: 'kilometers' });
+                p2 = turf.rhumbDestination(C, CORRIDOR_BAND_HALF_KM, normalizeBearing(perpBearing + 180), { units: 'kilometers' });
+            } catch (e) {
+                return mergedPoly;
+            }
+            const axis = turf.lineString([p2.geometry.coordinates, p1.geometry.coordinates]);
+            const widthKm = maxDistCentroidToPolygonBoundaryKm(C, mergedPoly);
+            let band;
+            try {
+                band = turf.buffer(axis, widthKm, { units: 'kilometers', steps: 24 });
+            } catch (e) {
+                return mergedPoly;
+            }
+            if (!band || !band.geometry) return mergedPoly;
+            return band;
+        }
+
+        function ensureRoadsLoaded() {
+            if (roadsGeoJson) return Promise.resolve(true);
+            if (roadsLoadPromise) return roadsLoadPromise;
+            roadsLoadPromise = (async () => {
+                for (const p of ROADS_PATHS) {
+                    try {
+                        const res = await fetch(p);
+                        if (res.ok) {
+                            roadsGeoJson = await res.json();
+                            return true;
+                        }
+                    } catch (e) { /* try next */ }
+                }
+                roadsGeoJson = null;
+                return false;
+            })();
+            return roadsLoadPromise;
+        }
+
+        async function loadCorridors() {
+            for (const p of CORRIDOR_PATHS) {
+                try {
+                    const res = await fetch(p);
+                    if (res.ok) {
+                        corridorGeoJson = await res.json();
+                        return true;
+                    }
+                } catch (e) { /* try next */ }
+            }
+            return false;
+        }
+
+        async function loadGcsCrossings() {
+            let list = [];
+
+            if (PUBLIC_ROAD_CROSSINGS_JSON_URL && String(PUBLIC_ROAD_CROSSINGS_JSON_URL).trim()) {
+                const res = await fetch(String(PUBLIC_ROAD_CROSSINGS_JSON_URL).trim());
+                if (!res.ok) throw new Error('Public crossings JSON ' + res.status);
+                const raw = await res.json();
+                list = normalizeCrossingsPayload(raw);
+            } else {
+                let headers = roadCrossingsAuthHeaders() || roadCrossingsBasicAuthHeaders();
+                if (!headers) {
+                    if (typeof window.AuthPortal !== 'undefined' && typeof window.AuthPortal.waitForFirebase === 'function') {
+                        await window.AuthPortal.waitForFirebase(10000);
+                    } else {
+                        await waitForFirebaseUser(10000);
+                    }
+                    let authToken = await getAuthToken();
+                    if (!authToken) {
+                        await new Promise(function (r) {
+                            setTimeout(r, 800);
+                        });
+                        authToken = await getAuthToken();
+                    }
+                    if (!authToken) {
+                        authToken = await getAuthToken(true);
+                    }
+                    if (authToken) headers = { Authorization: 'Bearer ' + authToken };
+                }
+                if (!headers) {
+                    throw new Error(
+                        'Sign in as admin, or set PUBLIC_ROAD_CROSSINGS_JSON_URL, or ROAD_CROSSINGS_ADMIN_SECRET / Basic credentials in this page'
+                    );
+                }
+                let res = await fetch(ROAD_API + '?action=list', { headers });
+                if (res.status === 401) {
+                    const retryToken = await getAuthToken(true);
+                    if (retryToken) {
+                        res = await fetch(ROAD_API + '?action=list', {
+                            headers: { Authorization: 'Bearer ' + retryToken }
+                        });
+                    }
+                }
+                if (!res.ok) {
+                    var detail = '';
+                    try {
+                        var errBody = await res.json();
+                        if (errBody && errBody.error) detail = ': ' + errBody.error;
+                        else if (errBody && errBody.details) detail = ': ' + errBody.details;
+                    } catch (e1) {
+                        /* ignore */
+                    }
+                    throw new Error('Crossings API ' + res.status + detail);
+                }
+                const j = await res.json();
+                list = j.crossings || [];
+            }
+
+            list = (list || []).map(normalizeCrossingCoords).filter(function (x) {
+                return x != null;
+            });
+            list.forEach(function (c) {
+                c._source = 'gcs';
+            });
+            allCrossings = list;
+        }
+
+        async function loadAgolCrossings() {
+            allAgolCrossings = [];
+            let offset = 0;
+            let guard = 0;
+            const maxPages = 500;
+            while (guard < maxPages) {
+                guard++;
+                const q =
+                    AGOL_FEATURESERVER_BASE.replace(/\/$/, '') +
+                    '/' +
+                    AGOL_LAYER_ID +
+                    '/query?' +
+                    agolQueryParams({ resultOffset: offset });
+                const res = await fetch(q);
+                const j = await res.json();
+                if (j.error) {
+                    const msg = j.error.message || j.error.messageCode || JSON.stringify(j.error);
+                    throw new Error('AGOL: ' + msg);
+                }
+                const feats = j.features || [];
+                for (let i = 0; i < feats.length; i++) {
+                    const o = agolFeatureToObservation(feats[i], offset + i);
+                    if (o) allAgolCrossings.push(o);
+                }
+                if (feats.length === 0) break;
+                if (!j.exceededTransferLimit) break;
+                offset += feats.length;
+            }
+        }
+
+        function syncCrossingsFromFilters() {
+            populateYearDropdown();
+            crossings = getFilteredCrossingsFromAll();
+            agolCrossings = getFilteredAgolFromAll();
+        }
+
+        function populateYearDropdown() {
+            const sel = document.getElementById('filterYear');
+            const cur = sel.value;
+            const years = new Set();
+            function addYears(arr) {
+                (arr || []).forEach(c => {
+                    const ts = Number(c.estimated_crossing_time);
+                    if (Number.isFinite(ts)) years.add(new Date(ts * 1000).getFullYear());
+                });
+            }
+            addYears(allCrossings);
+            addYears(allAgolCrossings);
+            const sorted = [...years].sort((a, b) => b - a);
+            sel.innerHTML = '<option value="">All years</option>';
+            sorted.forEach(y => {
+                const o = document.createElement('option');
+                o.value = String(y);
+                o.textContent = String(y);
+                sel.appendChild(o);
+            });
+            if (cur && sorted.includes(Number(cur))) sel.value = cur;
+        }
+
+        function getFilteredCrossingsFromAll() {
+            const year = document.getElementById('filterYear').value;
+            const month = document.getElementById('filterMonth').value;
+            return allCrossings.filter(c => {
+                if (!year && month === '') return true;
+                const ts = Number(c.estimated_crossing_time);
+                if (!Number.isFinite(ts)) return false;
+                const d = new Date(ts * 1000);
+                if (year && d.getFullYear() !== Number(year)) return false;
+                if (month !== '' && (d.getMonth() + 1) !== Number(month)) return false;
+                return true;
+            });
+        }
+
+        function getFilteredAgolFromAll() {
+            const year = document.getElementById('filterYear').value;
+            const month = document.getElementById('filterMonth').value;
+            return allAgolCrossings.filter(c => {
+                if (!year && month === '') return true;
+                const ts = Number(c.estimated_crossing_time);
+                if (!Number.isFinite(ts)) return false;
+                const d = new Date(ts * 1000);
+                if (year && d.getFullYear() !== Number(year)) return false;
+                if (month !== '' && (d.getMonth() + 1) !== Number(month)) return false;
+                return true;
+            });
+        }
+
+        function applyDateFilter() {
+            syncCrossingsFromFilters();
+            const keyInp = document.getElementById('elephantFilterKey');
+            if (keyInp) keyInp.value = '';
+            populateElephantTable();
+            const statusEl = document.getElementById('statusLine');
+            if (statusEl) statusEl.textContent = '';
+            updateCrossingStatsFigures();
+            redrawCrossingDisplay();
+            if (usageMode) void applyCorridorUsage();
+        }
+
+        function buildPointsFeatureCollection() {
+            const list = activeCrossings();
+            return turf.featureCollection(list.map(c =>
+                turf.point([Number(c.lon), Number(c.lat)], { id: c.id })
+            ));
+        }
+
+        function drawBaseCorridors() {
+            if (corridorLayer) {
+                map.removeLayer(corridorLayer);
+                corridorLayer = null;
+            }
+            if (!corridorGeoJson) return;
+            corridorLayer = L.geoJSON(corridorGeoJson, {
+                style: {
+                    color: '#1a4a2e',
+                    weight: 1.5,
+                    fillColor: '#4a7c59',
+                    fillOpacity: 0.12
+                }
+            });
+            corridorLayer.addTo(map);
+        }
+
+        function drawRoadsLayer() {
+            if (!map || !roadsGeoJson || !roadsGeoJson.features || !roadsGeoJson.features.length) return;
+            if (roadLayer) {
+                map.removeLayer(roadLayer);
+                roadLayer = null;
+            }
+            roadLayer = L.geoJSON(roadsGeoJson, {
+                pane: 'roadsPane',
+                style: {
+                    color: '#facc15',
+                    weight: 1,
+                    opacity: 0.65,
+                    fillOpacity: 0
+                }
+            });
+            roadLayer.addTo(map);
+        }
+
+        function clearUsageLayers() {
+            if (usageCorridorLayer) {
+                map.removeLayer(usageCorridorLayer);
+                usageCorridorLayer = null;
+            }
+            if (usageBufferLayer) {
+                map.removeLayer(usageBufferLayer);
+                usageBufferLayer = null;
+            }
+            if (corridorLayer) corridorLayer.addTo(map);
+        }
+
+        function styleBufferUsage(f, globalMax) {
+            const n = f.properties._usageCount || 0;
+            const s = colorWhiteToRed(n, globalMax);
+            return {
+                fillColor: s.fillColor,
+                color: '#b45309',
+                weight: 2,
+                fillOpacity: Math.min(0.92, (s.fillOpacity || 0.5) + 0.15),
+                opacity: 0.95
+            };
+        }
+
+        async function applyCorridorUsage() {
+            if (!corridorGeoJson) return;
+            const displayList = activeCrossings();
+            if (!displayList.length) {
+                document.getElementById('statsLine').textContent =
+                    'No points in current filter — adjust month/year, elephant (GCS), or load data.';
+                return;
+            }
+
+            await ensureRoadsLoaded();
+
+            if (corridorLayer && map.hasLayer(corridorLayer)) map.removeLayer(corridorLayer);
+            if (usageBufferLayer) {
+                map.removeLayer(usageBufferLayer);
+                usageBufferLayer = null;
+            }
+            if (usageCorridorLayer) {
+                map.removeLayer(usageCorridorLayer);
+                usageCorridorLayer = null;
+            }
+
+            const ptsFc = buildPointsFeatureCollection();
+            let maxCorridor = 0;
+            const corridorFeatures = corridorGeoJson.features.map((f, idx) => {
+                let n = 0;
+                try {
+                    const inside = turf.pointsWithinPolygon(ptsFc, f);
+                    n = inside.features.length;
+                } catch (e) { n = 0; }
+                maxCorridor = Math.max(maxCorridor, n);
+                const feat = JSON.parse(JSON.stringify(f));
+                feat.properties = feat.properties || {};
+                feat.properties._usageCount = n;
+                feat.properties._usageIdx = idx;
+                return feat;
+            });
+
+            const outsideBuffers = [];
+            let outsideCount = 0;
+            for (const c of displayList) {
+                const lon = Number(c.lon), lat = Number(c.lat);
+                if (pointInsideCorridors(lon, lat, corridorGeoJson)) continue;
+                outsideCount++;
+                if (outsideBuffers.length >= MAX_OUTSIDE_FOR_MERGE) continue;
+                try {
+                    const buf = turf.buffer(turf.point([lon, lat]), BUFFER_KM, { units: 'kilometers' });
+                    if (buf && buf.geometry) outsideBuffers.push(buf);
+                } catch (e) { /* skip */ }
+            }
+
+            let bufferFeatures = [];
+            let mergedClusterCount = 0;
+            let maxBuf = 0;
+            if (outsideBuffers.length) {
+                const merged = mergeOverlappingPolygons(outsideBuffers);
+                mergedClusterCount = merged.length;
+                const allBands = merged.map((poly, idx) => {
+                    let n = 0;
+                    try {
+                        const inside = turf.pointsWithinPolygon(ptsFc, poly);
+                        n = inside.features.length;
+                    } catch (e) { n = 0; }
+                    const displayPoly = mergedPolygonToUsageBand(poly, ptsFc);
+                    const feat = JSON.parse(JSON.stringify(displayPoly));
+                    feat.properties = feat.properties || {};
+                    feat.properties._usageCount = n;
+                    feat.properties._bufIdx = idx;
+                    return feat;
+                });
+                bufferFeatures = allBands.filter(f => (f.properties._usageCount || 0) >= MIN_OUTSIDE_CLUSTER_FOR_BAND);
+                bufferFeatures.forEach(f => {
+                    maxBuf = Math.max(maxBuf, f.properties._usageCount || 0);
+                });
+            }
+
+            const globalMax = Math.max(maxCorridor, maxBuf, 1);
+
+            usageCorridorLayer = L.geoJSON({ type: 'FeatureCollection', features: corridorFeatures }, {
+                pane: 'corridorUsagePane',
+                style(f) {
+                    return colorWhiteToRed(f.properties._usageCount || 0, globalMax);
+                },
+                onEachFeature(f, layer) {
+                    const n = f.properties._usageCount || 0;
+                    layer.bindPopup('<strong>Corridor</strong><br>Points (GCS + AGOL, filtered): ' + n);
+                }
+            });
+            usageCorridorLayer.addTo(map);
+
+            if (bufferFeatures.length) {
+                usageBufferLayer = L.geoJSON({ type: 'FeatureCollection', features: bufferFeatures }, {
+                    pane: 'usageBufferPane',
+                    style(f) {
+                        return styleBufferUsage(f, globalMax);
+                    },
+                    onEachFeature(f, layer) {
+                        const n = f.properties._usageCount || 0;
+                        const nz = bufferFeatures.length;
+                        layer.bindPopup(
+                            '<strong>Corridor band</strong> (clusters with ' + MIN_OUTSIDE_CLUSTER_FOR_BAND + '+ crossings; perpendicular to road, 1&nbsp;km each side; width from centroid to cluster edge) · ' +
+                            nz + ' zone' + (nz === 1 ? '' : 's') + ' shown<br>' +
+                            'Points in this merged 100&nbsp;m cluster: <strong>' + n + '</strong>'
+                        );
+                    }
+                });
+                usageBufferLayer.addTo(map);
+            }
+
+            let msg = displayList.length + ' points (GCS+AGOL) · ' + corridorGeoJson.features.length + ' corridors';
+            if (outsideCount === 0) {
+                msg += ' · All points fall inside corridors (no outside buffer polygons).';
+            } else {
+                msg += ' · ' + outsideCount + ' outside corridor' + (outsideCount > MAX_OUTSIDE_FOR_MERGE ? ' (capped ' + MAX_OUTSIDE_FOR_MERGE + ' for merge)' : '');
+                msg += ' · ' + mergedClusterCount + ' merged cluster' + (mergedClusterCount === 1 ? '' : 's');
+                msg += ' · ' + bufferFeatures.length + ' band' + (bufferFeatures.length === 1 ? '' : 's') + ' shown (≥' + MIN_OUTSIDE_CLUSTER_FOR_BAND + ' crossings)';
+            }
+            document.getElementById('statsLine').textContent = msg;
+
+            redrawCrossingDisplay();
+        }
+
+        function redrawCrossingDisplay() {
+            if (pointLayerGroup) {
+                map.removeLayer(pointLayerGroup);
+                pointLayerGroup = null;
+            }
+            if (heatLayer) {
+                map.removeLayer(heatLayer);
+                heatLayer = null;
+            }
+            const displayList = activeCrossings();
+            if (!displayList.length) return;
+            if (usageMode) return;
+
+            if (hotspotMode) {
+                const heatData = displayList.map(c => [Number(c.lat), Number(c.lon), 0.6]);
+                heatLayer = L.heatLayer(heatData, {
+                    radius: 28, blur: 22, maxZoom: 17, max: 0.8,
+                    gradient: { 0.2: 'blue', 0.5: 'lime', 0.7: 'yellow', 1: 'red' },
+                    pane: 'crossingMarkersPane'
+                });
+                heatLayer.addTo(map);
+            } else {
+                pointLayerGroup = L.layerGroup();
+                displayList.forEach(c => {
+                    const isAgol = c._source === 'agol';
+                    const m = L.circleMarker([Number(c.lat), Number(c.lon)], {
+                        radius: isAgol ? 5 : 4,
+                        color: isAgol ? '#c2410c' : '#7c3aed',
+                        weight: 1,
+                        fillColor: isAgol ? '#fdba74' : '#c4b5fd',
+                        fillOpacity: 0.9,
+                        pane: 'crossingMarkersPane'
+                    });
+                    if (isAgol) {
+                        m.bindPopup(popupHtmlFromAgolRecord(c));
+                    } else {
+                        m.bindPopup(
+                            '<strong>GCS</strong><br>' +
+                            '<strong>' + escapeHtml(c.ele_name || ('Tag ' + (c.ele_tag_id || ''))) + '</strong><br>' +
+                            escapeHtml(c.road_name || '') + '<br><small>' +
+                            (c.estimated_crossing_time
+                                ? new Date(Number(c.estimated_crossing_time) * 1000).toLocaleString()
+                                : '') + '</small>'
+                        );
+                    }
+                    pointLayerGroup.addLayer(m);
+                });
+                pointLayerGroup.addTo(map);
+            }
+        }
+
+        function toggleHotspotView() {
+            if (!hotspotMode && typeof L.heatLayer !== 'function') {
+                alert('Heat map script did not load. Check your network and refresh.');
+                return;
+            }
+            hotspotMode = !hotspotMode;
+            const btn = document.getElementById('btnHotspots');
+            btn.classList.toggle('active', hotspotMode);
+            btn.textContent = hotspotMode ? 'Point view' : 'Hotspot view';
+            redrawCrossingDisplay();
+        }
+
+        function toggleCorridorUsage() {
+            usageMode = !usageMode;
+            const btn = document.getElementById('btnCorridorUsage');
+            btn.classList.toggle('active', usageMode);
+            if (!usageMode) {
+                clearUsageLayers();
+                drawBaseCorridors();
+                document.getElementById('statsLine').textContent = '';
+                redrawCrossingDisplay();
+                return;
+            }
+            document.getElementById('statusLine').textContent = 'Computing usage…';
+            btn.disabled = true;
+            setTimeout(function() {
+                (async function() {
+                    try {
+                        await applyCorridorUsage();
+                        document.getElementById('statusLine').textContent =
+                            'Usage: corridors + corridor bands outside corridors (white→red). Crossing points hidden in this mode.';
+                    } catch (e) {
+                        console.error(e);
+                        document.getElementById('statusLine').textContent = 'Usage error: ' + e.message;
+                        usageMode = false;
+                        btn.classList.remove('active');
+                        drawBaseCorridors();
+                        redrawCrossingDisplay();
+                    } finally {
+                        btn.disabled = false;
+                    }
+                })();
+            }, 50);
+        }
+
+        function initMap() {
+            map = L.map('map', { zoomControl: true }).setView([-19.0, 22.5], 7);
+            map.createPane('roadsPane');
+            map.getPane('roadsPane').style.zIndex = 230;
+            map.getPane('roadsPane').style.pointerEvents = 'none';
+            map.createPane('corridorUsagePane');
+            map.getPane('corridorUsagePane').style.zIndex = 420;
+            map.getPane('corridorUsagePane').style.pointerEvents = 'auto';
+            map.createPane('usageBufferPane');
+            map.getPane('usageBufferPane').style.zIndex = 480;
+            map.getPane('usageBufferPane').style.pointerEvents = 'auto';
+            map.createPane('crossingMarkersPane');
+            map.getPane('crossingMarkersPane').style.zIndex = 560;
+            map.getPane('crossingMarkersPane').style.pointerEvents = 'auto';
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri',
+                maxZoom: 18,
+                opacity: 0.75
+            }).addTo(map);
+            L.control.scale({ metric: true, imperial: false }).addTo(map);
+        }
+
+        async function boot() {
+            initMap();
+            ensureElephantFilterTableBound();
+            const statusEl0 = document.getElementById('statusLine');
+            if (statusEl0) statusEl0.textContent = 'Loading corridors…';
+            const okCor = await loadCorridors();
+            if (!okCor || !corridorGeoJson) {
+                if (statusEl0) statusEl0.textContent = 'Could not load Corridors.geojson (expected under data/).';
+                return;
+            }
+            drawBaseCorridors();
+            await ensureRoadsLoaded();
+            drawRoadsLayer();
+            let gcsErr = null;
+            let agolErr = null;
+            try {
+                await loadGcsCrossings();
+            } catch (e) {
+                gcsErr = e;
+                allCrossings = [];
+            }
+            try {
+                await loadAgolCrossings();
+            } catch (e) {
+                agolErr = e;
+                allAgolCrossings = [];
+            }
+            syncCrossingsFromFilters();
+            const statusElOk = document.getElementById('statusLine');
+            if (statusElOk) {
+                const parts = [];
+                if (gcsErr) parts.push('GCS: ' + gcsErr.message);
+                if (agolErr) parts.push('AGOL: ' + agolErr.message);
+                statusElOk.textContent = parts.length ? parts.join(' · ') : '';
+            }
+            console.log(
+                'Corridor GCS+AGOL:',
+                corridorGeoJson.features.length,
+                'corridors,',
+                crossings.length,
+                'GCS (date filter),',
+                agolCrossings.length,
+                'AGOL (date filter).'
+            );
+            populateElephantTable();
+            updateCrossingStatsFigures();
+            redrawCrossingDisplay();
+            const b = corridorLayer.getBounds();
+            if (b.isValid()) map.fitBounds(b.pad(0.08));
+            setTimeout(function() { map.invalidateSize(); }, 200);
+        }
+
+        function runAfterAuth() {
+            wireCorridorShellUi();
+            if (window._corridorMonInit) return;
+            window._corridorMonInit = true;
+            requestAnimationFrame(boot);
+        }
+        window.runAfterAuth = runAfterAuth;
+        document.addEventListener('authReady', runAfterAuth, { once: true });
+        if (document.getElementById('auth-overlay') === null) runAfterAuth();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                wireCorridorShellUi();
+            });
+        } else {
+            wireCorridorShellUi();
+        }
+    </script>
+</body>
+</html>
