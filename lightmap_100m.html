@@ -24,7 +24,7 @@
         .app-layout-corridor .app-sidebar {
             width: 189px;
             flex-shrink: 0;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(180deg, #4C1918 0%, #3a1311 100%);
             color: #fff;
             box-shadow: 4px 0 24px rgba(0,0,0,0.12);
             z-index: 100;
@@ -70,8 +70,8 @@
             color: #fff;
         }
         .app-layout-corridor .app-sidebar-nav a.app-nav-current {
-            background: rgba(39, 174, 96, 0.25);
-            border-left-color: #27ae60;
+            background: rgba(67, 81, 45, 0.45);
+            border-left-color: #43512D;
             color: #fff;
         }
         .app-layout-corridor .app-main-wrap {
@@ -95,7 +95,7 @@
             height: 46px;
             border-radius: 50%;
             border: 2px solid rgba(255,255,255,0.95);
-            background: linear-gradient(145deg, #4a7c59, #2c5530);
+            background: linear-gradient(145deg, #526b38, #43512D);
             color: #fff;
             font-weight: 700;
             font-size: 0.85rem;
@@ -138,7 +138,7 @@
             margin: 0;
             font-size: 1.6875rem;
             font-weight: 700;
-            color: #1a4a2e;
+            color: #43512D;
             letter-spacing: -0.02em;
         }
         /* Override global styles.css .main-content height (was for top ribbon) */
@@ -164,11 +164,11 @@
         }
         .lightmap-loading { position: fixed; inset: 0; z-index: 20000; background: rgba(248,249,250,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; padding: 2rem; }
         .lightmap-loading.hidden { display: none !important; }
-        .lightmap-spinner { width: 52px; height: 52px; border: 4px solid #e9ecef; border-top-color: #2c5530; border-radius: 50%; animation: lm-spin 0.85s linear infinite; }
+        .lightmap-spinner { width: 52px; height: 52px; border: 4px solid #e9ecef; border-top-color: #43512D; border-radius: 50%; animation: lm-spin 0.85s linear infinite; }
         @keyframes lm-spin { to { transform: rotate(360deg); } }
         .joke-zone { max-width: 420px; text-align: center; min-height: 140px; }
         .joke-zone p { font-size: 1.05rem; color: #333; margin-bottom: 1rem; line-height: 1.45; }
-        .joke-zone .btn-next { background: linear-gradient(135deg, #2c5530, #4a7c59); border: none; color: #fff; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; }
+        .joke-zone .btn-next { background: linear-gradient(135deg, #43512D, #526b38); border: none; color: #fff; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; }
         .joke-zone .btn-next:hover { filter: brightness(1.05); color: #fff; }
     </style>
     <script>
@@ -780,7 +780,12 @@
                             const b = group.getBounds();
                             if (b.isValid()) {
                                 requestAnimationFrame(function () {
-                                    map.fitBounds(b.pad(0.08), { maxZoom: 16, animate: false });
+                                    map.invalidateSize();
+                                    map.fitBounds(b.pad(0.03), {
+                                        maxZoom: 18,
+                                        padding: [12, 12],
+                                        animate: false
+                                    });
                                     map.invalidateSize();
                                 });
                             }
@@ -838,7 +843,7 @@
                 if (cellRows[i].rawCount > maxIntersections) maxIntersections = cellRows[i].rawCount;
             }
 
-            map = L.map('lightmapMap', { zoomControl: true }).setView([-19.0, 22.5], 7);
+            map = L.map('lightmapMap', { zoomControl: true, zoomSnap: 0.25 }).setView([-19.0, 22.5], 8);
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '© Esri',
                 maxZoom: 18,
