@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-
     <style>
         /* App shell: left sidebar + main (same as corridor_monitoring.html) */
         body.app-layout-corridor {
@@ -22,7 +21,6 @@
             flex-direction: row;
             align-items: stretch;
         }
-
         .app-layout-corridor .app-sidebar {
             width: 189px;
             flex-shrink: 0;
@@ -34,7 +32,6 @@
             flex-direction: column;
             min-height: 100vh;
         }
-
         .app-layout-corridor .app-sidebar-inner {
             padding: 0.85rem 0.65rem 1.5rem 0.65rem;
             display: flex;
@@ -42,25 +39,21 @@
             gap: 1.25rem;
             flex: 1;
         }
-
         .app-layout-corridor .app-sidebar-logo {
             display: block;
             text-align: center;
             padding: 0.25rem 0;
         }
-
         .app-layout-corridor .app-sidebar-logo img {
             width: 58px;
             height: auto;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
-
         .app-layout-corridor .app-sidebar-nav {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-
         .app-layout-corridor .app-sidebar-nav a {
             display: block;
             padding: 10px 10px;
@@ -72,18 +65,15 @@
             transition: background 0.15s ease, color 0.15s ease;
             border-left: 3px solid transparent;
         }
-
         .app-layout-corridor .app-sidebar-nav a:hover {
             background: rgba(255,255,255,0.08);
             color: #fff;
         }
-
         .app-layout-corridor .app-sidebar-nav a.app-nav-current {
             background: rgba(67, 81, 45, 0.45);
             border-left-color: #43512D;
             color: #fff;
         }
-
         .app-layout-corridor .app-main-wrap {
             flex: 1;
             min-width: 0;
@@ -91,120 +81,870 @@
             flex-direction: column;
             min-height: 100vh;
         }
-
+        /* Floating user avatar — top-right, above page chrome */
+        .user-avatar-float {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            left: auto;
+            z-index: 10060;
+        }
+        .user-avatar-float .user-avatar-btn {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.95);
+            background: linear-gradient(145deg, #526b38, #43512D);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .user-avatar-float .user-avatar-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.28);
+        }
+        .user-avatar-float .user-status-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 11px;
+            height: 11px;
+            background: #22c55e;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .user-avatar-float .dropdown-menu {
+            margin-top: 8px;
+            min-width: 160px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 10070;
+        }
         .corridor-page-header {
             padding: 0.75rem 1rem 0.25rem 1rem;
             padding-right: 4.5rem;
             flex-shrink: 0;
         }
-
         .corridor-page-heading {
             margin: 0;
             font-size: 1.6875rem;
             font-weight: 700;
             color: #43512D;
+            letter-spacing: -0.02em;
         }
-
+        /* Override global styles.css .main-content height (was for top ribbon) */
+        body.app-layout-corridor .main-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            height: auto;
+            overflow-y: auto;
+        }
+        /* Light map: map card matches corridor map card chrome */
+        #lightmap-map-container.card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         #lightmapMap {
             height: calc(100vh - 12rem);
             min-height: 420px;
+            border-radius: 0;
+            position: relative;
         }
-
-        .lightmap-loading {
-            position: fixed;
-            inset: 0;
-            z-index: 20000;
-            background: rgba(248,249,250,0.97);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .lightmap-loading.hidden {
-            display: none !important;
-        }
-
-        .lightmap-spinner {
-            width: 52px;
-            height: 52px;
-            border: 4px solid #e9ecef;
-            border-top-color: #43512D;
-            border-radius: 50%;
-            animation: spin 0.85s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .lightmap-loading { position: fixed; inset: 0; z-index: 20000; background: rgba(248,249,250,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; padding: 2rem; }
+        .lightmap-loading.hidden { display: none !important; }
+        .lightmap-spinner { width: 52px; height: 52px; border: 4px solid #e9ecef; border-top-color: #43512D; border-radius: 50%; animation: lm-spin 0.85s linear infinite; }
+        @keyframes lm-spin { to { transform: rotate(360deg); } }
+        .joke-zone { max-width: 420px; text-align: center; min-height: 140px; }
+        .joke-zone p { font-size: 1.05rem; color: #333; margin-bottom: 1rem; line-height: 1.45; }
+        .joke-zone .btn-next { background: linear-gradient(135deg, #43512D, #526b38); border: none; color: #fff; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; }
+        .joke-zone .btn-next:hover { filter: brightness(1.05); color: #fff; }
     </style>
-
     <script>
-        (async function () {
-            try {
-                const result = await window.AuthPortal.checkAuthAndRedirect(false, 'lightmap_100m.html');
-                if (result && result.role !== 'admin') {
-                    window.location.replace('dashboard_public_firebase.html');
-                }
-            } catch (e) {
-                window.location.replace('login.html?return=lightmap_100m.html');
-            }
-        })();
+      (async function() {
+        try {
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'lightmap_100m.html');
+          if (result && result.role !== 'admin') {
+            window.location.replace('dashboard_public_firebase.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html?return=lightmap_100m.html');
+          return;
+        }
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else { doInit(); }
+      })();
     </script>
 </head>
-
 <body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
 
-<div class="app-main-wrap">
-
-<header class="corridor-page-header">
-    <h1 class="corridor-page-heading">Light map (100 m)</h1>
-</header>
-
-<div class="container-fluid mt-2 mb-3">
-    <div class="card shadow">
-        <div id="lightmapMap"></div>
+    <!-- Floating above layout: initials + online dot; click for Log out -->
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
     </div>
 
-    <!-- ADDED MATH (NO ARCHITECTURE CHANGE) -->
-    <div class="mt-3 small text-muted">
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav">
+                <a href="admin.html">Admin</a>
+                <a href="vehicle-tracker.html">Vehicle Tracker</a>
+                <a href="dashboard_all_data.html">Wildlife Map</a>
+                <a href="corridor_monitoring.html">Corridor monitoring</a>
+                <a href="lightmap_100m.html" class="app-nav-current">Light map (100&nbsp;m)</a>
+                <a href="ngamiland-lucis.html">Ngamiland LUCIS</a>
+                <a href="hec.html">HEC</a>
+                <a href="kaza/land_use_conflict.html">Land Use Conflict</a>
+            </nav>
+        </div>
+    </aside>
 
-        <p><b>Distance calculation (Haversine):</b></p>
-
-        :contentReference[oaicite:0]{index=0}
-
-        <p class="mt-2">
-            where <code>a</code> is derived from latitude/longitude differences on a sphere.
-        </p>
-
-        <p class="mt-3"><b>Speed per segment:</b></p>
-
-        :contentReference[oaicite:1]{index=1}
-
-        <p>
-            (km/h from distance over time interval between GPS fixes)
-        </p>
-
+    <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">Light map (100&nbsp;m)</h1>
+        </header>
+        <div class="main-content" style="overflow-y: auto;">
+            <div class="container-fluid mt-2 mb-3">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow" id="lightmap-map-container">
+                            <div id="lightmapMap"></div>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">
+                            Shown cells: <strong>top 50% by intersection count</strong> and <strong>top 10% by mean segment speed</strong>, solid white on a ~30% transparent dark veil.
+                            Intersections = GPS fixes per cell; mean speed = averaged segment speed for all A→B movements crossing each cell (see below).
+                        </p>
+                        <div class="mt-3 small text-muted border-top pt-3" id="lightmap-method-notes">
+                            <p class="mb-2"><strong>Cell identification (100&nbsp;m Web Mercator grid)</strong></p>
+                            <p class="mb-2">
+                                Each point is projected from WGS84 <code>(φ, λ)</code> in degrees to Web Mercator metres <code>(x, y)</code> using
+                                <code>x = R·λ<sub>rad</sub></code>,
+                                <code>y = R·ln(tan(π/4 + φ<sub>rad</sub>/2))</code> with <code>R = 6&nbsp;378&nbsp;137</code>&nbsp;m (same as EPSG:3857).
+                                Cell indices are <code>i<sub>x</sub> = ⌊x / 100⌋</code>, <code>i<sub>y</sub> = ⌊y / 100⌋</code>; the cell id is <code>i<sub>x</sub>,i<sub>y</sub></code> (one square = 100&nbsp;m × 100&nbsp;m in projected metres).
+                                Map rectangles use the geographic bounds of that square’s four corners.
+                            </p>
+                            <p class="mb-2"><strong>Distance (Haversine, km)</strong></p>
+                            <p class="mb-1 font-monospace" style="font-size:0.85rem;">
+                                a = sin²(Δφ/2) + cos φ₁ · cos φ₂ · sin²(Δλ/2)<br>
+                                d = 2 · R<sub>earth</sub> · atan2(√a, √(1−a)), &nbsp; R<sub>earth</sub> = 6371 km
+                            </p>
+                            <p class="mb-2">where <code>Δφ</code>, <code>Δλ</code> are latitude and longitude differences in radians on a sphere.</p>
+                            <p class="mb-2"><strong>Speed per segment (km/h)</strong></p>
+                            <p class="mb-0 font-monospace" style="font-size:0.85rem;">
+                                v = (d<sub>km</sub> / Δt<sub>s</sub>) × 3600
+                            </p>
+                            <p class="mb-0 mt-1">with <code>Δt</code> the time in seconds between consecutive GPS fixes <strong>A</strong> and <strong>B</strong> on the same animal tag (after sorting by time). Segment speed is accumulated into every grid cell the straight line <strong>A→B</strong> crosses in <code>(x, y)</code> space (sampled along the chord).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <p class="small text-muted mt-2">
-        Intersections = GPS fixes per 100 m cell. Mean speed per cell = averaged segment speed across all A→B movements crossing each grid cell.
-    </p>
-</div>
+    <div id="lightmapLoading" class="lightmap-loading" aria-live="polite" aria-busy="true">
+        <div class="lightmap-spinner" role="status" aria-label="Loading"></div>
+        <p class="text-muted small mb-0" id="lightmapStatus">Loading tracking data…</p>
+        <div class="joke-zone" id="jokeZone">
+            <p id="jokeLine"></p>
+            <button type="button" class="btn btn-next" id="jokeNext">Next</button>
+        </div>
+    </div>
 
-</div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<div id="lightmapLoading" class="lightmap-loading">
-    <div class="lightmap-spinner"></div>
-    <p id="lightmapStatus">Loading...</p>
-</div>
+    <script>
+        /** Same primary dataset as dashboard_all_data.html (GCS awt_tracking_data_cumulative.json via /api/awt-data). */
+        const AWT_DATA_API = 'https://ecoexist-api.vercel.app/api/awt-data';
+        const CELL_M = 100;
+        const R_MAJOR = 6378137;
+        /** Top fraction of nonempty cells by intersection count (rank). */
+        const TOP_CELL_FRACTION = 0.5;
+        /** Top fraction of cells with segment-derived mean speed (km/h, rank). */
+        const TOP_VELOCITY_FRACTION = 0.1;
+        /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
+        const DARK_VEIL_OPACITY = 0.7;
+        /**
+         * 100 m cells are only a few screen pixels below this zoom; fitBounds alone often zooms out too far.
+         * Clamp zoom up and center on highlights so white cells are visible without manually zooming in.
+         */
+        const MIN_ZOOM_HIGHLIGHTS = 12;
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        const JOKE_PAIRS = [
+            { q: 'Why are elephants always so broke?', a: 'They work for peanuts.' },
+            { q: 'What did the momma elephant say to her kid when he was misbehaving?', a: '“Tusk, tusk!”' },
+            { q: 'Why was the elephant afraid to go to the computer store?', a: 'Because they sold mice.' },
+            { q: 'What did the elephant do when he hurt his toe?', a: 'He called the tow truck.' },
+            { q: 'How do elephants keep cool in the summer?', a: 'Ear conditioning!' },
+            { q: 'What’s an elephant’s favorite font to use?', a: 'Ella font.' },
+            { q: 'Why are elephants bad dancers?', a: 'They have two left feet.' },
+            { q: 'What do you get when you cross a fish with an elephant?', a: 'Swimming trunks!' },
+            { q: 'What goes down but never goes up?', a: 'An elephant in an elevator.' },
+            { q: 'Why do elephants drink so much?', a: 'To try to forget.' },
+            { q: 'How do you keep an elephant from charging too much?', a: 'You take away its credit cards.' },
+            { q: 'What sport will an elephant always beat you at?', a: 'Squash!' },
+            { q: 'How do you do with a blue elephant?', a: 'Tell it silly jokes!' },
+            { q: 'What’s the best way to raise a baby elephant?', a: 'With a forklift.' }
+        ];
 
-<script>
-/* --- YOUR ORIGINAL JS UNCHANGED --- */
-/* (kept intact exactly as you had it) */
-</script>
+        window._corridorProfileNameForInitials = '';
 
+        function initialsFromFirebaseUser(user) {
+            if (!user) return '?';
+            const name = (user.displayName || window._corridorProfileNameForInitials || '').trim();
+            if (name) {
+                const parts = name.split(/\s+/).filter(Boolean);
+                if (parts.length >= 2) return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                if (parts.length === 1 && parts[0].length >= 2) return parts[0].substring(0, 2).toUpperCase();
+                return (parts[0].charAt(0) || '?').toUpperCase();
+            }
+            var emailStr = user.email || '';
+            if (!emailStr && user.providerData && user.providerData.length) emailStr = user.providerData[0].email || '';
+            const local = emailStr.split('@')[0] || '';
+            if (local) {
+                const bits = local.split(/[._-]+/).filter(Boolean);
+                if (bits.length >= 2) return (bits[0].charAt(0) + bits[1].charAt(0)).toUpperCase();
+                if (local.length >= 2) return local.substring(0, 2).toUpperCase();
+                return (local.charAt(0) + local.charAt(0)).toUpperCase();
+            }
+            return user.uid ? user.uid.substring(0, 2).toUpperCase() : '?';
+        }
+
+        window.updateCorridorUserAvatar = function () {
+            const el = document.getElementById('userAvatarInitials');
+            if (!el) return;
+            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
+            el.textContent = initialsFromFirebaseUser(user);
+        };
+
+        async function fetchCorridorUserProfileForInitials() {
+            window._corridorProfileNameForInitials = '';
+            const auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+            const db = window.firebasePortal && window.firebasePortal.db ? window.firebasePortal.db : null;
+            const docFn = window.firebasePortal && window.firebasePortal.doc ? window.firebasePortal.doc : null;
+            const getDocFn = window.firebasePortal && window.firebasePortal.getDoc ? window.firebasePortal.getDoc : null;
+            if (!auth || !auth.currentUser || !db || !docFn || !getDocFn) return;
+            try {
+                const snap = await getDocFn(docFn(db, 'users', auth.currentUser.uid));
+                if (snap.exists) {
+                    const d = snap.data();
+                    let n = (d.name || d.displayName || '').trim();
+                    if (!n) {
+                        const em = (d.email || auth.currentUser.email || '').trim();
+                        if (em) {
+                            const local = em.split('@')[0];
+                            const parts = local.split(/[._-]+/).filter(Boolean);
+                            if (parts.length >= 2) n = parts[0] + ' ' + parts[parts.length - 1];
+                            else n = local;
+                        }
+                    }
+                    if (n) window._corridorProfileNameForInitials = n;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function wireCorridorShellUiCore() {
+            window.updateCorridorUserAvatar();
+            fetchCorridorUserProfileForInitials().then(function () { window.updateCorridorUserAvatar(); });
+            var auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+            var oasc = window.firebasePortal && window.firebasePortal.onAuthStateChanged;
+            if (auth && oasc && !auth._corridorMonAvatarBound) {
+                auth._corridorMonAvatarBound = true;
+                oasc(auth, function (u) {
+                    window._corridorProfileNameForInitials = '';
+                    if (u) fetchCorridorUserProfileForInitials().then(function () { window.updateCorridorUserAvatar(); });
+                    else window.updateCorridorUserAvatar();
+                });
+            }
+            var so = document.getElementById('userAvatarSignOut');
+            if (so && !so._corridorSignOutBound) {
+                so._corridorSignOutBound = true;
+                so.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var a = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
+                    var signOutFn = window.firebasePortal && window.firebasePortal.signOut;
+                    if (a && signOutFn) {
+                        signOutFn(a).then(function () { window.location.href = 'login.html'; }).catch(function () { window.location.href = 'login.html'; });
+                    } else window.location.href = 'login.html';
+                });
+            }
+        }
+
+        function wireCorridorShellUi() {
+            if (window.AuthPortal && typeof window.AuthPortal.waitForFirebase === 'function') {
+                window.AuthPortal.waitForFirebase().then(function () { wireCorridorShellUiCore(); }).catch(function () { wireCorridorShellUiCore(); });
+            } else setTimeout(wireCorridorShellUi, 80);
+        }
+
+        function shuffle(arr) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const t = a[i]; a[i] = a[j]; a[j] = t;
+            }
+            return a;
+        }
+
+        let jokeDeck = [];
+        let jokeIdx = 0;
+        let jokeShowAnswer = false;
+
+        function renderJoke() {
+            const line = document.getElementById('jokeLine');
+            const zone = document.getElementById('jokeZone');
+            if (!line || !jokeDeck.length) {
+                if (zone) zone.style.display = 'none';
+                return;
+            }
+            if (zone) zone.style.display = '';
+            const j = jokeDeck[jokeIdx];
+            line.textContent = jokeShowAnswer ? j.a : j.q;
+            const btn = document.getElementById('jokeNext');
+            if (btn) btn.textContent = jokeShowAnswer ? 'Next question' : 'Answer';
+        }
+
+        function onJokeNext() {
+            if (!jokeShowAnswer) {
+                jokeShowAnswer = true;
+            } else {
+                jokeIdx = (jokeIdx + 1) % jokeDeck.length;
+                jokeShowAnswer = false;
+            }
+            renderJoke();
+        }
+
+        function hideLoadingUi() {
+            const el = document.getElementById('lightmapLoading');
+            if (el) el.classList.add('hidden');
+            const jokeZone = document.getElementById('jokeZone');
+            if (jokeZone) jokeZone.style.display = 'none';
+        }
+
+        function latLonToMercatorXY(lat, lon) {
+            const x = R_MAJOR * (lon * Math.PI / 180);
+            const y = R_MAJOR * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+            return { x: x, y: y };
+        }
+
+        /**
+         * Single source of truth for 100 m Web Mercator cell id (matches #lightmap-method-notes).
+         * @returns {{ ix: number, iy: number, key: string, x: number, y: number }}
+         */
+        function cellIndexFromLatLon(lat, lon) {
+            const xy = latLonToMercatorXY(lat, lon);
+            const ix = Math.floor(xy.x / CELL_M);
+            const iy = Math.floor(xy.y / CELL_M);
+            return { ix: ix, iy: iy, key: ix + ',' + iy, x: xy.x, y: xy.y };
+        }
+
+        function mercatorXYToLatLon(x, y) {
+            const lon = (x / R_MAJOR) * (180 / Math.PI);
+            const lat = (2 * Math.atan(Math.exp(y / R_MAJOR)) - Math.PI / 2) * (180 / Math.PI);
+            return { lat: lat, lon: lon };
+        }
+
+        /** LatLng bounds for one 100 m Mercator cell (four corners — avoids invalid diagonals). */
+        function cellIndexToRectangleBounds(ix, iy) {
+            const x0 = ix * CELL_M;
+            const y0 = iy * CELL_M;
+            const x1 = (ix + 1) * CELL_M;
+            const y1 = (iy + 1) * CELL_M;
+            const corners = [
+                mercatorXYToLatLon(x0, y0),
+                mercatorXYToLatLon(x1, y0),
+                mercatorXYToLatLon(x0, y1),
+                mercatorXYToLatLon(x1, y1)
+            ];
+            let south = corners[0].lat;
+            let north = corners[0].lat;
+            let west = corners[0].lon;
+            let east = corners[0].lon;
+            for (let i = 1; i < 4; i++) {
+                const c = corners[i];
+                if (c.lat < south) south = c.lat;
+                if (c.lat > north) north = c.lat;
+                if (c.lon < west) west = c.lon;
+                if (c.lon > east) east = c.lon;
+            }
+            return [[south, west], [north, east]];
+        }
+
+        function normalizePoint(p) {
+            if (!p || typeof p !== 'object') return null;
+            const lat = Number(p.latitude != null ? p.latitude : p.lat != null ? p.lat : p.Latitude);
+            const lon = Number(p.longitude != null ? p.longitude : p.lng != null ? p.lng : p.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+            if (lat >= 0) return null;
+            if (Math.abs(lat) < 5 && Math.abs(lon) < 5) return null;
+            return { lat: lat, lon: lon };
+        }
+
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) *
+                    Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        /** Unix seconds (handles ms timestamps). */
+        function getTimestampSec(p) {
+            if (!p) return null;
+            const t = p.timestamp ?? p.time ?? p.observation_time;
+            if (t == null) return null;
+            const n = Number(t);
+            if (!Number.isFinite(n)) return null;
+            return n > 1e12 ? n / 1000 : n;
+        }
+
+        function getTagId(p) {
+            if (!p) return '_';
+            const id = p.tagId ?? p.tag_id ?? p.ele_tag_id ?? p.eleTagId ?? p.animalId;
+            return id != null && id !== '' ? String(id) : '_';
+        }
+
+        /**
+         * 100 m Mercator grid cells whose interior the segment (x0,y0)→(x1,y1) crosses (meters).
+         * Uses dense sampling along the chord so thin diagonal crossings are not missed.
+         */
+        function mercatorCellsAlongSegment(x0, y0, x1, y1) {
+            const keys = new Set();
+            const dx = x1 - x0;
+            const dy = y1 - y0;
+            const len = Math.hypot(dx, dy);
+            if (len < 1e-9) {
+                keys.add(Math.floor(x0 / CELL_M) + ',' + Math.floor(y0 / CELL_M));
+                return keys;
+            }
+            const stepM = CELL_M / 4;
+            const n = Math.min(80000, Math.max(2, Math.ceil(len / stepM)));
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                const x = x0 + t * dx;
+                const y = y0 + t * dy;
+                keys.add(Math.floor(x / CELL_M) + ',' + Math.floor(y / CELL_M));
+            }
+            return keys;
+        }
+
+        async function getIdTokenForApi(forceRefresh) {
+            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
+            if (!user) return null;
+            try {
+                return await user.getIdToken(!!forceRefresh);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /**
+         * Loads the same JSON array as dashboard_all_data (single GET, Bearer admin).
+         */
+        async function fetchAwtDataSameAsDashboard() {
+            const statusEl = document.getElementById('lightmapStatus');
+            let authToken = await getIdTokenForApi(false);
+            if (!authToken) {
+                await new Promise(function (r) { setTimeout(r, 800); });
+                authToken = await getIdTokenForApi(false);
+            }
+            if (!authToken) {
+                window.location.replace('login.html?return=lightmap_100m.html');
+                return null;
+            }
+
+            let response = await fetch(AWT_DATA_API, {
+                method: 'GET',
+                headers: { Authorization: 'Bearer ' + authToken }
+            });
+
+            if (response.status === 401) {
+                authToken = await getIdTokenForApi(true);
+                response = await fetch(AWT_DATA_API, {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + authToken }
+                });
+            }
+
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert('Admin access required to view wildlife tracking data.');
+                    window.location.replace('dashboard_public_firebase.html');
+                    return null;
+                }
+                const errorText = await response.text();
+                throw new Error('AWT data: ' + response.status + ' — ' + errorText.slice(0, 280));
+            }
+
+            const liveData = await response.json();
+            const arr = Array.isArray(liveData) ? liveData : (liveData && Array.isArray(liveData.data) ? liveData.data : null);
+            if (!Array.isArray(arr)) {
+                throw new Error('Expected JSON array from awt-data');
+            }
+            if (statusEl) statusEl.textContent = 'Loaded ' + arr.length.toLocaleString() + ' records (same source as Wildlife Map)';
+            return arr;
+        }
+
+        /**
+         * Per 100 m cell: intersection count (points) + mean segment speed (km/h).
+         * Speed = distance(A,B)/Δt per consecutive points per tag (haversine km, Δt seconds).
+         * Each segment’s speed is averaged into every 100 m Mercator cell the segment line crosses.
+         */
+        async function aggregateCellsIntersectionsAndVelocity(points) {
+            const cellStats = new Map();
+            function getOrCreate(key) {
+                if (!cellStats.has(key)) {
+                    cellStats.set(key, { count: 0, sumSegSpeed: 0, nSeg: 0 });
+                }
+                return cellStats.get(key);
+            }
+            const byTag = new Map();
+            const chunk = 30000;
+            for (let start = 0; start < points.length; start += chunk) {
+                const end = Math.min(start + chunk, points.length);
+                for (let i = start; i < end; i++) {
+                    const p = points[i];
+                    const pt = normalizePoint(p);
+                    if (!pt) continue;
+                    const cell = cellIndexFromLatLon(pt.lat, pt.lon);
+                    getOrCreate(cell.key).count++;
+
+                    const ts = getTimestampSec(p);
+                    if (ts != null) {
+                        const tag = getTagId(p);
+                        if (!byTag.has(tag)) byTag.set(tag, []);
+                        byTag.get(tag).push({ lat: pt.lat, lon: pt.lon, ts: ts });
+                    }
+                }
+                document.getElementById('lightmapStatus').textContent =
+                    '100 m grid: counting intersections… ' + Math.min(end, points.length).toLocaleString() + ' / ' + points.length.toLocaleString();
+                await new Promise(function (r) { setTimeout(r, 0); });
+            }
+
+            document.getElementById('lightmapStatus').textContent = 'Segment speed + grid crossing…';
+            let segProcessed = 0;
+            byTag.forEach(function (arr) {
+                arr.sort(function (a, b) {
+                    return a.ts - b.ts;
+                });
+                for (let j = 0; j < arr.length - 1; j++) {
+                    const A = arr[j];
+                    const B = arr[j + 1];
+                    const dt = B.ts - A.ts;
+                    if (dt <= 0 || dt >= 6 * 3600) continue;
+                    const dist = haversineKm(A.lat, A.lon, B.lat, B.lon);
+                    const kmh = (dist / dt) * 3600;
+                    if (!Number.isFinite(kmh) || kmh < 0 || kmh >= 200) continue;
+                    const m0 = latLonToMercatorXY(A.lat, A.lon);
+                    const m1 = latLonToMercatorXY(B.lat, B.lon);
+                    const cells = mercatorCellsAlongSegment(m0.x, m0.y, m1.x, m1.y);
+                    cells.forEach(function (cellKey) {
+                        if (!cellStats.has(cellKey)) return;
+                        const st = cellStats.get(cellKey);
+                        st.sumSegSpeed += kmh;
+                        st.nSeg++;
+                    });
+                    segProcessed++;
+                    if (segProcessed % 5000 === 0) {
+                        document.getElementById('lightmapStatus').textContent =
+                            'Segment speed… ' + segProcessed.toLocaleString() + ' segments';
+                    }
+                }
+            });
+
+            const rows = [];
+            cellStats.forEach(function (st, key) {
+                if (st.count === 0) return;
+                const avgVel = st.nSeg > 0 ? st.sumSegSpeed / st.nSeg : null;
+                rows.push({ key: key, rawCount: st.count, avgVelocity: avgVel });
+            });
+            return rows;
+        }
+
+        /**
+         * Cells in global top TOP_CELL_FRACTION by intersection count AND
+         * global top TOP_VELOCITY_FRACTION by mean speed (among cells with velocity samples).
+         */
+        function filterTopCountAndTopVelocity(cellRows) {
+            const n = cellRows.length;
+            if (n === 0) {
+                return { filtered: [], kCount: 0, kVel: 0, minCountCut: null, minVelCut: null };
+            }
+            const byCount = cellRows.slice().sort(function (a, b) {
+                return b.rawCount - a.rawCount;
+            });
+            const kCount = Math.max(1, Math.ceil(n * TOP_CELL_FRACTION));
+            const countSet = new Set();
+            for (let i = 0; i < kCount; i++) countSet.add(byCount[i].key);
+            const minCountCut = byCount[kCount - 1].rawCount;
+
+            const withVel = cellRows.filter(function (x) {
+                return x.avgVelocity != null && Number.isFinite(x.avgVelocity);
+            });
+            if (withVel.length === 0) {
+                return {
+                    filtered: [],
+                    kCount: kCount,
+                    kVel: 0,
+                    minCountCut: minCountCut,
+                    minVelCut: null
+                };
+            }
+            withVel.sort(function (a, b) {
+                return b.avgVelocity - a.avgVelocity;
+            });
+            const kVel = Math.max(1, Math.ceil(withVel.length * TOP_VELOCITY_FRACTION));
+            const velSet = new Set();
+            for (let j = 0; j < kVel; j++) velSet.add(withVel[j].key);
+            const minVelCut = withVel[kVel - 1].avgVelocity;
+
+            const filtered = [];
+            for (let i = 0; i < cellRows.length; i++) {
+                const r = cellRows[i];
+                if (countSet.has(r.key) && velSet.has(r.key)) filtered.push(r);
+            }
+            return {
+                filtered: filtered,
+                kCount: kCount,
+                kVel: kVel,
+                minCountCut: minCountCut,
+                minVelCut: minVelCut
+            };
+        }
+
+        function addDarkVeilOverImagery(map) {
+            map.createPane('lightmapDarkVeil');
+            const veilPane = map.getPane('lightmapDarkVeil');
+            /* Between tilePane (200) and overlayPane (400); white cells use markerPane (600). */
+            veilPane.style.zIndex = '250';
+            veilPane.style.pointerEvents = 'none';
+            L.rectangle(
+                [[-85, -179.99], [85, 179.99]],
+                {
+                    pane: 'lightmapDarkVeil',
+                    interactive: false,
+                    stroke: false,
+                    fillColor: '#000000',
+                    fillOpacity: DARK_VEIL_OPACITY
+                }
+            ).addTo(map);
+        }
+
+        function buildMapLayers(map, entries, meta) {
+            const maxIntersections = meta.maxIntersections;
+            const nonemptyCells = meta.nonemptyCells;
+            const fr = meta.filterResult;
+
+            if (!entries || entries.length === 0) {
+                hideLoadingUi();
+                return;
+            }
+
+            const group = L.layerGroup();
+            let idx = 0;
+            const batch = 400;
+
+            function addSlice() {
+                const end = Math.min(idx + batch, entries.length);
+                for (; idx < end; idx++) {
+                    const e = entries[idx];
+                    const parts = e.key.split(',');
+                    const ix = parseInt(parts[0], 10);
+                    const iy = parseInt(parts[1], 10);
+                    const bounds = cellIndexToRectangleBounds(ix, iy);
+                    const normalized = maxIntersections > 0 ? e.rawCount / maxIntersections : 0;
+                    const velStr =
+                        e.avgVelocity != null && Number.isFinite(e.avgVelocity) ? e.avgVelocity.toFixed(2) + ' km/h' : '—';
+                    L.rectangle(
+                        bounds,
+                        {
+                            pane: 'markerPane',
+                            stroke: true,
+                            weight: 1,
+                            color: '#ffffff',
+                            opacity: 1,
+                            fillColor: '#ffffff',
+                            fillOpacity: 1,
+                            interactive: true
+                        }
+                    )
+                        .bindPopup(
+                            '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% count ∩ top ' + Math.round(TOP_VELOCITY_FRACTION * 100) + '% speed</strong><br>' +
+                            '<strong>Cell id:</strong> i<sub>x</sub>=' + ix + ', i<sub>y</sub>=' + iy + ' &nbsp;(<code>' + e.key + '</code>)<br>' +
+                            'Intersections: ' + e.rawCount.toLocaleString() + '<br>' +
+                            'Mean segment speed (A→B): ' + velStr + '<br>' +
+                            'Vs max intersections (0–1): ' + normalized.toFixed(4) + '<br>' +
+                            'Nonempty cells: ' + nonemptyCells.toLocaleString() + ' · drawn: ' + entries.length.toLocaleString()
+                        )
+                        .addTo(group);
+                }
+                document.getElementById('lightmapStatus').textContent =
+                    'Drawing cells… ' + Math.min(idx, entries.length).toLocaleString() + ' / ' + entries.length.toLocaleString();
+                if (idx < entries.length) {
+                    requestAnimationFrame(addSlice);
+                } else {
+                    group.addTo(map);
+                    if (entries.length > 0) {
+                        try {
+                            const b = group.getBounds();
+                            if (b.isValid()) {
+                                var padded = b.pad(0.025);
+                                function fitHighlights() {
+                                    map.invalidateSize();
+                                    map.fitBounds(padded, {
+                                        maxZoom: 18,
+                                        padding: [8, 8],
+                                        animate: false
+                                    });
+                                    var z = map.getZoom();
+                                    if (z < MIN_ZOOM_HIGHLIGHTS) {
+                                        map.setView(padded.getCenter(), MIN_ZOOM_HIGHLIGHTS, { animate: false });
+                                    }
+                                    map.invalidateSize();
+                                }
+                                setTimeout(fitHighlights, 200);
+                            }
+                        } catch (err) { /* ignore */ }
+                    }
+                    document.getElementById('lightmapStatus').textContent =
+                        nonemptyCells.toLocaleString() +
+                        ' nonempty cells · max ' +
+                        maxIntersections.toLocaleString() +
+                        ' intersections · showing ' +
+                        entries.length.toLocaleString() +
+                        ' (count ≥ ' +
+                        (fr.minCountCut != null ? fr.minCountCut.toLocaleString() : '—') +
+                        ' & speed ≥ ' +
+                        (fr.minVelCut != null ? fr.minVelCut.toFixed(2) + ' km/h' : '—') +
+                        ')';
+                    hideLoadingUi();
+                }
+            }
+            document.getElementById('lightmapStatus').textContent =
+                'Drawing ' + entries.length.toLocaleString() + ' filtered cells…';
+            addSlice();
+        }
+
+        let map;
+
+        async function runLightmap() {
+            jokeDeck = shuffle(JOKE_PAIRS);
+            jokeIdx = 0;
+            jokeShowAnswer = false;
+            renderJoke();
+            const jn = document.getElementById('jokeNext');
+            if (jn && !jn.dataset.lmBound) {
+                jn.dataset.lmBound = '1';
+                jn.addEventListener('click', onJokeNext);
+            }
+
+            const raw = await fetchAwtDataSameAsDashboard();
+            if (raw === null) {
+                return;
+            }
+            document.getElementById('lightmapStatus').textContent =
+                'Binning ' + raw.length.toLocaleString() + ' points into 100 m cells (intersections + speed)…';
+            const cellRows = await aggregateCellsIntersectionsAndVelocity(raw);
+
+            if (cellRows.length === 0) {
+                document.getElementById('lightmapStatus').textContent = 'No valid points after filters.';
+                hideLoadingUi();
+                return;
+            }
+
+            const fr = filterTopCountAndTopVelocity(cellRows);
+            let maxIntersections = 0;
+            for (let i = 0; i < cellRows.length; i++) {
+                if (cellRows[i].rawCount > maxIntersections) maxIntersections = cellRows[i].rawCount;
+            }
+
+            map = L.map('lightmapMap', {
+                zoomControl: true,
+                zoomSnap: 0.25,
+                preferCanvas: true
+            }).setView([-19.0, 22.5], 10);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri',
+                maxZoom: 18,
+                opacity: 1
+            }).addTo(map);
+            addDarkVeilOverImagery(map);
+            L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+            if (fr.filtered.length === 0) {
+                const st = document.getElementById('lightmapStatus');
+                if (fr.kVel === 0) {
+                    st.textContent =
+                        'No mean segment speed per cell (need `timestamp` + elephant tag on points, and at least one valid A→B segment crossing a grid cell).';
+                } else {
+                    st.textContent =
+                        'No cells in the overlap of top ' +
+                        Math.round(TOP_CELL_FRACTION * 100) +
+                        '% by intersections and top ' +
+                        Math.round(TOP_VELOCITY_FRACTION * 100) +
+                        '% by mean speed.';
+                }
+                hideLoadingUi();
+                return;
+            }
+
+            buildMapLayers(map, fr.filtered, {
+                maxIntersections: maxIntersections,
+                nonemptyCells: cellRows.length,
+                filterResult: fr
+            });
+        }
+
+        function runAfterAuth() {
+            wireCorridorShellUi();
+            if (window._lightmapRan) return;
+            window._lightmapRan = true;
+            runLightmap().catch(function (err) {
+                console.error(err);
+                document.getElementById('lightmapStatus').textContent = err.message || String(err);
+                hideLoadingUi();
+            });
+        }
+        window.runAfterAuth = runAfterAuth;
+        document.addEventListener('authReady', runAfterAuth, { once: true });
+        if (document.getElementById('auth-overlay') === null) runAfterAuth();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', wireCorridorShellUi);
+        } else {
+            wireCorridorShellUi();
+        }
+    </script>
 </body>
 </html>
