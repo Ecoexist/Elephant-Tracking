@@ -268,6 +268,11 @@
         const TOP_VELOCITY_FRACTION = 0.1;
         /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
         const DARK_VEIL_OPACITY = 0.7;
+        /**
+         * 100 m cells are only a few screen pixels below this zoom; fitBounds alone often zooms out too far.
+         * Clamp zoom up and center on highlights so white cells are visible without manually zooming in.
+         */
+        const MIN_ZOOM_HIGHLIGHTS = 12;
 
         const JOKE_PAIRS = [
             { q: 'Why are elephants always so broke?', a: 'They work for peanuts.' },
@@ -754,7 +759,10 @@
                         bounds,
                         {
                             pane: 'markerPane',
-                            stroke: false,
+                            stroke: true,
+                            weight: 1,
+                            color: '#ffffff',
+                            opacity: 1,
                             fillColor: '#ffffff',
                             fillOpacity: 1,
                             interactive: true
@@ -779,15 +787,21 @@
                         try {
                             const b = group.getBounds();
                             if (b.isValid()) {
-                                requestAnimationFrame(function () {
+                                var padded = b.pad(0.025);
+                                function fitHighlights() {
                                     map.invalidateSize();
-                                    map.fitBounds(b.pad(0.03), {
+                                    map.fitBounds(padded, {
                                         maxZoom: 18,
-                                        padding: [12, 12],
+                                        padding: [8, 8],
                                         animate: false
                                     });
+                                    var z = map.getZoom();
+                                    if (z < MIN_ZOOM_HIGHLIGHTS) {
+                                        map.setView(padded.getCenter(), MIN_ZOOM_HIGHLIGHTS, { animate: false });
+                                    }
                                     map.invalidateSize();
-                                });
+                                }
+                                setTimeout(fitHighlights, 200);
                             }
                         } catch (err) { /* ignore */ }
                     }
@@ -843,7 +857,11 @@
                 if (cellRows[i].rawCount > maxIntersections) maxIntersections = cellRows[i].rawCount;
             }
 
-            map = L.map('lightmapMap', { zoomControl: true, zoomSnap: 0.25 }).setView([-19.0, 22.5], 8);
+            map = L.map('lightmapMap', {
+                zoomControl: true,
+                zoomSnap: 0.25,
+                preferCanvas: true
+            }).setView([-19.0, 22.5], 10);
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '© Esri',
                 maxZoom: 18,
