@@ -1,297 +1,116 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Light map (100 m) | Ecoexist</title>
+async function aggregateCellsIntersectionsAndVelocity(points) {
 
-<link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
-<script type="module" src="js/firebase-config.js"></script>
-<script src="js/auth-portal.js"></script>
+    const cellStats = new Map();
+    const byTag = new Map();
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-
-<style>
-/* --- (UNCHANGED UI + LAYOUT) --- */
-body.app-layout-corridor {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-}
-
-.app-sidebar {
-    width: 189px;
-    background: linear-gradient(180deg, #4C1918 0%, #3a1311 100%);
-    color: white;
-}
-
-.app-main-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-#lightmapMap {
-    height: calc(100vh - 12rem);
-}
-
-.lightmap-loading {
-    position: fixed;
-    inset: 0;
-    background: rgba(248,249,250,0.97);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.lightmap-loading.hidden { display: none; }
-
-.joke-zone { max-width: 420px; text-align: center; }
-</style>
-
-<!-- ================= AUTH (UNCHANGED) ================= -->
-<script>
-(async function () {
-    try {
-        const result = await window.AuthPortal.checkAuthAndRedirect(false, 'lightmap_100m.html');
-        if (result && result.role !== 'admin') {
-            window.location.replace('dashboard_public_firebase.html');
-            return;
-        }
-    } catch (e) {
-        window.location.replace('login.html?return=lightmap_100m.html');
-        return;
-    }
-
-    function init() {
-        const o = document.getElementById('auth-overlay');
-        if (o) o.remove();
-        window.dispatchEvent(new CustomEvent('authReady'));
-        if (window.runAfterAuth) window.runAfterAuth();
-    }
-
-    document.addEventListener('DOMContentLoaded', init);
-})();
-</script>
-
-</head>
-
-<body class="app-layout-corridor">
-
-<div id="auth-overlay">Checking authentication...</div>
-
-<!-- SIDEBAR (UNCHANGED) -->
-<aside class="app-sidebar"></aside>
-
-<div class="app-main-wrap">
-
-<header class="p-3">
-<h2>Light map (100 m)</h2>
-</header>
-
-<div id="lightmapMap"></div>
-
-</div>
-
-<!-- LOADING -->
-<div id="lightmapLoading" class="lightmap-loading">
-    <div class="spinner-border"></div>
-    <p id="lightmapStatus">Loading...</p>
-
-    <div class="joke-zone">
-        <p id="jokeLine"></p>
-        <button id="jokeNext">Next</button>
-    </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-/* ================= CONFIG ================= */
-const AWT_DATA_API = 'https://ecoexist-api.vercel.app/api/awt-data';
-const CELL_M = 100;
-
-/* ================= JOKES (UNCHANGED) ================= */
-const JOKES = [
-    { q: "Why are elephants always broke?", a: "They work for peanuts." },
-    { q: "Why do elephants never use computers?", a: "They're afraid of the mouse." }
-];
-
-let jokeIndex = 0;
-let showAnswer = false;
-
-/* ================= MAP ================= */
-let map;
-
-/* ================= AUTH HELPERS (UNCHANGED) ================= */
-async function getToken() {
-    const user = window.firebasePortal?.auth?.currentUser;
-    return user ? await user.getIdToken() : null;
-}
-
-/* ================= DATA FETCH ================= */
-async function fetchData() {
-    const token = await getToken();
-
-    const res = await fetch(AWT_DATA_API, {
-        headers: { Authorization: 'Bearer ' + token }
-    });
-
-    return await res.json();
-}
-
-/* =========================================================
-   🔴 CORE PIPELINE
-   ========================================================= */
-
-/**
- * STEP 1: NORMALISE DATA INTO POINTS
- */
-function normalize(points) {
-    return points.map(p => ({
-        lat: p.lat ?? p.latitude,
-        lon: p.lon ?? p.longitude,
-        t: p.timestamp,
-        tag: p.tagId
-    })).filter(p => p.lat && p.lon);
-}
-
-/**
- * STEP 2: GRID INDEXING (UNCHANGED LOGIC)
- */
-function toCell(lat, lon) {
-    return [
-        Math.floor(lat * 1000 / CELL_M),
-        Math.floor(lon * 1000 / CELL_M)
-    ].join(',');
-}
-
-/* =========================================================
-   🔴 REPLACE THIS SECTION WITH PAPER ALGORITHM
-   ========================================================= */
-
-/**
- * CURRENT LOGIC (YOUR EXISTING METHOD)
- * - count points per cell
- * - compute movement speeds
- * - filter by top percentiles
- *
- * 👉 THIS IS WHERE YOUR PAPER LOGIC GOES
- */
-function computeCells(points) {
-
-    const cells = new Map();
-
-    for (let p of points) {
-        const key = toCell(p.lat, p.lon);
-
-        if (!cells.has(key)) {
-            cells.set(key, {
+    function getOrCreate(key) {
+        if (!cellStats.has(key)) {
+            cellStats.set(key, {
                 count: 0,
-                speeds: []
+                sumScore: 0,
+                nScore: 0
             });
         }
-
-        cells.get(key).count++;
+        return cellStats.get(key);
     }
 
-    return Array.from(cells.entries()).map(([key, v]) => ({
-        key,
-        count: v.count,
-        score: v.count   // 🔴 REPLACE WITH PAPER THRESHOLD METRIC
-    }));
-}
+    // =========================
+    // STEP 1: CELL COUNTS
+    // =========================
+    for (let i = 0; i < points.length; i++) {
 
-/* =========================================================
-   FILTERING (ALSO SWAP-READY)
-   ========================================================= */
+        const p = normalizePoint(points[i]);
+        if (!p) continue;
 
-function filterCells(cells) {
+        const xy = latLonToMercatorXY(p.lat, p.lon);
+        const ix = Math.floor(xy.x / CELL_M);
+        const iy = Math.floor(xy.y / CELL_M);
 
-    // CURRENT: simple percentile cutoff
-    const sorted = [...cells].sort((a,b) => b.score - a.score);
+        const key = ix + ',' + iy;
 
-    const cutoff = Math.floor(sorted.length * 0.5);
+        const cell = getOrCreate(key);
+        cell.count++;
 
-    return sorted.slice(0, cutoff);
-}
-
-/* ================= RENDER ================= */
-function draw(cells) {
-
-    map = L.map('lightmapMap').setView([-19, 22], 10);
-
-    L.tileLayer('https://server.arcgisonline.com/.../{z}/{y}/{x}').addTo(map);
-
-    for (let c of cells) {
-
-        const [ix, iy] = c.key.split(',').map(Number);
-
-        const bounds = [
-            [-19 + ix * 0.01, 22 + iy * 0.01],
-            [-19 + ix * 0.01 + 0.01, 22 + iy * 0.01 + 0.01]
-        ];
-
-        L.rectangle(bounds, {
-            color: "white",
-            weight: 1,
-            fillOpacity: 0.8
-        }).addTo(map)
-        .bindPopup(`Score: ${c.score}`);
+        // keep tag grouping EXACTLY as before (architecture unchanged)
+        const ts = getTimestampSec(points[i]);
+        if (ts != null) {
+            const tag = getTagId(points[i]);
+            if (!byTag.has(tag)) byTag.set(tag, []);
+            byTag.get(tag).push({ lat: p.lat, lon: p.lon, ts });
+        }
     }
+
+    // =========================
+    // STEP 2: PAPER-STYLE METRIC (REPLACEMENT ZONE)
+    // =========================
+    //
+    // 🔴 THIS IS WHERE YOUR "NEW PAPER MATH" GOES
+    // WITHOUT TOUCHING STRUCTURE
+
+    byTag.forEach((arr) => {
+
+        arr.sort((a, b) => a.ts - b.ts);
+
+        for (let i = 0; i < arr.length - 1; i++) {
+
+            const A = arr[i];
+            const B = arr[i + 1];
+
+            const dt = B.ts - A.ts;
+            if (dt <= 0 || dt > 6 * 3600) continue;
+
+            const dist = haversineKm(A.lat, A.lon, B.lat, B.lon);
+            const speed = (dist / dt) * 3600;
+
+            if (!Number.isFinite(speed) || speed <= 0) continue;
+
+            const m0 = latLonToMercatorXY(A.lat, A.lon);
+            const m1 = latLonToMercatorXY(B.lat, B.lon);
+
+            const dx = m1.x - m0.x;
+            const dy = m1.y - m0.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+
+            const steps = Math.max(2, Math.floor(len / 50));
+
+            for (let s = 0; s <= steps; s++) {
+
+                const t = s / steps;
+
+                const x = m0.x + t * dx;
+                const y = m0.y + t * dy;
+
+                const key = Math.floor(x / CELL_M) + ',' + Math.floor(y / CELL_M);
+
+                if (!cellStats.has(key)) continue;
+
+                const cell = cellStats.get(key);
+
+                // =========================
+                // 🔴 PAPER METRIC HOOK
+                // =========================
+                //
+                // Replace THIS line if paper defines weighting differently:
+                cell.sumScore += speed;
+                cell.nScore += 1;
+            }
+        }
+    });
+
+    // =========================
+    // OUTPUT (UNCHANGED SHAPE)
+    // =========================
+    const out = [];
+
+    cellStats.forEach((v, key) => {
+        out.push({
+            key,
+            rawCount: v.count,
+
+            // 🔴 PAPER SCORE (replace formula only)
+            score: v.nScore > 0 ? (v.sumScore / v.nScore) : v.count
+        });
+    });
+
+    return out;
 }
-
-/* ================= JOKES ================= */
-function renderJoke() {
-    const j = JOKES[jokeIndex];
-    document.getElementById('jokeLine').textContent =
-        showAnswer ? j.a : j.q;
-
-    document.getElementById('jokeNext').textContent =
-        showAnswer ? "Next" : "Answer";
-}
-
-document.getElementById('jokeNext').onclick = () => {
-    if (!showAnswer) showAnswer = true;
-    else {
-        jokeIndex = (jokeIndex + 1) % JOKES.length;
-        showAnswer = false;
-    }
-    renderJoke();
-};
-
-/* ================= RUN ================= */
-async function run() {
-
-    renderJoke();
-
-    const raw = await fetchData();
-    const pts = normalize(raw);
-
-    document.getElementById('lightmapStatus').textContent =
-        "Computing grid...";
-
-    const cells = computeCells(pts); // 🔴 PAPER LOGIC HERE
-
-    const filtered = filterCells(cells);
-
-    draw(filtered);
-
-    document.getElementById('lightmapLoading').classList.add('hidden');
-}
-
-/* ================= AUTH HOOK ================= */
-window.runAfterAuth = run;
-
-document.addEventListener('authReady', run);
-
-</script>
-
-</body>
-</html>
