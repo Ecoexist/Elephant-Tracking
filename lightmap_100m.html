@@ -175,7 +175,7 @@
       (async function() {
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'lightmap_100m.html');
-          if (result && result.role !== 'admin') {
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'lightmap_100m.html')) {
             window.location.replace('dashboard_public_firebase.html');
             return;
           }
@@ -238,7 +238,45 @@
                         <div class="card border-0 shadow" id="lightmap-map-container">
                             <div id="lightmapMap"></div>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Intersections = GPS fixes per 100&nbsp;m cell. Mean speed per cell = average of segment speeds (point&nbsp;A→B: haversine km ÷ Δt) for each track segment whose path crosses that cell in Web Mercator space. Shown cells: <strong>top 50% by intersection count</strong> and <strong>top 10% by mean segment speed</strong>, solid white on a ~30% transparent dark veil.</p>
+                        <p class="small text-muted mt-2 mb-0">
+                            White cells must lie in the <strong>top 50% by intersection count</strong>, <strong>top 10% by mean segment speed</strong>, and <strong>top 10% by directional coherence</strong> (aligned movement through the cell; see below).
+                            Solid white on a ~30% transparent dark veil.
+                        </p>
+                        <div class="mt-3 small text-muted border-top pt-3" id="lightmap-method-notes">
+                            <p class="mb-2"><strong>Cell identification (100&nbsp;m Web Mercator grid)</strong></p>
+                            <p class="mb-2">
+                                Each point is projected from WGS84 <code>(φ, λ)</code> in degrees to Web Mercator metres <code>(x, y)</code> using
+                                <code>x = R·λ<sub>rad</sub></code>,
+                                <code>y = R·ln(tan(π/4 + φ<sub>rad</sub>/2))</code> with <code>R = 6&nbsp;378&nbsp;137</code>&nbsp;m (same as EPSG:3857).
+                                Cell indices are <code>i<sub>x</sub> = ⌊x / 100⌋</code>, <code>i<sub>y</sub> = ⌊y / 100⌋</code>; the cell id is <code>i<sub>x</sub>,i<sub>y</sub></code> (one square = 100&nbsp;m × 100&nbsp;m in projected metres).
+                                Map rectangles use the geographic bounds of that square’s four corners.
+                            </p>
+                            <p class="mb-2"><strong>Distance (Haversine, km)</strong></p>
+                            <p class="mb-1 font-monospace" style="font-size:0.85rem;">
+                                a = sin²(Δφ/2) + cos φ₁ · cos φ₂ · sin²(Δλ/2)<br>
+                                d = 2 · R<sub>earth</sub> · atan2(√a, √(1−a)), &nbsp; R<sub>earth</sub> = 6371 km
+                            </p>
+                            <p class="mb-2">where <code>Δφ</code>, <code>Δλ</code> are latitude and longitude differences in radians on a sphere.</p>
+                            <p class="mb-2"><strong>Speed per segment (km/h)</strong></p>
+                            <p class="mb-0 font-monospace" style="font-size:0.85rem;">
+                                v = (d<sub>km</sub> / Δt<sub>s</sub>) × 3600
+                            </p>
+                            <p class="mb-0 mt-1">with <code>Δt</code> the time in seconds between consecutive GPS fixes <strong>A</strong> and <strong>B</strong> on the same animal tag (after sorting by time). Segment speed is accumulated into every grid cell the straight line <strong>A→B</strong> crosses in <code>(x, y)</code> space (sampled along the chord).</p>
+                            <p class="mb-2 mt-3"><strong>Direction (unit vector &amp; “directional dot” / coherence)</strong></p>
+                            <p class="mb-1">
+                                In Mercator metres, segment <strong>A→B</strong> has <code>Δx = x<sub>B</sub> − x<sub>A</sub></code>, <code>Δy = y<sub>B</sub> − y<sub>A</sub></code>.
+                                The <strong>unit direction</strong> is <code>û = (Δx, Δy) / √((Δx)² + (Δy)²)</code>.
+                                For each cell the segment crosses, we add this same <code>û</code> to a running vector sum <code><strong>R</strong> = Σ û</code> over <code>N</code> segment crossings.
+                            </p>
+                            <p class="mb-1 font-monospace" style="font-size:0.85rem;">
+                                c = |<strong>R</strong>| / N &nbsp; ∈ [0, 1]
+                            </p>
+                            <p class="mb-0">
+                                <code>c</code> is the <strong>mean resultant length</strong>: if all <code>û</code> agree, <code>c → 1</code>; if they cancel, <code>c → 0</code>.
+                                Equivalently, with mean direction <code>r̂ = <strong>R</strong>/|<strong>R</strong>|</code>, each term contributes <code>û · r̂</code> and <code>c</code> is their average—so high <code>c</code> means movement through the cell is <strong>directionally consistent</strong>.
+                                Highlighted cells are also in the top tier of <code>c</code> among cells that have segment data.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -266,6 +304,8 @@
         const TOP_CELL_FRACTION = 0.5;
         /** Top fraction of cells with segment-derived mean speed (km/h, rank). */
         const TOP_VELOCITY_FRACTION = 0.1;
+        /** Top fraction by directional coherence |Σû|/N (see method notes; rank among cells with segments). */
+        const TOP_DIRECTION_FRACTION = 0.1;
         /** Black veil over imagery: 0.7 = 70% opaque = 30% transparent. */
         const DARK_VEIL_OPACITY = 0.7;
         /**
@@ -430,6 +470,17 @@
             return { x: x, y: y };
         }
 
+        /**
+         * Single source of truth for 100 m Web Mercator cell id (matches #lightmap-method-notes).
+         * @returns {{ ix: number, iy: number, key: string, x: number, y: number }}
+         */
+        function cellIndexFromLatLon(lat, lon) {
+            const xy = latLonToMercatorXY(lat, lon);
+            const ix = Math.floor(xy.x / CELL_M);
+            const iy = Math.floor(xy.y / CELL_M);
+            return { ix: ix, iy: iy, key: ix + ',' + iy, x: xy.x, y: xy.y };
+        }
+
         function mercatorXYToLatLon(x, y) {
             const lon = (x / R_MAJOR) * (180 / Math.PI);
             const lat = (2 * Math.atan(Math.exp(y / R_MAJOR)) - Math.PI / 2) * (180 / Math.PI);
@@ -583,15 +634,15 @@
         }
 
         /**
-         * Per 100 m cell: intersection count (points) + mean segment speed (km/h).
-         * Speed = distance(A,B)/Δt per consecutive points per tag (haversine km, Δt seconds).
-         * Each segment’s speed is averaged into every 100 m Mercator cell the segment line crosses.
+         * Per 100 m cell: intersection count (points) + mean segment speed (km/h) + directional sum (Mercator û).
+         * For each segment A→B: haversine speed; unit direction in Mercator (Δx,Δy)/|…| summed into every crossed cell.
+         * directionCoherence = |Σû|/N (mean resultant length).
          */
         async function aggregateCellsIntersectionsAndVelocity(points) {
             const cellStats = new Map();
             function getOrCreate(key) {
                 if (!cellStats.has(key)) {
-                    cellStats.set(key, { count: 0, sumSegSpeed: 0, nSeg: 0 });
+                    cellStats.set(key, { count: 0, sumSegSpeed: 0, nSeg: 0, sumUx: 0, sumUy: 0 });
                 }
                 return cellStats.get(key);
             }
@@ -603,11 +654,8 @@
                     const p = points[i];
                     const pt = normalizePoint(p);
                     if (!pt) continue;
-                    const xy = latLonToMercatorXY(pt.lat, pt.lon);
-                    const ix = Math.floor(xy.x / CELL_M);
-                    const iy = Math.floor(xy.y / CELL_M);
-                    const key = ix + ',' + iy;
-                    getOrCreate(key).count++;
+                    const cell = cellIndexFromLatLon(pt.lat, pt.lon);
+                    getOrCreate(cell.key).count++;
 
                     const ts = getTimestampSec(p);
                     if (ts != null) {
@@ -637,12 +685,20 @@
                     if (!Number.isFinite(kmh) || kmh < 0 || kmh >= 200) continue;
                     const m0 = latLonToMercatorXY(A.lat, A.lon);
                     const m1 = latLonToMercatorXY(B.lat, B.lon);
+                    const dmx = m1.x - m0.x;
+                    const dmy = m1.y - m0.y;
+                    const segLenM = Math.hypot(dmx, dmy);
+                    if (segLenM < 1e-9) continue;
+                    const ux = dmx / segLenM;
+                    const uy = dmy / segLenM;
                     const cells = mercatorCellsAlongSegment(m0.x, m0.y, m1.x, m1.y);
                     cells.forEach(function (cellKey) {
                         if (!cellStats.has(cellKey)) return;
                         const st = cellStats.get(cellKey);
                         st.sumSegSpeed += kmh;
                         st.nSeg++;
+                        st.sumUx += ux;
+                        st.sumUy += uy;
                     });
                     segProcessed++;
                     if (segProcessed % 5000 === 0) {
@@ -656,19 +712,37 @@
             cellStats.forEach(function (st, key) {
                 if (st.count === 0) return;
                 const avgVel = st.nSeg > 0 ? st.sumSegSpeed / st.nSeg : null;
-                rows.push({ key: key, rawCount: st.count, avgVelocity: avgVel });
+                const dirCoh =
+                    st.nSeg > 0 ? Math.hypot(st.sumUx, st.sumUy) / st.nSeg : null;
+                const meanBearDeg =
+                    st.nSeg > 0 ? (Math.atan2(st.sumUy, st.sumUx) * 180) / Math.PI : null;
+                rows.push({
+                    key: key,
+                    rawCount: st.count,
+                    avgVelocity: avgVel,
+                    directionCoherence: dirCoh,
+                    meanBearingDeg: meanBearDeg
+                });
             });
             return rows;
         }
 
         /**
-         * Cells in global top TOP_CELL_FRACTION by intersection count AND
-         * global top TOP_VELOCITY_FRACTION by mean speed (among cells with velocity samples).
+         * Cells in top TOP_CELL_FRACTION by count ∩ top TOP_VELOCITY_FRACTION by mean speed ∩
+         * top TOP_DIRECTION_FRACTION by directionCoherence (among cells with segment samples).
          */
-        function filterTopCountAndTopVelocity(cellRows) {
+        function filterTopCountVelocityDirection(cellRows) {
             const n = cellRows.length;
             if (n === 0) {
-                return { filtered: [], kCount: 0, kVel: 0, minCountCut: null, minVelCut: null };
+                return {
+                    filtered: [],
+                    kCount: 0,
+                    kVel: 0,
+                    kDir: 0,
+                    minCountCut: null,
+                    minVelCut: null,
+                    minDirCut: null
+                };
             }
             const byCount = cellRows.slice().sort(function (a, b) {
                 return b.rawCount - a.rawCount;
@@ -686,8 +760,10 @@
                     filtered: [],
                     kCount: kCount,
                     kVel: 0,
+                    kDir: 0,
                     minCountCut: minCountCut,
-                    minVelCut: null
+                    minVelCut: null,
+                    minDirCut: null
                 };
             }
             withVel.sort(function (a, b) {
@@ -698,17 +774,41 @@
             for (let j = 0; j < kVel; j++) velSet.add(withVel[j].key);
             const minVelCut = withVel[kVel - 1].avgVelocity;
 
+            const withDir = cellRows.filter(function (x) {
+                return x.directionCoherence != null && Number.isFinite(x.directionCoherence);
+            });
+            if (withDir.length === 0) {
+                return {
+                    filtered: [],
+                    kCount: kCount,
+                    kVel: kVel,
+                    kDir: 0,
+                    minCountCut: minCountCut,
+                    minVelCut: minVelCut,
+                    minDirCut: null
+                };
+            }
+            withDir.sort(function (a, b) {
+                return b.directionCoherence - a.directionCoherence;
+            });
+            const kDir = Math.max(1, Math.ceil(withDir.length * TOP_DIRECTION_FRACTION));
+            const dirSet = new Set();
+            for (let k = 0; k < kDir; k++) dirSet.add(withDir[k].key);
+            const minDirCut = withDir[kDir - 1].directionCoherence;
+
             const filtered = [];
             for (let i = 0; i < cellRows.length; i++) {
                 const r = cellRows[i];
-                if (countSet.has(r.key) && velSet.has(r.key)) filtered.push(r);
+                if (countSet.has(r.key) && velSet.has(r.key) && dirSet.has(r.key)) filtered.push(r);
             }
             return {
                 filtered: filtered,
                 kCount: kCount,
                 kVel: kVel,
+                kDir: kDir,
                 minCountCut: minCountCut,
-                minVelCut: minVelCut
+                minVelCut: minVelCut,
+                minDirCut: minDirCut
             };
         }
 
@@ -755,6 +855,16 @@
                     const normalized = maxIntersections > 0 ? e.rawCount / maxIntersections : 0;
                     const velStr =
                         e.avgVelocity != null && Number.isFinite(e.avgVelocity) ? e.avgVelocity.toFixed(2) + ' km/h' : '—';
+                    const cohStr =
+                        e.directionCoherence != null && Number.isFinite(e.directionCoherence)
+                            ? e.directionCoherence.toFixed(3) + ' (|Σû|/N)'
+                            : '—';
+                    let bearStr = '—';
+                    if (e.meanBearingDeg != null && Number.isFinite(e.meanBearingDeg)) {
+                        let deg = e.meanBearingDeg;
+                        if (deg < 0) deg += 360;
+                        bearStr = deg.toFixed(1) + '° (mean direction of Σû)';
+                    }
                     L.rectangle(
                         bounds,
                         {
@@ -769,9 +879,18 @@
                         }
                     )
                         .bindPopup(
-                            '<strong>Top ' + Math.round(TOP_CELL_FRACTION * 100) + '% count ∩ top ' + Math.round(TOP_VELOCITY_FRACTION * 100) + '% speed</strong><br>' +
+                            '<strong>Top ' +
+                                Math.round(TOP_CELL_FRACTION * 100) +
+                                '% count ∩ top ' +
+                                Math.round(TOP_VELOCITY_FRACTION * 100) +
+                                '% speed ∩ top ' +
+                                Math.round(TOP_DIRECTION_FRACTION * 100) +
+                                '% direction</strong><br>' +
+                            '<strong>Cell id:</strong> i<sub>x</sub>=' + ix + ', i<sub>y</sub>=' + iy + ' &nbsp;(<code>' + e.key + '</code>)<br>' +
                             'Intersections: ' + e.rawCount.toLocaleString() + '<br>' +
                             'Mean segment speed (A→B): ' + velStr + '<br>' +
+                            'Directional coherence: ' + cohStr + '<br>' +
+                            'Mean bearing (Mercator Σû): ' + bearStr + '<br>' +
                             'Vs max intersections (0–1): ' + normalized.toFixed(4) + '<br>' +
                             'Nonempty cells: ' + nonemptyCells.toLocaleString() + ' · drawn: ' + entries.length.toLocaleString()
                         )
@@ -815,6 +934,8 @@
                         (fr.minCountCut != null ? fr.minCountCut.toLocaleString() : '—') +
                         ' & speed ≥ ' +
                         (fr.minVelCut != null ? fr.minVelCut.toFixed(2) + ' km/h' : '—') +
+                        ' & coherence ≥ ' +
+                        (fr.minDirCut != null ? fr.minDirCut.toFixed(3) : '—') +
                         ')';
                     hideLoadingUi();
                 }
@@ -851,7 +972,7 @@
                 return;
             }
 
-            const fr = filterTopCountAndTopVelocity(cellRows);
+            const fr = filterTopCountVelocityDirection(cellRows);
             let maxIntersections = 0;
             for (let i = 0; i < cellRows.length; i++) {
                 if (cellRows[i].rawCount > maxIntersections) maxIntersections = cellRows[i].rawCount;
@@ -875,13 +996,18 @@
                 if (fr.kVel === 0) {
                     st.textContent =
                         'No mean segment speed per cell (need `timestamp` + elephant tag on points, and at least one valid A→B segment crossing a grid cell).';
+                } else if (fr.kDir === 0) {
+                    st.textContent =
+                        'No directional coherence per cell (segment Mercator direction û could not be accumulated).';
                 } else {
                     st.textContent =
                         'No cells in the overlap of top ' +
                         Math.round(TOP_CELL_FRACTION * 100) +
-                        '% by intersections and top ' +
+                        '% by intersections, top ' +
                         Math.round(TOP_VELOCITY_FRACTION * 100) +
-                        '% by mean speed.';
+                        '% by mean speed, and top ' +
+                        Math.round(TOP_DIRECTION_FRACTION * 100) +
+                        '% by directional coherence |Σû|/N.';
                 }
                 hideLoadingUi();
                 return;
