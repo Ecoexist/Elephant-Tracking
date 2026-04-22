@@ -11,11 +11,10 @@
     <script>
       (async function() {
         try {
-          await window.AuthPortal.checkAuthAndRedirect(false);
-          const user = window.firebasePortal?.auth?.currentUser;
-          if (user) {
-            const role = await window.AuthPortal.getUserRole(user.uid);
-            if (role !== 'admin') (window.top !== window ? window.top : window).location.href = 'dashboard_public_firebase.html';
+          const session = await window.AuthPortal.checkAuthAndRedirect(false);
+          if (session.role !== 'admin') {
+            (window.top !== window ? window.top : window).location.href = 'dashboard_public_firebase.html';
+            return;
           }
         } catch (e) {
           window.location.replace('login.html');
@@ -570,11 +569,42 @@
     </div>
 
     <script>
+        /**
+         * Resolves when Firebase Auth has a signed-in user (session restored or fresh sign-in).
+         */
+        function waitForUser(timeoutMs) {
+            var maxWait = timeoutMs != null ? timeoutMs : 30000;
+            return window.AuthPortal.waitForFirebase().then(function () {
+                var auth = window.firebasePortal.auth;
+                var onAuthStateChanged = window.firebasePortal.onAuthStateChanged;
+                if (!auth || !onAuthStateChanged) {
+                    return Promise.reject(new Error('Authentication service unavailable'));
+                }
+                if (auth.currentUser) {
+                    return Promise.resolve(auth.currentUser);
+                }
+                return new Promise(function (resolve, reject) {
+                    var settled = false;
+                    var timer = setTimeout(function () {
+                        if (settled) return;
+                        settled = true;
+                        try { unsub(); } catch (e) {}
+                        reject(new Error('Not signed in'));
+                    }, maxWait);
+                    var unsub = onAuthStateChanged(auth, function (user) {
+                        if (!user || settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        try { unsub(); } catch (e) {}
+                        resolve(user);
+                    });
+                });
+            });
+        }
+
         async function getPortalAuthHeaders() {
-            const auth = window.firebasePortal && window.firebasePortal.auth;
-            const u = auth && auth.currentUser;
-            if (!u) throw new Error('Not signed in');
-            const token = await u.getIdToken();
+            var u = await waitForUser();
+            var token = await u.getIdToken();
             return {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
@@ -681,6 +711,7 @@
 
         async function loadUserManagementData() {
             try {
+                await waitForUser();
                 if (allObservations.length === 0) await loadObservations();
                 if (allTracking.length === 0) await loadTracking();
 
@@ -978,7 +1009,15 @@
             });
         });
 
-        loadUserManagementData();
+        (async function adminBootstrap() {
+            try {
+                await waitForUser();
+                await loadUserManagementData();
+            } catch (e) {
+                console.error('Admin bootstrap:', e);
+                showAlert('dashboard-alert', (e && e.message) ? e.message : 'Authentication required', 'danger');
+            }
+        })();
     </script>
 </body>
 </html>
