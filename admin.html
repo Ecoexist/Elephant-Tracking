@@ -311,6 +311,21 @@
             font-size: 12px;
         }
 
+        .funder-pages-wrap {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .funder-pages-wrap label {
+            display: block;
+            font-size: 13px;
+            margin: 4px 0;
+            cursor: pointer;
+        }
+        .funder-pages-wrap input { margin-right: 8px; }
         .role-select {
             padding: 4px 8px;
             border-radius: 4px;
@@ -495,18 +510,24 @@
                     <label for="new-user-role">Role</label>
                     <select id="new-user-role">
                         <option value="admin">Admin</option>
+                        <option value="funder">Funder</option>
                         <option value="user" selected>User</option>
                         <option value="viewer">Viewer</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Create User</button>
             </form>
+            <div id="new-funder-pages-wrap" class="funder-pages-wrap" style="display: none; margin-top: 12px;">
+                <strong style="font-size: 13px;">Pages this funder can open</strong>
+                <p style="font-size: 12px; color: #666; margin: 6px 0 10px 0;">Stored in Firebase (<code>users/{uid}.allowedPages</code>). Admin panel access is never granted.</p>
+                <div id="new-funder-pages"></div>
+            </div>
             <div id="create-user-alert" style="margin-top: 10px;"></div>
         </div>
 
     <!-- Edit User Modal -->
     <div id="edit-user-modal" class="modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
-        <div style="background: white; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%;">
+        <div style="background: white; padding: 30px; border-radius: 8px; max-width: 480px; width: 90%; max-height: 90vh; overflow-y: auto;">
             <h3 style="margin: 0 0 20px 0;">Edit User</h3>
             <form id="edit-user-form">
                 <input type="hidden" id="edit-user-id">
@@ -518,9 +539,14 @@
                     <label for="edit-user-role">Role</label>
                     <select id="edit-user-role">
                         <option value="admin">Admin</option>
+                        <option value="funder">Funder</option>
                         <option value="user">User</option>
                         <option value="viewer">Viewer</option>
                     </select>
+                </div>
+                <div id="edit-funder-pages-wrap" class="funder-pages-wrap" style="display: none;">
+                    <strong style="font-size: 13px;">Pages this funder can open</strong>
+                    <div id="edit-funder-pages" style="margin-top: 8px;"></div>
                 </div>
                 <div class="form-group">
                     <label for="edit-user-password">New Password <span style="color: #999; font-size: 12px;">(leave blank to keep current)</span></label>
@@ -547,6 +573,56 @@
         const API_BASE_URL = 'https://ecoexist-pwa-backend.vercel.app';
         const API_KEY = '1bfafeaa14a4f1af545d3c9ea6dbf07b983bf5d8cf25ec283338c12427bc384b';
         const ADMIN_API_KEY = 'ecoexist_admin_2024';
+
+        function escAttr(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+        function escHtml2(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function buildFunderPageCheckboxes(containerId, selectedArr) {
+            const opts = window.AuthPortal && window.AuthPortal.FUNDER_PAGE_OPTIONS ? window.AuthPortal.FUNDER_PAGE_OPTIONS : [];
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const sel = new Set(selectedArr || []);
+            el.innerHTML = opts.map(function (o) {
+                const c = sel.has(o.value) ? ' checked' : '';
+                return '<label><input type="checkbox" value="' + escAttr(o.value) + '"' + c + '> ' + escHtml2(o.label) + '</label>';
+            }).join('');
+        }
+
+        function readCheckedFunderPages(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return [];
+            return Array.prototype.slice.call(el.querySelectorAll('input[type="checkbox"]:checked')).map(function (cb) {
+                return cb.value;
+            });
+        }
+
+        function toggleFunderPagesSection(roleSelectId, wrapId) {
+            const role = document.getElementById(roleSelectId);
+            const wrap = document.getElementById(wrapId);
+            if (!role || !wrap) return;
+            wrap.style.display = role.value === 'funder' ? 'block' : 'none';
+        }
+
+        async function syncFunderPagesToFirestore(uid, role, allowedPages) {
+            if (!uid || !window.firebasePortal) return;
+            const { db, doc, setDoc } = window.firebasePortal;
+            try {
+                await setDoc(
+                    doc(db, 'users', uid),
+                    {
+                        allowedPages: role === 'funder' && Array.isArray(allowedPages) ? allowedPages : []
+                    },
+                    { merge: true }
+                );
+            } catch (e) {
+                console.error('Firestore allowedPages sync:', e);
+                showAlert('dashboard-alert', 'User saved but could not sync page access in Firebase: ' + (e.message || e), 'danger');
+            }
+        }
 
         function getAuthHeaders() {
             return { 'x-api-key': API_KEY, 'Content-Type': 'application/json' };
@@ -701,6 +777,7 @@
                     <td>
                         <select class="role-select" data-user-id="${uid}" onchange="updateUserRole(this.getAttribute('data-user-id'), this.value)">
                             <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="funder" ${user.role === 'funder' ? 'selected' : ''}>Funder</option>
                             <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
                             <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Viewer</option>
                         </select>
@@ -744,21 +821,42 @@
             document.getElementById('admin-revoked-users').textContent = stats.revoked || 0;
         }
 
+        document.getElementById('new-user-role').addEventListener('change', function () {
+            toggleFunderPagesSection('new-user-role', 'new-funder-pages-wrap');
+        });
+        buildFunderPageCheckboxes('new-funder-pages', []);
+
         document.getElementById('create-user-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const name = document.getElementById('new-user-name').value.trim();
             const identifier = document.getElementById('new-user-email').value.trim();
             const password = document.getElementById('new-user-password').value;
             const role = document.getElementById('new-user-role').value;
-            const body = identifier.includes('@') ? { name, email: identifier, password, role } : { name, phone: identifier, password, role };
+            const allowedPages = role === 'funder' ? readCheckedFunderPages('new-funder-pages') : [];
+            const body = identifier.includes('@')
+                ? { name, email: identifier, password, role, allowedPages }
+                : { name, phone: identifier, password, role, allowedPages };
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/users`, { method: 'POST', headers: getAdminAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 if (data.success) {
+                    const newUid = data.uid || data.userId || (data.user && (data.user.uid || data.user.id));
+                    let funderWarn = '';
+                    if (role === 'funder') {
+                        if (newUid) await syncFunderPagesToFirestore(newUid, role, allowedPages);
+                        else {
+                            funderWarn =
+                                '<div class="alert alert-warning" style="margin-top:8px">Funder created; API did not return a user id — open <strong>Edit user</strong> and save once to sync page access to Firebase.</div>';
+                        }
+                    }
                     document.getElementById('create-user-form').reset();
-                    document.getElementById('create-user-alert').innerHTML = '<div class="alert alert-success">User created successfully!</div>';
+                    document.getElementById('new-user-role').value = 'user';
+                    toggleFunderPagesSection('new-user-role', 'new-funder-pages-wrap');
+                    buildFunderPageCheckboxes('new-funder-pages', []);
+                    document.getElementById('create-user-alert').innerHTML =
+                        '<div class="alert alert-success">User created successfully!</div>' + funderWarn;
                     loadUserManagementData();
-                    setTimeout(() => document.getElementById('create-user-alert').innerHTML = '', 3000);
+                    setTimeout(() => document.getElementById('create-user-alert').innerHTML = '', funderWarn ? 8000 : 3000);
                 } else {
                     document.getElementById('create-user-alert').innerHTML = '<div class="alert alert-danger">' + (data.message || 'Failed to create user') + '</div>';
                 }
@@ -767,7 +865,7 @@
             }
         });
 
-        function openEditModal(btn) {
+        async function openEditModal(btn) {
             const userId = btn.getAttribute('data-user-id') || '';
             const name = btn.getAttribute('data-name') || '';
             const role = btn.getAttribute('data-role') || 'user';
@@ -776,6 +874,19 @@
             document.getElementById('edit-user-name').value = name;
             document.getElementById('edit-user-role').value = role;
             document.getElementById('edit-user-password').value = '';
+            toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
+            let pages = [];
+            if (userId && window.firebasePortal && window.firebasePortal.getDoc) {
+                try {
+                    const { db, doc, getDoc } = window.firebasePortal;
+                    const snap = await getDoc(doc(db, 'users', userId));
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        if (Array.isArray(d.allowedPages)) pages = d.allowedPages;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+            buildFunderPageCheckboxes('edit-funder-pages', pages);
             document.getElementById('edit-revoke-btn').style.display = status === 'active' ? 'inline-block' : 'none';
             document.getElementById('edit-revoke-btn').onclick = () => { revokeUser(userId).then(() => closeEditModal()); };
             document.getElementById('edit-restore-btn').style.display = status === 'revoked' ? 'inline-block' : 'none';
@@ -785,19 +896,28 @@
 
         function closeEditModal() { document.getElementById('edit-user-modal').classList.remove('show'); }
 
+        document.getElementById('edit-user-role').addEventListener('change', function () {
+            toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
+        });
+
         document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const userId = document.getElementById('edit-user-id').value;
             const name = document.getElementById('edit-user-name').value.trim();
             const role = document.getElementById('edit-user-role').value;
             const password = document.getElementById('edit-user-password').value;
-            const body = { name, role };
+            const allowedPages = role === 'funder' ? readCheckedFunderPages('edit-funder-pages') : [];
+            const body = { name, role, allowedPages };
             if (password && password.length >= 6) body.password = password;
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
-                if (data.success) { closeEditModal(); showAlert('dashboard-alert', 'User updated successfully', 'success'); loadUserManagementData(); }
-                else showAlert('dashboard-alert', data.message || 'Failed to update user', 'danger');
+                if (data.success) {
+                    await syncFunderPagesToFirestore(userId, role, allowedPages);
+                    closeEditModal();
+                    showAlert('dashboard-alert', 'User updated successfully', 'success');
+                    loadUserManagementData();
+                } else showAlert('dashboard-alert', data.message || 'Failed to update user', 'danger');
             } catch (error) { showAlert('dashboard-alert', 'Failed to update user', 'danger'); }
         });
 
@@ -805,8 +925,10 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify({ role }) });
                 const data = await response.json();
-                if (data.success) showAlert('dashboard-alert', 'Role updated', 'success');
-                else { showAlert('dashboard-alert', data.message || 'Failed to update role', 'danger'); loadUserManagementData(); }
+                if (data.success) {
+                    await syncFunderPagesToFirestore(userId, role, role === 'funder' ? [] : []);
+                    showAlert('dashboard-alert', 'Role updated' + (role === 'funder' ? ' — open Edit to choose pages' : ''), 'success');
+                } else { showAlert('dashboard-alert', data.message || 'Failed to update role', 'danger'); loadUserManagementData(); }
             } catch (error) { showAlert('dashboard-alert', 'Failed to update role', 'danger'); loadUserManagementData(); }
         }
 
