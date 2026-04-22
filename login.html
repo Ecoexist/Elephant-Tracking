@@ -109,10 +109,10 @@
             const { auth } = window.firebasePortal;
 
             if (auth.currentUser) {
-                const role = await window.AuthPortal.getUserRole(auth.currentUser.uid);
-                if (role) {
+                const access = await window.AuthPortal.getUserAccess(auth.currentUser.uid);
+                if (access) {
                     const returnTo = new URLSearchParams(window.location.search).get('return');
-                    window.AuthPortal.redirectByRole(role, returnTo);
+                    window.AuthPortal.redirectByRole(access.role, returnTo, access.allowedPages);
                     return;
                 }
             }
@@ -140,10 +140,16 @@
                 try {
                     await window.AuthPortal.loginWithPassword(name, password);
                     const uid = auth.currentUser?.uid;
-                    const role = await window.AuthPortal.getUserRole(uid);
+                    const access = await window.AuthPortal.getUserAccess(uid);
+                    if (!access) {
+                        showMsg('Account inactive.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Sign In';
+                        return;
+                    }
                     showMsg('Signed in! Redirecting...', 'success');
                     const returnTo = new URLSearchParams(window.location.search).get('return');
-                    window.AuthPortal.redirectByRole(role, returnTo);
+                    window.AuthPortal.redirectByRole(access.role, returnTo, access.allowedPages);
                 } catch (err) {
                     showMsg(err.message || 'Login failed', 'error');
                     btn.disabled = false;
@@ -213,10 +219,16 @@
                 try {
                     await window.AuthPortal.signInWithPin(userData.email, pin);
                     const uid = auth.currentUser?.uid;
-                    const role = await window.AuthPortal.getUserRole(uid);
+                    const access = await window.AuthPortal.getUserAccess(uid);
+                    if (!access) {
+                        showMsg('Account inactive.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Verify & Sign In';
+                        return;
+                    }
                     showMsg('Signed in! Redirecting...', 'success');
                     const returnTo = new URLSearchParams(window.location.search).get('return');
-                    window.AuthPortal.redirectByRole(role, returnTo);
+                    window.AuthPortal.redirectByRole(access.role, returnTo, access.allowedPages);
                 } catch (err) {
                     showMsg(err.message || 'Invalid PIN', 'error');
                     btn.disabled = false;
