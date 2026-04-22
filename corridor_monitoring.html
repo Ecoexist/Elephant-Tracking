@@ -156,22 +156,36 @@
         }
         #map { height: 600px; border-radius: 0; position: relative; flex: 1; min-width: 0; }
         #corridor-map-legend-panel {
-            width: 108px;
+            width: 96px;
             flex-shrink: 0;
-            padding: 8px;
+            padding: 8px 6px;
             background: #fff;
             border-left: 1px solid #dee2e6;
             border-radius: 0;
         }
+        #corridor-map-legend-panel .corridor-legend-scale {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            text-align: center;
+        }
+        #corridor-map-legend-panel .legend-label-above,
+        #corridor-map-legend-panel .legend-label-below {
+            font-size: 0.58rem;
+            color: #6c757d;
+            line-height: 1.15;
+            width: 100%;
+        }
         #corridor-map-legend-panel .legend-gradient-vertical {
             width: 9px;
-            min-height: 100px;
+            min-height: 88px;
             border-radius: 4px;
             border: 1px solid #ccc;
             background: linear-gradient(to bottom, #ff0000, #ffffff);
             flex-shrink: 0;
         }
-        #corridor-map-legend-panel .usage-legend-stack { font-size: 0.62rem; color: #6c757d; line-height: 1.2; }
         .elephant-filter-menu { min-width: 100%; }
         .elephant-filter-menu table { table-layout: fixed; width: 100%; margin-bottom: 0; font-size: 0.8125rem; }
         .elephant-filter-menu th,
@@ -200,12 +214,13 @@
         .view-mode-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
         .view-mode-buttons button { flex: 1; min-width: 120px; }
         .info-icon-btn { width: 2rem; height: 2rem; padding: 0; border-radius: 50%; font-weight: 700; font-size: 0.95rem; line-height: 1; }
+        .corridor-last-ele { font-size: 0.7rem; line-height: 1.25; }
     </style>
     <script>
       (async function() {
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring.html');
-          if (result && result.role !== 'admin') {
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'corridor_monitoring.html')) {
             window.location.replace('dashboard_public_firebase.html');
             return;
           }
@@ -249,6 +264,7 @@
                 <a href="vehicle-tracker.html">Vehicle Tracker</a>
                 <a href="dashboard_all_data.html">Wildlife Map</a>
                 <a href="corridor_monitoring.html" class="app-nav-current">Corridor monitoring</a>
+                <a href="lightmap_100m.html">Light map (100&nbsp;m)</a>
                 <a href="ngamiland-lucis.html">Ngamiland LUCIS</a>
                 <a href="hec.html">HEC</a>
                 <a href="kaza/land_use_conflict.html">Land Use Conflict</a>
@@ -271,12 +287,10 @@
                                 <div id="map"></div>
                                 <div id="corridor-map-legend-panel" class="bg-white border-start">
                                     <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
-                                    <div class="d-flex gap-1 align-items-stretch justify-content-center" title="Corridor usage scale">
-                                        <div class="d-flex flex-column justify-content-between text-end usage-legend-stack flex-grow-1 py-0 legend-more-less" style="min-width: 0; min-height: 100px;">
-                                            <span>More crossings</span>
-                                            <span>Less crossings</span>
-                                        </div>
+                                    <div class="corridor-legend-scale" title="Corridor usage scale">
+                                        <span class="legend-label-above">More crossings</span>
                                         <div class="legend-gradient-vertical" aria-hidden="true"></div>
+                                        <span class="legend-label-below">Less crossings</span>
                                     </div>
                                 </div>
                             </div>
@@ -308,6 +322,15 @@
                                 <div class="card-body py-3">
                                     <h6 class="card-title text-muted small mb-1">Outside corridors</h6>
                                     <h3 class="text-dark mb-0" id="figOutsideCorridors">—</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-12">
+                            <div class="card stats-card">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted small mb-1">Last crossing</h6>
+                                    <div class="fs-6 fw-semibold text-dark lh-sm mb-0" id="figLastCrossingDate">—</div>
+                                    <div class="text-muted mt-1 mb-0 corridor-last-ele" id="figLastCrossingEle"></div>
                                 </div>
                             </div>
                         </div>
@@ -818,6 +841,8 @@
             const elTotal = document.getElementById('figTotalCrossings');
             const elIn = document.getElementById('figInsideCorridors');
             const elOut = document.getElementById('figOutsideCorridors');
+            const elLastDt = document.getElementById('figLastCrossingDate');
+            const elLastEl = document.getElementById('figLastCrossingEle');
             if (!elTotal || !elIn || !elOut) return;
 
             const list = activeCrossings();
@@ -835,6 +860,32 @@
                 }
                 elIn.textContent = String(inside);
                 elOut.textContent = String(Math.max(0, total - inside));
+            }
+
+            let latestTs = -Infinity;
+            let latestC = null;
+            for (let i = 0; i < list.length; i++) {
+                const c = list[i];
+                const ts = Number(c.estimated_crossing_time);
+                if (!Number.isFinite(ts)) continue;
+                if (ts > latestTs) {
+                    latestTs = ts;
+                    latestC = c;
+                }
+            }
+            if (elLastDt && elLastEl) {
+                if (latestC != null && Number.isFinite(latestTs) && latestTs > -Infinity) {
+                    const dt = new Date(latestTs * 1000);
+                    elLastDt.textContent = dt.toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    });
+                    const elLabel = elephantDisplayLabel(latestC);
+                    elLastEl.textContent = elLabel ? elLabel : '';
+                } else {
+                    elLastDt.textContent = '—';
+                    elLastEl.textContent = '';
+                }
             }
         }
 
