@@ -8,8 +8,6 @@
     <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
     <script type="module" src="js/firebase-config.js"></script>
     <script src="js/auth-portal.js"></script>
-    <!-- Optional: copy js/admin-api-config.example.js → js/admin-api-config.js (gitignored) for API keys -->
-    <script src="js/admin-api-config.js"></script>
     <script>
       (async function() {
         try {
@@ -572,23 +570,16 @@
     </div>
 
     <script>
-        (function () {
-            var C = window.__ECOEXIST_ADMIN_API;
-            if (!C || typeof C !== 'object') {
-                window.__ECOEXIST_ADMIN_API = {
-                    API_BASE_URL: 'https://ecoexist-pwa-backend.vercel.app',
-                    API_KEY: '',
-                    ADMIN_API_KEY: ''
-                };
-                console.warn(
-                    'Ecoexist admin: add js/admin-api-config.js (copy from js/admin-api-config.example.js) with your API keys.'
-                );
-            }
-        })();
-        var _adminCfg = window.__ECOEXIST_ADMIN_API;
-        const API_BASE_URL = _adminCfg.API_BASE_URL || 'https://ecoexist-pwa-backend.vercel.app';
-        const API_KEY = _adminCfg.API_KEY || '';
-        const ADMIN_API_KEY = _adminCfg.ADMIN_API_KEY || '';
+        async function getPortalAuthHeaders() {
+            const auth = window.firebasePortal && window.firebasePortal.auth;
+            const u = auth && auth.currentUser;
+            if (!u) throw new Error('Not signed in');
+            const token = await u.getIdToken();
+            return {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            };
+        }
 
         function escAttr(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -646,22 +637,12 @@
             }
         }
 
-        function getAuthHeaders() {
-            if (!API_KEY) console.warn('Ecoexist admin: API_KEY empty — observations/tracking may fail.');
-            return { 'x-api-key': API_KEY, 'Content-Type': 'application/json' };
-        }
-
-        function getAdminAuthHeaders() {
-            if (!ADMIN_API_KEY) console.warn('Ecoexist admin: ADMIN_API_KEY empty — user API calls will fail.');
-            return { 'x-api-key': ADMIN_API_KEY, 'Content-Type': 'application/json' };
-        }
-
         let allObservations = [];
         let allTracking = [];
 
         async function loadObservations() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/observations`, { headers: getAuthHeaders() });
+                const response = await fetch('/api/admin/observations', { headers: await getPortalAuthHeaders() });
                 if (!response.ok) throw new Error(`Observations API returned ${response.status}`);
                 const data = await response.json();
                 if (data.success && data.data) allObservations = data.data;
@@ -674,7 +655,7 @@
 
         async function loadTracking() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/tracking`, { headers: getAuthHeaders() });
+                const response = await fetch('/api/admin/tracking', { headers: await getPortalAuthHeaders() });
                 if (!response.ok) throw new Error(`Tracking API returned ${response.status}`);
                 const data = await response.json();
                 if (data.success && data.data) {
@@ -703,7 +684,7 @@
                 if (allObservations.length === 0) await loadObservations();
                 if (allTracking.length === 0) await loadTracking();
 
-                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: getAdminAuthHeaders() });
+                const response = await fetch('/api/admin/users', { headers: await getPortalAuthHeaders() });
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const data = await response.json();
                 if (!data.success || !data.users) throw new Error(data.message || 'Failed to load users');
@@ -861,7 +842,7 @@
                 ? { name, email: identifier, password, role, allowedPages }
                 : { name, phone: identifier, password, role, allowedPages };
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { method: 'POST', headers: getAdminAuthHeaders(), body: JSON.stringify(body) });
+                const response = await fetch('/api/admin/users', { method: 'POST', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 if (data.success) {
                     const newUid = data.uid || data.userId || (data.user && (data.user.uid || data.user.id));
@@ -933,7 +914,7 @@
             const body = { name, role, allowedPages };
             if (password && password.length >= 6) body.password = password;
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify(body) });
+                const response = await fetch('/api/admin/users/' + encodeURIComponent(userId), { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 if (data.success) {
                     await syncUserRoleAndPagesToFirestore(userId, role, allowedPages);
@@ -946,7 +927,7 @@
 
         async function updateUserRole(userId, role) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify({ role }) });
+                const response = await fetch('/api/admin/users/' + encodeURIComponent(userId), { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ role }) });
                 const data = await response.json();
                 if (data.success) {
                     await syncUserRoleAndPagesToFirestore(userId, role, role === 'funder' ? [] : []);
@@ -958,7 +939,7 @@
         async function revokeUser(userId) {
             if (!confirm('Are you sure you want to revoke this user?')) return;
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/status`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify({ status: 'revoked' }) });
+                const response = await fetch('/api/admin/users/' + encodeURIComponent(userId) + '/status', { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'revoked' }) });
                 const data = await response.json();
                 if (data.success) { showAlert('dashboard-alert', 'User access revoked', 'success'); loadUserManagementData(); }
                 else showAlert('dashboard-alert', data.message || 'Failed to revoke user', 'danger');
@@ -967,7 +948,7 @@
 
         async function activateUser(userId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/status`, { method: 'PATCH', headers: getAdminAuthHeaders(), body: JSON.stringify({ status: 'active' }) });
+                const response = await fetch('/api/admin/users/' + encodeURIComponent(userId) + '/status', { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'active' }) });
                 const data = await response.json();
                 if (data.success) { showAlert('dashboard-alert', 'User access restored', 'success'); loadUserManagementData(); }
                 else showAlert('dashboard-alert', data.message || 'Failed to restore user', 'danger');
