@@ -1,11 +1,33 @@
 /**
  * Auth Portal - Firebase auth for Ecoexist Monitoring
  * - Email PIN login (same as PWA)
- * - Role-based redirect: admin -> map.html + admin, viewer/user -> map-users.html
- * - Protects map.html, admin.html, map-users.html
+ * - Roles: admin, funder (page-scoped), viewer/user
  */
 
 const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
+
+/** Pages funders may be granted (admin excluded). Labels for admin UI. */
+const FUNDER_PAGE_OPTIONS = [
+  { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
+  { value: 'map-users.html', label: 'Wildlife map (viewer)' },
+  { value: 'dashboard_all_data.html', label: 'Wildlife map — all data' },
+  { value: 'dashboard.html', label: 'Dashboard (shell)' },
+  { value: 'firebasemap.html', label: 'Firebase map' },
+  { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
+  { value: 'vehicle-tracker.html', label: 'Vehicle tracker' },
+  { value: 'ngamiland-lucis.html', label: 'Ngamiland LUCIS' },
+  { value: 'hec.html', label: 'HEC' },
+  { value: 'land_use_conflict.html', label: 'Land use conflict' },
+  { value: 'lightmap_100m.html', label: 'Light map (100 m)' },
+  { value: 'corridor_monitoring.html', label: 'Corridor monitoring' },
+  { value: 'corridor_monitoring_agol.html', label: 'Corridor monitoring (GCS + AGOL)' },
+  { value: 'road_crossings_firebase.html', label: 'Road crossings (Firebase)' },
+  { value: 'map.html', label: 'Map (legacy)' },
+  { value: 'meeting-reports.html', label: 'Meeting reports' },
+  { value: 'user-submissions.html', label: 'User submissions' }
+];
+
+const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
 async function waitForFirebase(timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
@@ -25,19 +47,33 @@ async function waitForFirebase(timeoutMs = 10000) {
   });
 }
 
-async function getUserRole(uid) {
+/**
+ * @returns {Promise<{ role: string, allowedPages: string[] }|null>} null if revoked
+ */
+async function getUserAccess(uid) {
   const { db, doc, getDoc } = window.firebasePortal;
   try {
     const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      if (data.status === 'revoked') return null;
-      return data.role || 'viewer';
+    if (!userDoc.exists()) {
+      return { role: 'viewer', allowedPages: [] };
     }
+    const data = userDoc.data();
+    if (data.status === 'revoked') return null;
+    const raw = data.allowedPages;
+    const allowedPages = Array.isArray(raw) ? raw.filter((p) => typeof p === 'string' && p) : [];
+    return {
+      role: data.role || 'viewer',
+      allowedPages
+    };
   } catch (e) {
-    console.error('Failed to get user role:', e);
+    console.error('Failed to get user access:', e);
+    return { role: 'viewer', allowedPages: [] };
   }
-  return 'viewer';
+}
+
+async function getUserRole(uid) {
+  const access = await getUserAccess(uid);
+  return access ? access.role : null;
 }
 
 async function loginWithPassword(name, password) {
@@ -98,14 +134,19 @@ async function signInWithPin(email, pin) {
   return data;
 }
 
-const ALLOWED_RETURN_PAGES = ['firebasemap.html', 'dashboard.html', 'dashboard_public_firebase.html', 'admin.html', 'vehicle-tracker.html', 'ngamiland-lucis.html', 'hec.html', 'land_use_conflict.html','lightmap_100m.html','corridor-mon2.html'];
-
-function redirectByRole(role, returnUrl) {
+function redirectByRole(role, returnUrl, allowedPages = []) {
+  const pages = Array.isArray(allowedPages) ? allowedPages : [];
   const isAdmin = role === 'admin';
+  const isFunder = role === 'funder';
   const isViewer = role === 'viewer' || role === 'user';
 
+  const safeFunderReturn = (u) =>
+    u &&
+    ALLOWED_RETURN_PAGES.includes(u) &&
+    u !== 'admin.html' &&
+    pages.includes(u);
+
   if (isAdmin) {
-    // Admin: firebasemap/dashboard -> dashboard.html; admin.html -> admin; else admin.html
     if (returnUrl === 'firebasemap.html' || returnUrl === 'dashboard.html') {
       window.location.href = 'dashboard.html';
       return;
@@ -119,8 +160,20 @@ function redirectByRole(role, returnUrl) {
     return;
   }
 
+  if (isFunder) {
+    const target =
+      returnUrl && safeFunderReturn(returnUrl)
+        ? returnUrl
+        : pages.find((p) => ALLOWED_RETURN_PAGES.includes(p) && p !== 'admin.html') || null;
+    if (target) {
+      window.location.href = target;
+      return;
+    }
+    window.location.href = 'dashboard_public_firebase.html';
+    return;
+  }
+
   if (isViewer) {
-    // Viewer/user: always go to public dashboard (no access to admin/internal pages)
     window.location.href = 'dashboard_public_firebase.html';
     return;
   }
@@ -133,6 +186,31 @@ function getCurrentPageForReturn() {
   return ALLOWED_RETURN_PAGES.includes(name) ? name : '';
 }
 
+/**
+ * Admin-only tools: admin, or funder with page in allowedPages.
+ */
+function canAccessAdminToolPage(role, allowedPages, page) {
+  if (role === 'admin') return true;
+  if (role === 'funder') {
+    return page !== 'admin.html' && (Array.isArray(allowedPages) ? allowedPages : []).includes(page);
+  }
+  return false;
+}
+
+/**
+ * Any logged-in portal page that previously allowed viewer/user (e.g. HEC, map-users).
+ */
+function canAccessPortalPage(role, allowedPages, page) {
+  if (role === 'admin') return true;
+  if (role === 'funder') {
+    if (page === 'admin.html') return false;
+    if (page === 'dashboard_public_firebase.html') return true;
+    return (Array.isArray(allowedPages) ? allowedPages : []).includes(page);
+  }
+  if (role === 'viewer' || role === 'user') return true;
+  return false;
+}
+
 async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
   await waitForFirebase();
   const { auth, onAuthStateChanged } = window.firebasePortal;
@@ -141,16 +219,16 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
     const unsub = onAuthStateChanged(auth, async (user) => {
       unsub();
       if (!user) {
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 600));
         const userAgain = auth.currentUser;
         if (userAgain) {
-          const role = await getUserRole(userAgain.uid);
-          if (role) {
+          const access = await getUserAccess(userAgain.uid);
+          if (access) {
             if (isLoginPage) {
               const returnTo = new URLSearchParams(window.location.search).get('return');
-              redirectByRole(role, returnTo || document.referrer);
+              redirectByRole(access.role, returnTo || document.referrer, access.allowedPages);
             } else {
-              resolve({ user: userAgain, role });
+              resolve({ user: userAgain, role: access.role, allowedPages: access.allowedPages });
             }
             return;
           }
@@ -162,8 +240,8 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
         }
         return;
       }
-      const role = await getUserRole(user.uid);
-      if (!role) {
+      const access = await getUserAccess(user.uid);
+      if (!access) {
         await auth.signOut();
         if (isLoginPage) resolve(null);
         else {
@@ -174,9 +252,9 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
       }
       if (isLoginPage) {
         const returnTo = new URLSearchParams(window.location.search).get('return');
-        redirectByRole(role, returnTo || document.referrer);
+        redirectByRole(access.role, returnTo || document.referrer, access.allowedPages);
       } else {
-        resolve({ user, role });
+        resolve({ user, role: access.role, allowedPages: access.allowedPages });
       }
     });
   });
@@ -190,12 +268,16 @@ function canAccessPage(role, page) {
 window.AuthPortal = {
   waitForFirebase,
   getUserRole,
+  getUserAccess,
   loginWithPassword,
   requestPin,
   verifyPin,
   signInWithPin,
   redirectByRole,
   checkAuthAndRedirect,
-  canAccessPage
+  canAccessPage,
+  canAccessAdminToolPage,
+  canAccessPortalPage,
+  FUNDER_PAGE_OPTIONS,
+  ALLOWED_RETURN_PAGES
 };
-
