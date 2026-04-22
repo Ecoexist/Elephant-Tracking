@@ -717,7 +717,7 @@
                 if (allObservations.length === 0) await loadObservations();
                 if (allTracking.length === 0) await loadTracking();
 
-                const response = await fetch(`${API_BASE_URL}/api/users`, { headers: await getPortalAuthHeaders() });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: await getPortalAuthHeaders() });
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const data = await response.json();
                 if (!data.success || !data.users) throw new Error(data.message || 'Failed to load users');
@@ -875,7 +875,7 @@
                 ? { name, email: identifier, password, role, allowedPages }
                 : { name, phone: identifier, password, role, allowedPages };
             try {
-                const response = await fetch(`${API_BASE_URL}/api/users`, { method: 'POST', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { method: 'POST', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 if (data.success) {
                     const newUid = data.uid || data.userId || (data.user && (data.user.uid || data.user.id));
@@ -947,7 +947,7 @@
             const body = { name, role, allowedPages };
             if (password && password.length >= 6) body.password = password;
             try {
-                const response = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 if (data.success) {
                     await syncUserRoleAndPagesToFirestore(userId, role, allowedPages);
@@ -960,7 +960,7 @@
 
         async function updateUserRole(userId, role) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ role }) });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ role }) });
                 const data = await response.json();
                 if (data.success) {
                     await syncUserRoleAndPagesToFirestore(userId, role, role === 'funder' ? [] : []);
@@ -972,7 +972,7 @@
         async function revokeUser(userId) {
             if (!confirm('Are you sure you want to revoke this user?')) return;
             try {
-                const response = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'revoked' }) });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'revoked' }) });
                 const data = await response.json();
                 if (data.success) { showAlert('dashboard-alert', 'User access revoked', 'success'); loadUserManagementData(); }
                 else showAlert('dashboard-alert', data.message || 'Failed to revoke user', 'danger');
@@ -981,7 +981,7 @@
 
         async function activateUser(userId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'active' }) });
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'active' }) });
                 const data = await response.json();
                 if (data.success) { showAlert('dashboard-alert', 'User access restored', 'success'); loadUserManagementData(); }
                 else showAlert('dashboard-alert', data.message || 'Failed to restore user', 'danger');
