@@ -220,7 +220,7 @@
       (async function() {
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring_agol.html');
-          if (result && result.role !== 'admin') {
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'corridor_monitoring_agol.html')) {
             window.location.replace('dashboard_public_firebase.html');
             return;
           }
@@ -465,6 +465,8 @@
         /** Only needed if the service is secured; this Form view is public */
         const AGOL_PORTAL_TOKEN = '';
         const AGOL_PAGE_SIZE = 1000;
+        /** Parallel AGOL feature requests (after count is known) */
+        const AGOL_FETCH_CONCURRENCY = 4;
 
         const ROAD_API = 'https://ecoexist-api.vercel.app/api/road-crossings-process';
         const PUBLIC_ROAD_CROSSINGS_JSON_URL = '';
@@ -682,6 +684,24 @@
                 });
             }
             return p.toString();
+        }
+
+        function agolLayerQueryBase() {
+            return AGOL_FEATURESERVER_BASE.replace(/\/$/, '') + '/' + AGOL_LAYER_ID + '/query?';
+        }
+
+        async function agolFetchFeaturePage(offset) {
+            const q = agolLayerQueryBase() + agolQueryParams({ resultOffset: offset });
+            const res = await fetch(q);
+            const j = await res.json();
+            if (j.error) {
+                const msg = j.error.message || j.error.messageCode || JSON.stringify(j.error);
+                throw new Error('AGOL: ' + msg);
+            }
+            return {
+                features: j.features || [],
+                exceededTransferLimit: j.exceededTransferLimit === true
+            };
         }
 
         function latLonFromEsriGeometry(geom) {
@@ -1342,31 +1362,65 @@
 
         async function loadAgolCrossings() {
             allAgolCrossings = [];
+            const countP = new URLSearchParams();
+            countP.set('where', '1=1');
+            countP.set('returnCountOnly', 'true');
+            countP.set('f', 'json');
+            if (AGOL_PORTAL_TOKEN && String(AGOL_PORTAL_TOKEN).trim()) {
+                countP.set('token', String(AGOL_PORTAL_TOKEN).trim());
+            }
+            let total = null;
+            try {
+                const cr = await fetch(agolLayerQueryBase() + countP.toString());
+                const cj = await cr.json();
+                if (!cj.error && typeof cj.count === 'number' && cj.count >= 0) {
+                    total = cj.count;
+                }
+            } catch (e) {
+                total = null;
+            }
+
+            const page = AGOL_PAGE_SIZE;
+            if (total === 0) {
+                return;
+            }
+
+            if (total != null && total > 0) {
+                const offsets = [];
+                for (let o = 0; o < total; o += page) {
+                    offsets.push(o);
+                }
+                for (let i = 0; i < offsets.length; i += AGOL_FETCH_CONCURRENCY) {
+                    const slice = offsets.slice(i, i + AGOL_FETCH_CONCURRENCY);
+                    const results = await Promise.all(slice.map(function (off) {
+                        return agolFetchFeaturePage(off);
+                    }));
+                    for (let b = 0; b < results.length; b++) {
+                        const feats = results[b].features;
+                        const off = slice[b];
+                        for (let k = 0; k < feats.length; k++) {
+                            const o = agolFeatureToObservation(feats[k], off + k);
+                            if (o) allAgolCrossings.push(o);
+                        }
+                    }
+                }
+                return;
+            }
+
             let offset = 0;
             let guard = 0;
             const maxPages = 500;
             while (guard < maxPages) {
                 guard++;
-                const q =
-                    AGOL_FEATURESERVER_BASE.replace(/\/$/, '') +
-                    '/' +
-                    AGOL_LAYER_ID +
-                    '/query?' +
-                    agolQueryParams({ resultOffset: offset });
-                const res = await fetch(q);
-                const j = await res.json();
-                if (j.error) {
-                    const msg = j.error.message || j.error.messageCode || JSON.stringify(j.error);
-                    throw new Error('AGOL: ' + msg);
-                }
-                const feats = j.features || [];
+                const pack = await agolFetchFeaturePage(offset);
+                const feats = pack.features;
                 for (let i = 0; i < feats.length; i++) {
                     const o = agolFeatureToObservation(feats[i], offset + i);
                     if (o) allAgolCrossings.push(o);
                 }
                 if (feats.length === 0) break;
-                if (!j.exceededTransferLimit) break;
                 offset += feats.length;
+                if (!pack.exceededTransferLimit) break;
             }
         }
 
@@ -1755,20 +1809,17 @@
                 return;
             }
             drawBaseCorridors();
-            await ensureRoadsLoaded();
-            drawRoadsLayer();
+            const roadsPromise = ensureRoadsLoaded();
+            if (statusEl0) statusEl0.textContent = 'Loading GCS + AGOL (roads in background)…';
             let gcsErr = null;
             let agolErr = null;
-            try {
-                await loadGcsCrossings();
-            } catch (e) {
-                gcsErr = e;
+            const settled = await Promise.allSettled([loadGcsCrossings(), loadAgolCrossings()]);
+            if (settled[0].status === 'rejected') {
+                gcsErr = settled[0].reason;
                 allCrossings = [];
             }
-            try {
-                await loadAgolCrossings();
-            } catch (e) {
-                agolErr = e;
+            if (settled[1].status === 'rejected') {
+                agolErr = settled[1].reason;
                 allAgolCrossings = [];
             }
             syncCrossingsFromFilters();
@@ -1793,7 +1844,10 @@
             redrawCrossingDisplay();
             const b = corridorLayer.getBounds();
             if (b.isValid()) map.fitBounds(b.pad(0.08));
-            setTimeout(function() { map.invalidateSize(); }, 200);
+            roadsPromise.then(function () {
+                drawRoadsLayer();
+                setTimeout(function() { map.invalidateSize(); }, 200);
+            });
         }
 
         function runAfterAuth() {
