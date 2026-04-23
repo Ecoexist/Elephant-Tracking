@@ -2,6 +2,8 @@
  * Auth Portal - Firebase auth for Ecoexist Monitoring
  * - Email PIN login (same as PWA)
  * - Roles: admin, funder (page-scoped), viewer/user
+ *
+ * Portal page lists live here only. road-crossings-process.js duplicates these page lists for Bearer checks; awt-data uses Firestore roles (admin, user, viewer, funder).
  */
 
 const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
@@ -28,6 +30,17 @@ const FUNDER_PAGE_OPTIONS = [
 
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
+/** Default tool pages for role `user` (Firestore role). */
+const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
+
+/** Default tool pages for role `viewer`. */
+const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'dashboard_all_data.html'];
+
+function pageFilename(page) {
+  if (typeof page !== 'string') return '';
+  return page.split('/').pop().split('?')[0].split('#')[0];
+}
+
 /**
  * Public marketing entry is index (no auth). Never use it in role-based redirects or ?return= after login.
  * Legacy `dashboard_public*` pages are not valid post-login targets (bookmarks / referrers ignored).
@@ -40,17 +53,6 @@ function sanitizeRoleRedirectTarget(raw) {
   if (lower === 'index' || lower === 'index.html') return null;
   if (lower.startsWith('dashboard_public')) return null;
   return name;
-}
-
-/** Default tool pages for role `user` (Firestore role). */
-const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
-
-/** Default tool pages for role `viewer`. */
-const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'dashboard_all_data.html'];
-
-function pageFilename(page) {
-  if (typeof page !== 'string') return '';
-  return page.split('/').pop().split('?')[0].split('#')[0];
 }
 
 /** Map stored Firestore paths (e.g. kaza/foo.html) to canonical FUNDER_PAGE_OPTIONS values. */
