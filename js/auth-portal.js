@@ -8,12 +8,11 @@ const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI. */
 const FUNDER_PAGE_OPTIONS = [
-  // { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
-  // { value: 'map-users.html', label: 'Wildlife map (viewer)' },
+  { value: 'map-users.html', label: 'Wildlife map (viewer)' },
   { value: 'dashboard_all_data.html', label: 'Wildlife map — all data' },
   { value: 'dashboard.html', label: 'Dashboard (shell)' },
-  // { value: 'firebasemap.html', label: 'Firebase map' },
-  // { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
+  { value: 'firebasemap.html', label: 'Firebase map' },
+  { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
   { value: 'vehicle-tracker.html', label: 'Vehicle tracker' },
   { value: 'ngamiland-lucis.html', label: 'Ngamiland LUCIS' },
   { value: 'hec.html', label: 'HEC' },
@@ -29,7 +28,12 @@ const FUNDER_PAGE_OPTIONS = [
 
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
+/** Public wildlife dashboard URL (no login). Never use as a post-login redirect target. */
 const PORTAL_PUBLIC_HOME = 'dashboard_public_firebase.html';
+
+function isPublicDashboardPage(page) {
+  return canonicalPortalPageName(page) === PORTAL_PUBLIC_HOME;
+}
 
 /** Default tool pages for role `user` (Firestore role). */
 const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
@@ -75,7 +79,6 @@ function canonicalPortalPageName(page) {
 
 /** Sidebar links for app shell pages (corridor / lightmap layout). Order = display order. */
 const SIDEBAR_NAV_ITEMS = [
-  // { href: 'dashboard_public_firebase.html', label: 'Overview', pageKey: 'dashboard_public_firebase.html', htmlLabel: false },
   { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false },
   { href: 'vehicle-tracker.html', label: 'Vehicle Tracker', pageKey: 'vehicle-tracker.html', htmlLabel: false },
   { href: 'dashboard_all_data.html', label: 'Wildlife Map', pageKey: 'dashboard_all_data.html', htmlLabel: false },
@@ -88,21 +91,22 @@ const SIDEBAR_NAV_ITEMS = [
 ];
 
 function getAccessiblePortalPages(role, allowedPages) {
-  const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []);
+  const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []).filter(
+    (p) => !isPublicDashboardPage(p)
+  );
   if (role === 'admin') {
-    const keys = new Set([PORTAL_PUBLIC_HOME, ...SIDEBAR_NAV_ITEMS.map((i) => i.pageKey)]);
-    return [...keys];
+    return [...new Set(SIDEBAR_NAV_ITEMS.map((i) => i.pageKey))];
   }
   if (role === 'funder') {
-    return [PORTAL_PUBLIC_HOME, ...norm];
+    return [...norm];
   }
   if (role === 'user') {
-    return [PORTAL_PUBLIC_HOME, ...USER_ROLE_DEFAULT_PAGES];
+    return [...USER_ROLE_DEFAULT_PAGES];
   }
   if (role === 'viewer') {
-    return [PORTAL_PUBLIC_HOME, ...VIEWER_ROLE_DEFAULT_PAGES];
+    return [...VIEWER_ROLE_DEFAULT_PAGES];
   }
-  return [PORTAL_PUBLIC_HOME];
+  return [...VIEWER_ROLE_DEFAULT_PAGES];
 }
 
 function canAccessPortalPage(role, allowedPages, page) {
@@ -175,7 +179,7 @@ async function applySidebarNavForUser(options = {}) {
         logo.href = 'dashboard_all_data.html';
       } else {
         const first = SIDEBAR_NAV_ITEMS.find((item) => canAccessPortalPage(role, allowedPages, item.pageKey));
-        logo.href = first ? first.href : PORTAL_PUBLIC_HOME;
+        logo.href = first ? first.href : '#';
       }
     }
   } catch (e) {
@@ -347,17 +351,24 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
 
   const safeFunderReturn = (u) =>
     u &&
+    !isPublicDashboardPage(u) &&
     ALLOWED_RETURN_PAGES.includes(u) &&
     u !== 'admin.html' &&
     pages.includes(u);
+
+  const firstFunderTarget = () =>
+    pages.find((p) => ALLOWED_RETURN_PAGES.includes(p) && p !== 'admin.html' && !isPublicDashboardPage(p)) ||
+    null;
 
   if (isAdmin) {
     if (returnUrl === 'firebasemap.html' || returnUrl === 'dashboard.html') {
       window.location.href = 'dashboard.html';
       return;
     }
-    const returnTo = returnUrl && ALLOWED_RETURN_PAGES.includes(returnUrl) ? returnUrl : null;
-    if (returnTo && returnTo !== 'dashboard_public_firebase.html') {
+    const rawRet = returnUrl && String(returnUrl).trim() ? pageFilename(String(returnUrl)) : '';
+    const returnTo =
+      rawRet && ALLOWED_RETURN_PAGES.includes(rawRet) && !isPublicDashboardPage(rawRet) ? rawRet : null;
+    if (returnTo) {
       window.location.href = returnTo;
       return;
     }
@@ -366,15 +377,23 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
   }
 
   if (isFunder) {
+    const raw = returnUrl && String(returnUrl).trim() ? pageFilename(String(returnUrl)) : '';
     const target =
-      returnUrl && safeFunderReturn(returnUrl)
-        ? returnUrl
-        : pages.find((p) => ALLOWED_RETURN_PAGES.includes(p) && p !== 'admin.html') || null;
+      raw && safeFunderReturn(raw) ? raw : firstFunderTarget();
     if (target) {
       window.location.href = target;
       return;
     }
-    window.location.href = 'dashboard_public_firebase.html';
+    const auth = window.firebasePortal?.auth;
+    const so = window.firebasePortal?.signOut;
+    const goLogin = () => {
+      window.location.replace('login.html?no_tool_access=1');
+    };
+    if (auth && so) {
+      Promise.resolve(so(auth)).then(goLogin).catch(goLogin);
+    } else {
+      goLogin();
+    }
     return;
   }
 
@@ -405,6 +424,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
 
 function getCurrentPageForReturn() {
   const name = (window.location.pathname || '').split('/').pop() || '';
+  if (!name || isPublicDashboardPage(name)) return '';
   return ALLOWED_RETURN_PAGES.includes(name) ? name : '';
 }
 
@@ -496,6 +516,7 @@ window.AuthPortal = {
   canonicalPortalPageName,
   normalizeFunderPagePath,
   normalizeAllowedPagesList,
+  isPublicDashboardPage,
   FUNDER_PAGE_OPTIONS,
   ALLOWED_RETURN_PAGES,
   PORTAL_PUBLIC_HOME,
