@@ -8,23 +8,23 @@ const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI. */
 const FUNDER_PAGE_OPTIONS = [
-  // { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
-  // { value: 'map-users.html', label: 'Wildlife map (viewer)' },
+  { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
+  { value: 'map-users.html', label: 'Wildlife map (viewer)' },
   { value: 'dashboard_all_data.html', label: 'Wildlife map — all data' },
-  // { value: 'dashboard.html', label: 'Dashboard (shell)' },
-  // { value: 'firebasemap.html', label: 'Firebase map' },
-  // { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
+  { value: 'dashboard.html', label: 'Dashboard (shell)' },
+  { value: 'firebasemap.html', label: 'Firebase map' },
+  { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
   { value: 'vehicle-tracker.html', label: 'Vehicle tracker' },
   { value: 'ngamiland-lucis.html', label: 'Ngamiland LUCIS' },
   { value: 'hec.html', label: 'HEC' },
   { value: 'land_use_conflict.html', label: 'Land use conflict' },
   { value: 'lightmap_100m.html', label: 'Light map (100 m)' },
   { value: 'corridor_monitoring.html', label: 'Corridor monitoring' },
-  { value: 'corridor-mon2.html', label: 'Corridor monitoring (GCS + AGOL)' },
-  // { value: 'road_crossings_firebase.html', label: 'Road crossings (Firebase)' },
-  // { value: 'map.html', label: 'Map (legacy)' },
+  { value: 'corridor_monitoring_agol.html', label: 'Corridor monitoring (GCS + AGOL)' },
+  { value: 'road_crossings_firebase.html', label: 'Road crossings (Firebase)' },
+  { value: 'map.html', label: 'Map (legacy)' },
   { value: 'meeting-reports.html', label: 'Meeting reports' },
-  // { value: 'user-submissions.html', label: 'User submissions' }
+  { value: 'user-submissions.html', label: 'User submissions' }
 ];
 
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
@@ -265,6 +265,44 @@ function canAccessPage(role, page) {
   return true;
 }
 
+/** Map stored Firestore paths (e.g. kaza/foo.html) to canonical FUNDER_PAGE_OPTIONS values. */
+function normalizeFunderPagePath(stored) {
+  if (typeof stored !== 'string' || !stored) return null;
+  const trimmed = stored.trim();
+  if (ALLOWED_RETURN_PAGES.includes(trimmed)) return trimmed;
+  const base = trimmed.split('/').pop().split('?')[0].split('#')[0];
+  if (ALLOWED_RETURN_PAGES.includes(base)) return base;
+  return null;
+}
+
+function normalizeAllowedPagesList(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const p of raw) {
+    const n = normalizeFunderPagePath(p);
+    if (n && !seen.has(n)) {
+      seen.add(n);
+      out.push(n);
+    }
+  }
+  return out;
+}
+
+/** If auth UI removed auth-overlay before listeners ran, still unblock the page after full load. */
+window.addEventListener('load', () => {
+  const authEl = document.getElementById('auth-overlay');
+  if (authEl) {
+    console.warn('[AuthPortal] Removing auth-overlay at window load (stuck guard)');
+    authEl.remove();
+    window.dispatchEvent(new CustomEvent('authReady'));
+  }
+  const lm = document.getElementById('lightmapLoading');
+  if (lm && !lm.classList.contains('hidden')) {
+    lm.classList.add('hidden');
+  }
+});
+
 window.AuthPortal = {
   waitForFirebase,
   getUserRole,
@@ -278,6 +316,8 @@ window.AuthPortal = {
   canAccessPage,
   canAccessAdminToolPage,
   canAccessPortalPage,
+  normalizeFunderPagePath,
+  normalizeAllowedPagesList,
   FUNDER_PAGE_OPTIONS,
   ALLOWED_RETURN_PAGES
 };
