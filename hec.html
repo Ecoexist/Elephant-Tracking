@@ -11,9 +11,13 @@
     <script>
       (async function() {
         try {
-          await window.AuthPortal.checkAuthAndRedirect(false);
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'hec.html');
+          if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'hec.html')) {
+            window.location.replace('dashboard_public_firebase.html');
+            return;
+          }
         } catch (e) {
-          window.location.replace('login.html');
+          window.location.replace('login.html?return=hec.html');
           return;
         }
         document.getElementById('auth-overlay')?.remove();
