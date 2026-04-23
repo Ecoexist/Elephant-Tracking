@@ -75,6 +75,7 @@ function canonicalPortalPageName(page) {
 
 /** Sidebar links for app shell pages (corridor / lightmap layout). Order = display order. */
 const SIDEBAR_NAV_ITEMS = [
+  { href: 'dashboard_public_firebase.html', label: 'Overview', pageKey: 'dashboard_public_firebase.html', htmlLabel: false },
   { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false },
   { href: 'vehicle-tracker.html', label: 'Vehicle Tracker', pageKey: 'vehicle-tracker.html', htmlLabel: false },
   { href: 'dashboard_all_data.html', label: 'Wildlife Map', pageKey: 'dashboard_all_data.html', htmlLabel: false },
@@ -114,6 +115,27 @@ function canAccessPortalPage(role, allowedPages, page) {
   return allowedSet.has(canon);
 }
 
+async function waitForNavContainer(selector, timeoutMs) {
+  const max = timeoutMs != null ? timeoutMs : 8000;
+  const start = Date.now();
+  while (Date.now() - start < max) {
+    const el = document.querySelector(selector);
+    if (el) return el;
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  return null;
+}
+
+function ribbonButtonStyle(pageKey) {
+  if (pageKey === 'dashboard_all_data.html') {
+    return 'background: #2c5530; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+  }
+  if (pageKey === 'vehicle-tracker.html') {
+    return 'background: #8e44ad; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+  }
+  return 'background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+}
+
 function canAccessAdminToolPage(role, allowedPages, page) {
   return canAccessPortalPage(role, allowedPages, page);
 }
@@ -127,8 +149,12 @@ async function applySidebarNavForUser(options = {}) {
     if (!access) return;
     const { role, allowedPages } = access;
     const currentPage = options.currentPage || pageFilename(window.location.pathname || '');
-    const nav = document.querySelector(options.navSelector || '.app-sidebar-nav');
-    if (!nav) return;
+    const navSelector = options.navSelector || '.app-sidebar-nav';
+    const nav = (await waitForNavContainer(navSelector, options.waitMs)) || document.querySelector(navSelector);
+    if (!nav) {
+      console.warn('applySidebarNavForUser: nav not found', navSelector);
+      return;
+    }
     nav.innerHTML = '';
     for (const item of SIDEBAR_NAV_ITEMS) {
       if (!canAccessPortalPage(role, allowedPages, item.pageKey)) continue;
@@ -155,6 +181,58 @@ async function applySidebarNavForUser(options = {}) {
   } catch (e) {
     console.warn('applySidebarNavForUser:', e);
   }
+}
+
+/** Top ribbon pages (HEC, Ngamiland LUCIS, etc.): `#portal-ribbon-nav` */
+async function applyRibbonNavForUser(options = {}) {
+  try {
+    await waitForFirebase();
+    const u = window.firebasePortal?.auth?.currentUser;
+    if (!u) return;
+    const access = await getUserAccess(u.uid);
+    if (!access) return;
+    const { role, allowedPages } = access;
+    const currentPage = options.currentPage || pageFilename(window.location.pathname || '');
+    const ribbonSelector = options.ribbonSelector || '#portal-ribbon-nav';
+    const host = (await waitForNavContainer(ribbonSelector, options.waitMs)) || document.querySelector(ribbonSelector);
+    if (!host) {
+      console.warn('applyRibbonNavForUser: container not found', ribbonSelector);
+      return;
+    }
+    host.innerHTML = '';
+    for (const item of SIDEBAR_NAV_ITEMS) {
+      if (!canAccessPortalPage(role, allowedPages, item.pageKey)) continue;
+      const a = document.createElement('a');
+      a.href = item.href;
+      a.className = 'submit-data-btn';
+      a.style.cssText = ribbonButtonStyle(item.pageKey);
+      if (item.htmlLabel) a.innerHTML = 'Light map (100&nbsp;m)';
+      else a.textContent = item.label;
+      if (canonicalPortalPageName(currentPage) === canonicalPortalPageName(item.pageKey)) {
+        a.style.boxShadow = 'inset 0 0 0 2px #fff';
+      }
+      host.appendChild(a);
+    }
+    const so = document.createElement('a');
+    so.href = '#';
+    so.className = 'submit-data-btn';
+    so.style.cssText = ribbonButtonStyle('signout');
+    so.textContent = 'Sign Out';
+    so.onclick = function () {
+      window.firebasePortal?.signOut?.(window.firebasePortal.auth).then(() => {
+        location.href = 'login.html';
+      });
+      return false;
+    };
+    host.appendChild(so);
+  } catch (e) {
+    console.warn('applyRibbonNavForUser:', e);
+  }
+}
+
+async function applyPortalNavigation(options = {}) {
+  await applySidebarNavForUser(options);
+  await applyRibbonNavForUser(options);
 }
 
 async function waitForFirebase(timeoutMs = 10000) {
@@ -413,6 +491,8 @@ window.AuthPortal = {
   canAccessPortalPage,
   getAccessiblePortalPages,
   applySidebarNavForUser,
+  applyRibbonNavForUser,
+  applyPortalNavigation,
   canonicalPortalPageName,
   normalizeFunderPagePath,
   normalizeAllowedPagesList,
