@@ -902,7 +902,15 @@
             }
         });
 
+        function detachEditFunderListener() {
+            if (typeof window.__editFunderPagesUnsub === 'function') {
+                try { window.__editFunderPagesUnsub(); } catch (e) { /* ignore */ }
+                window.__editFunderPagesUnsub = null;
+            }
+        }
+
         async function openEditModal(btn) {
+            detachEditFunderListener();
             const userId = btn.getAttribute('data-user-id') || '';
             const name = btn.getAttribute('data-name') || '';
             const role = btn.getAttribute('data-role') || 'user';
@@ -912,18 +920,41 @@
             document.getElementById('edit-user-role').value = role;
             document.getElementById('edit-user-password').value = '';
             toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
-            let pages = [];
-            if (userId && window.firebasePortal && window.firebasePortal.getDoc) {
+            const applyPagesToForm = function (rawPages) {
+                const norm = window.AuthPortal && window.AuthPortal.normalizeAllowedPagesList
+                    ? window.AuthPortal.normalizeAllowedPagesList(rawPages)
+                    : (Array.isArray(rawPages) ? rawPages : []);
+                if (document.getElementById('edit-user-role').value === 'funder') {
+                    buildFunderPageCheckboxes('edit-funder-pages', norm);
+                }
+            };
+            if (userId && window.firebasePortal && window.firebasePortal.onSnapshot) {
+                const { db, doc, onSnapshot } = window.firebasePortal;
+                const ref = doc(db, 'users', userId);
+                window.__editFunderPagesUnsub = onSnapshot(ref, function (snap) {
+                    var raw = [];
+                    if (snap.exists()) {
+                        var d = snap.data();
+                        if (Array.isArray(d.allowedPages)) raw = d.allowedPages;
+                    }
+                    applyPagesToForm(raw);
+                });
+            } else if (userId && window.firebasePortal && window.firebasePortal.getDoc) {
                 try {
                     const { db, doc, getDoc } = window.firebasePortal;
                     const snap = await getDoc(doc(db, 'users', userId));
+                    var rawOne = [];
                     if (snap.exists()) {
-                        const d = snap.data();
-                        if (Array.isArray(d.allowedPages)) pages = d.allowedPages;
+                        var d0 = snap.data();
+                        if (Array.isArray(d0.allowedPages)) rawOne = d0.allowedPages;
                     }
-                } catch (e) { /* ignore */ }
+                    applyPagesToForm(rawOne);
+                } catch (e) {
+                    buildFunderPageCheckboxes('edit-funder-pages', []);
+                }
+            } else {
+                buildFunderPageCheckboxes('edit-funder-pages', []);
             }
-            buildFunderPageCheckboxes('edit-funder-pages', pages);
             document.getElementById('edit-revoke-btn').style.display = status === 'active' ? 'inline-block' : 'none';
             document.getElementById('edit-revoke-btn').onclick = () => { revokeUser(userId).then(() => closeEditModal()); };
             document.getElementById('edit-restore-btn').style.display = status === 'revoked' ? 'inline-block' : 'none';
@@ -931,10 +962,33 @@
             document.getElementById('edit-user-modal').classList.add('show');
         }
 
-        function closeEditModal() { document.getElementById('edit-user-modal').classList.remove('show'); }
+        function closeEditModal() {
+            detachEditFunderListener();
+            document.getElementById('edit-user-modal').classList.remove('show');
+        }
 
         document.getElementById('edit-user-role').addEventListener('change', function () {
             toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
+            if (this.value === 'funder') {
+                const uid = document.getElementById('edit-user-id').value;
+                if (uid && window.firebasePortal && window.firebasePortal.getDoc) {
+                    (async function () {
+                        try {
+                            const { db, doc, getDoc } = window.firebasePortal;
+                            const snap = await getDoc(doc(db, 'users', uid));
+                            var raw = [];
+                            if (snap.exists()) {
+                                var d = snap.data();
+                                if (Array.isArray(d.allowedPages)) raw = d.allowedPages;
+                            }
+                            const norm = window.AuthPortal.normalizeAllowedPagesList(raw);
+                            buildFunderPageCheckboxes('edit-funder-pages', norm);
+                        } catch (e) {
+                            buildFunderPageCheckboxes('edit-funder-pages', []);
+                        }
+                    })();
+                }
+            }
         });
 
         document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
@@ -963,8 +1017,21 @@
                 const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ role }) });
                 const data = await response.json();
                 if (data.success) {
-                    await syncUserRoleAndPagesToFirestore(userId, role, role === 'funder' ? [] : []);
-                    showAlert('dashboard-alert', 'Role updated' + (role === 'funder' ? ' — open Edit to choose pages' : ''), 'success');
+                    let pagesForSync = [];
+                    if (role === 'funder' && window.firebasePortal && window.firebasePortal.getDoc) {
+                        try {
+                            const { db, doc, getDoc } = window.firebasePortal;
+                            const snap = await getDoc(doc(db, 'users', userId));
+                            if (snap.exists()) {
+                                const d = snap.data();
+                                if (Array.isArray(d.allowedPages)) {
+                                    pagesForSync = window.AuthPortal.normalizeAllowedPagesList(d.allowedPages);
+                                }
+                            }
+                        } catch (e) { /* keep [] */ }
+                    }
+                    await syncUserRoleAndPagesToFirestore(userId, role, role === 'funder' ? pagesForSync : []);
+                    showAlert('dashboard-alert', 'Role updated' + (role === 'funder' ? ' — use Edit to change page access' : ''), 'success');
                 } else { showAlert('dashboard-alert', data.message || 'Failed to update role', 'danger'); loadUserManagementData(); }
             } catch (error) { showAlert('dashboard-alert', 'Failed to update role', 'danger'); loadUserManagementData(); }
         }
