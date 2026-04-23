@@ -232,14 +232,18 @@
           var overlay = document.getElementById('auth-overlay');
           if (overlay) overlay.remove();
           window.dispatchEvent(new CustomEvent('authReady'));
-          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
-            window.AuthPortal.applySidebarNavForUser({ currentPage: 'corridor_monitoring.html' });
-          }
           if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'corridor_monitoring.html' }).catch(function (e) {
+              console.warn(e);
+            });
+          }
         }
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', doInit);
-        } else { doInit(); }
+        } else {
+          doInit();
+        }
       })();
     </script>
 </head>
