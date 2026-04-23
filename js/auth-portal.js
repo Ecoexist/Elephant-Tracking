@@ -28,11 +28,18 @@ const FUNDER_PAGE_OPTIONS = [
 
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
-/** Public wildlife dashboard URL (no login). Never use as a post-login redirect target. */
-const PORTAL_PUBLIC_HOME = 'dashboard_public_firebase.html';
-
-function isPublicDashboardPage(page) {
-  return canonicalPortalPageName(page) === PORTAL_PUBLIC_HOME;
+/**
+ * Public marketing entry is index (no auth). Never use it in role-based redirects or ?return= after login.
+ * Legacy `dashboard_public*` pages are not valid post-login targets (bookmarks / referrers ignored).
+ */
+function sanitizeRoleRedirectTarget(raw) {
+  if (raw == null || raw === '') return null;
+  const name = pageFilename(String(raw).trim());
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower === 'index' || lower === 'index.html') return null;
+  if (lower.startsWith('dashboard_public')) return null;
+  return name;
 }
 
 /** Default tool pages for role `user` (Firestore role). */
@@ -91,9 +98,7 @@ const SIDEBAR_NAV_ITEMS = [
 ];
 
 function getAccessiblePortalPages(role, allowedPages) {
-  const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []).filter(
-    (p) => !isPublicDashboardPage(p)
-  );
+  const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []);
   if (role === 'admin') {
     return [...new Set(SIDEBAR_NAV_ITEMS.map((i) => i.pageKey))];
   }
@@ -349,25 +354,33 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
   const isAdmin = role === 'admin';
   const isFunder = role === 'funder';
 
-  const safeFunderReturn = (u) =>
-    u &&
-    !isPublicDashboardPage(u) &&
-    ALLOWED_RETURN_PAGES.includes(u) &&
-    u !== 'admin.html' &&
-    pages.includes(u);
+  const safeFunderReturn = (u) => {
+    const t = sanitizeRoleRedirectTarget(u);
+    return !!(
+      t &&
+      ALLOWED_RETURN_PAGES.includes(t) &&
+      t !== 'admin.html' &&
+      pages.includes(t)
+    );
+  };
 
-  const firstFunderTarget = () =>
-    pages.find((p) => ALLOWED_RETURN_PAGES.includes(p) && p !== 'admin.html' && !isPublicDashboardPage(p)) ||
-    null;
+  const firstFunderTarget = () => {
+    for (const p of pages) {
+      const t = sanitizeRoleRedirectTarget(p);
+      if (t && ALLOWED_RETURN_PAGES.includes(t) && t !== 'admin.html') return t;
+    }
+    return null;
+  };
 
   if (isAdmin) {
     if (returnUrl === 'firebasemap.html' || returnUrl === 'dashboard.html') {
       window.location.href = 'dashboard.html';
       return;
     }
-    const rawRet = returnUrl && String(returnUrl).trim() ? pageFilename(String(returnUrl)) : '';
-    const returnTo =
-      rawRet && ALLOWED_RETURN_PAGES.includes(rawRet) && !isPublicDashboardPage(rawRet) ? rawRet : null;
+    const returnTo = (() => {
+      const t = sanitizeRoleRedirectTarget(returnUrl);
+      return t && ALLOWED_RETURN_PAGES.includes(t) ? t : null;
+    })();
     if (returnTo) {
       window.location.href = returnTo;
       return;
@@ -377,9 +390,8 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
   }
 
   if (isFunder) {
-    const raw = returnUrl && String(returnUrl).trim() ? pageFilename(String(returnUrl)) : '';
-    const target =
-      raw && safeFunderReturn(raw) ? raw : firstFunderTarget();
+    const raw = sanitizeRoleRedirectTarget(returnUrl);
+    const target = raw && safeFunderReturn(raw) ? raw : firstFunderTarget();
     if (target) {
       window.location.href = target;
       return;
@@ -398,8 +410,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
   }
 
   if (role === 'viewer') {
-    const raw = returnUrl ? String(returnUrl).trim() : '';
-    const name = raw ? pageFilename(raw) : '';
+    const name = sanitizeRoleRedirectTarget(returnUrl);
     if (name && canAccessPortalPage(role, pages, name)) {
       window.location.href = name;
     } else {
@@ -409,8 +420,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
   }
 
   if (role === 'user') {
-    const raw = returnUrl ? String(returnUrl).trim() : '';
-    const name = raw ? pageFilename(raw) : '';
+    const name = sanitizeRoleRedirectTarget(returnUrl);
     if (name && canAccessPortalPage(role, pages, name)) {
       window.location.href = name;
     } else {
@@ -424,8 +434,9 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
 
 function getCurrentPageForReturn() {
   const name = (window.location.pathname || '').split('/').pop() || '';
-  if (!name || isPublicDashboardPage(name)) return '';
-  return ALLOWED_RETURN_PAGES.includes(name) ? name : '';
+  const t = sanitizeRoleRedirectTarget(name);
+  if (!t) return '';
+  return ALLOWED_RETURN_PAGES.includes(t) ? t : '';
 }
 
 async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
@@ -442,8 +453,9 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
           const access = await getUserAccess(userAgain.uid);
           if (access) {
             if (isLoginPage) {
-              const returnTo = new URLSearchParams(window.location.search).get('return');
-              redirectByRole(access.role, returnTo || document.referrer, access.allowedPages);
+              const q = new URLSearchParams(window.location.search).get('return');
+              const returnTo = sanitizeRoleRedirectTarget(q) || sanitizeRoleRedirectTarget(document.referrer);
+              redirectByRole(access.role, returnTo, access.allowedPages);
             } else {
               resolve({ user: userAgain, role: access.role, allowedPages: access.allowedPages });
             }
@@ -452,7 +464,7 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
         }
         if (isLoginPage) resolve(null);
         else {
-          const ret = returnPage || getCurrentPageForReturn();
+          const ret = sanitizeRoleRedirectTarget(returnPage) || getCurrentPageForReturn();
           window.location.replace(ret ? 'login.html?return=' + encodeURIComponent(ret) : 'login.html');
         }
         return;
@@ -462,14 +474,15 @@ async function checkAuthAndRedirect(isLoginPage = false, returnPage = null) {
         await auth.signOut();
         if (isLoginPage) resolve(null);
         else {
-          const ret = returnPage || getCurrentPageForReturn();
+          const ret = sanitizeRoleRedirectTarget(returnPage) || getCurrentPageForReturn();
           window.location.replace(ret ? 'login.html?return=' + encodeURIComponent(ret) : 'login.html');
         }
         return;
       }
       if (isLoginPage) {
-        const returnTo = new URLSearchParams(window.location.search).get('return');
-        redirectByRole(access.role, returnTo || document.referrer, access.allowedPages);
+        const q = new URLSearchParams(window.location.search).get('return');
+        const returnTo = sanitizeRoleRedirectTarget(q) || sanitizeRoleRedirectTarget(document.referrer);
+        redirectByRole(access.role, returnTo, access.allowedPages);
       } else {
         resolve({ user, role: access.role, allowedPages: access.allowedPages });
       }
@@ -516,10 +529,9 @@ window.AuthPortal = {
   canonicalPortalPageName,
   normalizeFunderPagePath,
   normalizeAllowedPagesList,
-  isPublicDashboardPage,
+  sanitizeRoleRedirectTarget,
   FUNDER_PAGE_OPTIONS,
   ALLOWED_RETURN_PAGES,
-  PORTAL_PUBLIC_HOME,
   USER_ROLE_DEFAULT_PAGES,
   VIEWER_ROLE_DEFAULT_PAGES
 };
