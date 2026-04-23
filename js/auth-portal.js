@@ -29,7 +29,7 @@ const FUNDER_PAGE_OPTIONS = [
 
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
-const PORTAL_PUBLIC_HOME = 'dashboard_public_firebase.html';
+// const PORTAL_PUBLIC_HOME = 'dashboard_public_firebase.html';
 
 /** Default tool pages for role `user` (Firestore role). */
 const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
