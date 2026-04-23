@@ -220,7 +220,7 @@
       (async function() {
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring.html');
-          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'corridor_monitoring.html')) {
+          if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'corridor_monitoring.html')) {
             window.location.replace('dashboard_public_firebase.html');
             return;
           }
@@ -232,6 +232,9 @@
           var overlay = document.getElementById('auth-overlay');
           if (overlay) overlay.remove();
           window.dispatchEvent(new CustomEvent('authReady'));
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'corridor_monitoring.html' });
+          }
           if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
         }
         if (document.readyState === 'loading') {
