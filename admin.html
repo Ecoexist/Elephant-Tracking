@@ -13,7 +13,7 @@
         try {
           const session = await window.AuthPortal.checkAuthAndRedirect(false);
           if (session.role !== 'admin') {
-            (window.top !== window ? window.top : window).location.href = 'dashboard_public_firebase.html';
+            (window.top !== window ? window.top : window).location.replace('login.html');
             return;
           }
         } catch (e) {
