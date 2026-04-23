@@ -8,12 +8,12 @@ const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI. */
 const FUNDER_PAGE_OPTIONS = [
-  { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
-  { value: 'map-users.html', label: 'Wildlife map (viewer)' },
+  // { value: 'dashboard_public_firebase.html', label: 'Public wildlife dashboard' },
+  // { value: 'map-users.html', label: 'Wildlife map (viewer)' },
   { value: 'dashboard_all_data.html', label: 'Wildlife map — all data' },
   { value: 'dashboard.html', label: 'Dashboard (shell)' },
-  { value: 'firebasemap.html', label: 'Firebase map' },
-  { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
+  // { value: 'firebasemap.html', label: 'Firebase map' },
+  // { value: 'firebasemap_1.html', label: 'Firebase map (alt)' },
   { value: 'vehicle-tracker.html', label: 'Vehicle tracker' },
   { value: 'ngamiland-lucis.html', label: 'Ngamiland LUCIS' },
   { value: 'hec.html', label: 'HEC' },
