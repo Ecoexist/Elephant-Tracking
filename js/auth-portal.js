@@ -75,7 +75,7 @@ function canonicalPortalPageName(page) {
 
 /** Sidebar links for app shell pages (corridor / lightmap layout). Order = display order. */
 const SIDEBAR_NAV_ITEMS = [
-  { href: 'dashboard_public_firebase.html', label: 'Overview', pageKey: 'dashboard_public_firebase.html', htmlLabel: false },
+  // { href: 'dashboard_public_firebase.html', label: 'Overview', pageKey: 'dashboard_public_firebase.html', htmlLabel: false },
   { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false },
   { href: 'vehicle-tracker.html', label: 'Vehicle Tracker', pageKey: 'vehicle-tracker.html', htmlLabel: false },
   { href: 'dashboard_all_data.html', label: 'Wildlife Map', pageKey: 'dashboard_all_data.html', htmlLabel: false },
