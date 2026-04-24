@@ -35,7 +35,7 @@ const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
 
 /** Default tool pages for role `viewer`. */
-const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'dashboard_all_data.html'];
+const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'vehicle-tracker.html'];
 
 function pageFilename(page) {
   if (typeof page !== 'string') return '';
