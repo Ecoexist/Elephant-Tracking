@@ -34,8 +34,11 @@ const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 /** Default tool pages for role `user` (Firestore role). */
 const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
 
-/** Default tool pages for role `viewer`. */
-const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'vehicle-tracker.html'];
+/**
+ * Default tools for role `viewer`. Cumulative wildlife map (dashboard_all_data) is not included:
+ * /api/awt-data allows only admin, funder, user — same rule here.
+ */
+const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html'];
 
 function pageFilename(page) {
   if (typeof page !== 'string') return '';
@@ -123,7 +126,9 @@ function getAccessiblePortalPages(role, allowedPages) {
     return [...USER_ROLE_DEFAULT_PAGES];
   }
   if (r === 'viewer') {
-    return [...VIEWER_ROLE_DEFAULT_PAGES];
+    const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []);
+    const merged = [...new Set([...VIEWER_ROLE_DEFAULT_PAGES, ...norm])];
+    return merged.filter((p) => p !== 'dashboard_all_data.html');
   }
   return [...VIEWER_ROLE_DEFAULT_PAGES];
 }
@@ -439,7 +444,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'lightmap_100.html';
+      window.location.href = 'lightmap_100m.html';
     }
     return;
   }
