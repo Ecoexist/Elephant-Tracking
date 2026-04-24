@@ -439,7 +439,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'dashboard_all_data.html';
+      window.location.href = 'lightmap_100.html';
     }
     return;
   }
