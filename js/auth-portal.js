@@ -32,13 +32,13 @@ const FUNDER_PAGE_OPTIONS = [
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
 /** Default tool pages for role `user` (Firestore role). */
-const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
+const USER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
 
 /**
  * Default tools for role `viewer`. Cumulative wildlife map (dashboard_all_data) is not included:
  * /api/awt-data allows only admin, funder, user — same rule here.
  */
-const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html', 'corridor_monitoring.html'];
+const VIEWER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html'];
 
 function pageFilename(page) {
   if (typeof page !== 'string') return '';
