@@ -13,7 +13,7 @@
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'hec.html');
           if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'hec.html')) {
-            window.location.replace('dashboard_public_firebase.html');
+            window.location.replace('login.html?return=hec.html');
             return;
           }
         } catch (e) {
