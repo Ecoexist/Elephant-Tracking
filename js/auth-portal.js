@@ -3,7 +3,8 @@
  * - Email PIN login (same as PWA)
  * - Roles: admin, funder (page-scoped), viewer/user
  *
- * Portal page lists live here only. road-crossings-process.js duplicates these page lists for Bearer checks; awt-data uses Firestore roles (admin, user, viewer, funder).
+ * Portal page lists live here only. awt-data.js and road-crossings-process.js allow Firebase Bearer for Firestore roles admin, funder, and user only (not viewer).
+ * PORTAL_NAV_ITEMS drives sidebars/ribbons; applySidebarNavForUser / applyRibbonNavForUser show only pages the role may access (admin: all; funder: allowedPages; user/viewer: defaults).
  */
 
 const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
@@ -40,6 +41,29 @@ function pageFilename(page) {
   if (typeof page !== 'string') return '';
   return page.split('/').pop().split('?')[0].split('#')[0];
 }
+
+function portalRole(role) {
+  return String(role || '').trim().toLowerCase();
+}
+
+function portalHrefForPageKey(pageKey) {
+  if (pageKey === 'land_use_conflict.html') return 'kaza/land_use_conflict.html';
+  return pageKey;
+}
+
+/** Full tool nav (admin + all grantable tools). Used for sidebars and top ribbons; filtered by role. */
+const PORTAL_NAV_ITEMS = [
+  { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false },
+  ...FUNDER_PAGE_OPTIONS.map((o) => ({
+    href: portalHrefForPageKey(o.value),
+    label: o.label,
+    pageKey: o.value,
+    htmlLabel: o.value === 'lightmap_100m.html'
+  }))
+];
+
+/** @deprecated alias */
+const SIDEBAR_NAV_ITEMS = PORTAL_NAV_ITEMS;
 
 /**
  * Public marketing entry is index (no auth). Never use it in role-based redirects or ?return= after login.
@@ -86,38 +110,26 @@ function canonicalPortalPageName(page) {
   return pageFilename(page);
 }
 
-/** Sidebar links for app shell pages (corridor / lightmap layout). Order = display order. */
-const SIDEBAR_NAV_ITEMS = [
-  { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false },
-  { href: 'vehicle-tracker.html', label: 'Vehicle Tracker', pageKey: 'vehicle-tracker.html', htmlLabel: false },
-  { href: 'dashboard_all_data.html', label: 'Wildlife Map', pageKey: 'dashboard_all_data.html', htmlLabel: false },
-  { href: 'corridor_monitoring.html', label: 'Corridor monitoring', pageKey: 'corridor_monitoring.html', htmlLabel: false },
-  { href: 'corridor_monitoring_agol.html', label: 'Corridor (AGOL)', pageKey: 'corridor_monitoring_agol.html', htmlLabel: false },
-  { href: 'lightmap_100m.html', label: 'Light map (100 m)', pageKey: 'lightmap_100m.html', htmlLabel: true },
-  { href: 'ngamiland-lucis.html', label: 'Ngamiland LUCIS', pageKey: 'ngamiland-lucis.html', htmlLabel: false },
-  { href: 'hec.html', label: 'HEC', pageKey: 'hec.html', htmlLabel: false },
-  { href: 'kaza/land_use_conflict.html', label: 'Land Use Conflict', pageKey: 'land_use_conflict.html', htmlLabel: false }
-];
-
 function getAccessiblePortalPages(role, allowedPages) {
+  const r = portalRole(role);
   const norm = normalizeAllowedPagesList(Array.isArray(allowedPages) ? allowedPages : []);
-  if (role === 'admin') {
-    return [...new Set(SIDEBAR_NAV_ITEMS.map((i) => i.pageKey))];
+  if (r === 'admin') {
+    return PORTAL_NAV_ITEMS.map((i) => i.pageKey);
   }
-  if (role === 'funder') {
+  if (r === 'funder') {
     return [...norm];
   }
-  if (role === 'user') {
+  if (r === 'user') {
     return [...USER_ROLE_DEFAULT_PAGES];
   }
-  if (role === 'viewer') {
+  if (r === 'viewer') {
     return [...VIEWER_ROLE_DEFAULT_PAGES];
   }
   return [...VIEWER_ROLE_DEFAULT_PAGES];
 }
 
 function canAccessPortalPage(role, allowedPages, page) {
-  if (role === 'admin') return true;
+  if (portalRole(role) === 'admin') return true;
   const canon = canonicalPortalPageName(page);
   if (canon === 'admin.html') return false;
   const allowedSet = new Set(
@@ -138,13 +150,23 @@ async function waitForNavContainer(selector, timeoutMs) {
 }
 
 function ribbonButtonStyle(pageKey) {
-  if (pageKey === 'dashboard_all_data.html') {
-    return 'background: #2c5530; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+  const base = 'padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+  if (pageKey === 'dashboard_all_data.html' || pageKey === 'firebasemap.html') {
+    return 'background: #2c5530; ' + base;
   }
   if (pageKey === 'vehicle-tracker.html') {
-    return 'background: #8e44ad; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+    return 'background: #8e44ad; ' + base;
   }
-  return 'background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px; color: #fff;';
+  if (pageKey === 'firebasemap_1.html' || pageKey === 'road_crossings_firebase.html') {
+    return 'background: #555; ' + base;
+  }
+  if (pageKey === 'map.html') {
+    return 'background: #3498db; ' + base;
+  }
+  if (pageKey === 'user-submissions.html') {
+    return 'background: #27ae60; ' + base;
+  }
+  return 'background: #666; ' + base;
 }
 
 function canAccessAdminToolPage(role, allowedPages, page) {
@@ -167,7 +189,7 @@ async function applySidebarNavForUser(options = {}) {
       return;
     }
     nav.innerHTML = '';
-    for (const item of SIDEBAR_NAV_ITEMS) {
+    for (const item of PORTAL_NAV_ITEMS) {
       if (!canAccessPortalPage(role, allowedPages, item.pageKey)) continue;
       const a = document.createElement('a');
       a.href = item.href;
@@ -180,12 +202,12 @@ async function applySidebarNavForUser(options = {}) {
     }
     const logo = document.querySelector(options.logoSelector || '.app-sidebar-logo');
     if (logo) {
-      if (role === 'admin') {
+      if (portalRole(role) === 'admin') {
         logo.href = 'dashboard_all_data.html';
       } else if (canAccessPortalPage(role, allowedPages, 'dashboard_all_data.html')) {
         logo.href = 'dashboard_all_data.html';
       } else {
-        const first = SIDEBAR_NAV_ITEMS.find((item) => canAccessPortalPage(role, allowedPages, item.pageKey));
+        const first = PORTAL_NAV_ITEMS.find((item) => canAccessPortalPage(role, allowedPages, item.pageKey));
         logo.href = first ? first.href : '#';
       }
     }
@@ -211,7 +233,7 @@ async function applyRibbonNavForUser(options = {}) {
       return;
     }
     host.innerHTML = '';
-    for (const item of SIDEBAR_NAV_ITEMS) {
+    for (const item of PORTAL_NAV_ITEMS) {
       if (!canAccessPortalPage(role, allowedPages, item.pageKey)) continue;
       const a = document.createElement('a');
       a.href = item.href;
@@ -353,8 +375,9 @@ async function signInWithPin(email, pin) {
 
 function redirectByRole(role, returnUrl, allowedPages = []) {
   const pages = Array.isArray(allowedPages) ? allowedPages : [];
-  const isAdmin = role === 'admin';
-  const isFunder = role === 'funder';
+  const r = portalRole(role);
+  const isAdmin = r === 'admin';
+  const isFunder = r === 'funder';
 
   const safeFunderReturn = (u) => {
     const t = sanitizeRoleRedirectTarget(u);
@@ -411,9 +434,9 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     return;
   }
 
-  if (role === 'viewer') {
+  if (r === 'viewer') {
     const name = sanitizeRoleRedirectTarget(returnUrl);
-    if (name && canAccessPortalPage(role, pages, name)) {
+    if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
       window.location.href = 'dashboard_all_data.html';
@@ -421,9 +444,9 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     return;
   }
 
-  if (role === 'user') {
+  if (r === 'user') {
     const name = sanitizeRoleRedirectTarget(returnUrl);
-    if (name && canAccessPortalPage(role, pages, name)) {
+    if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
       window.location.href = 'corridor_monitoring.html';
@@ -532,6 +555,9 @@ window.AuthPortal = {
   normalizeFunderPagePath,
   normalizeAllowedPagesList,
   sanitizeRoleRedirectTarget,
+  portalRole,
+  PORTAL_NAV_ITEMS,
+  SIDEBAR_NAV_ITEMS,
   FUNDER_PAGE_OPTIONS,
   ALLOWED_RETURN_PAGES,
   USER_ROLE_DEFAULT_PAGES,
