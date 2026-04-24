@@ -11,12 +11,26 @@
     <script>
       (async function() {
         try {
-          await window.AuthPortal.checkAuthAndRedirect(false);
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'ngamiland-lucis.html');
+          if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'ngamiland-lucis.html')) {
+            window.location.replace('login.html?return=ngamiland-lucis.html');
+            return;
+          }
         } catch (e) {
-          window.location.replace('login.html');
+          window.location.replace('login.html?return=ngamiland-lucis.html');
           return;
         }
-        document.getElementById('auth-overlay')?.remove();
+        function finish() {
+          document.getElementById('auth-overlay')?.remove();
+          if (window.AuthPortal && window.AuthPortal.applyRibbonNavForUser) {
+            window.AuthPortal.applyRibbonNavForUser({ currentPage: 'ngamiland-lucis.html' });
+          }
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', finish);
+        } else {
+          finish();
+        }
       })();
     </script>
     <link rel="stylesheet" href="styles.css" />
@@ -34,16 +48,7 @@
             <img src="data/icons/Ecoexist.svg" alt="" style="width: 48px; height: 48px; flex-shrink: 0;">
             Ngamiland LUCIS
         </h1>
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-            <a href="admin.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Admin</a>
-            <a href="vehicle-tracker.html" class="submit-data-btn" style="background: #8e44ad; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Vehicle Tracker</a>
-            <a href="dashboard_all_data.html" class="submit-data-btn" style="background: #2c5530; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Wildlife Map</a>
-            <a href="corridor_monitoring.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Corridor monitoring</a>
-            <a href="ngamiland-lucis.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Ngamiland LUCIS</a>
-            <a href="hec.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">HEC</a>
-            <a href="kaza/land_use_conflict.html" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Land Use Conflict</a>
-            <a href="#" onclick="window.firebasePortal?.signOut?.(window.firebasePortal.auth).then(()=>location.href='login.html'); return false;" class="submit-data-btn" style="background: #666; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Sign Out</a>
-        </div>
+        <div id="portal-ribbon-nav" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;"></div>
     </div>
     <div class="main-content" style="overflow: hidden;">
         <div class="embed-container">
