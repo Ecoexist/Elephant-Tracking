@@ -435,7 +435,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'he.html';
+      window.location.href = 'hec.html';
     }
     return;
   }
