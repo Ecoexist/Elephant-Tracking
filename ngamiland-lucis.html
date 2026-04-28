@@ -8,6 +8,12 @@
     <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
     <script type="module" src="js/firebase-config.js"></script>
     <script src="js/auth-portal.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        .embed-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .embed-container iframe { flex: 1; width: 100%; border: none; min-height: 600px; }
+    </style>
     <script>
       (async function() {
         try {
@@ -20,40 +26,62 @@
           window.location.replace('login.html?return=ngamiland-lucis.html');
           return;
         }
-        function finish() {
-          document.getElementById('auth-overlay')?.remove();
-          if (window.AuthPortal && window.AuthPortal.applyRibbonNavForUser) {
-            window.AuthPortal.applyRibbonNavForUser({ currentPage: 'ngamiland-lucis.html' });
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'ngamiland-lucis.html' }).catch(function (e) {
+              console.warn(e);
+            });
           }
+          if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
         }
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', finish);
+          document.addEventListener('DOMContentLoaded', doInit);
         } else {
-          finish();
+          doInit();
         }
       })();
     </script>
-    <link rel="stylesheet" href="styles.css" />
-    <style>
-        .embed-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-        .embed-container iframe { flex: 1; width: 100%; border: none; min-height: 600px; }
-    </style>
 </head>
-<body>
+<body class="app-layout-corridor">
     <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
-    <style>html.embed-mode .top-ribbon{display:none!important}html.embed-mode .main-content{margin-top:0!important}</style>
+    <style>html.embed-mode .app-sidebar,html.embed-mode .user-avatar-float,html.embed-mode .corridor-page-header{display:none!important}html.embed-mode .main-content{margin-top:0!important}</style>
     <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embed-mode');</script>
-    <div class="top-ribbon">
-        <h1 style="display: flex; align-items: center; gap: 10px;">
-            <img src="data/icons/Ecoexist.svg" alt="" style="width: 48px; height: 48px; flex-shrink: 0;">
-            Ngamiland LUCIS
-        </h1>
-        <div id="portal-ribbon-nav" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;"></div>
+
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
     </div>
-    <div class="main-content" style="overflow: hidden;">
-        <div class="embed-container">
-            <iframe src="https://ecoexist.maps.arcgis.com/apps/dashboards/ac4895422fb14fea9aef73f381aa6197" title="Ngamiland LUCIS Dashboard"></iframe>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav"></nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">Ngamiland LUCIS</h1>
+        </header>
+        <div class="main-content" style="overflow: hidden;">
+            <div class="embed-container">
+                <iframe src="https://ecoexist.maps.arcgis.com/apps/dashboards/ac4895422fb14fea9aef73f381aa6197" title="Ngamiland LUCIS Dashboard"></iframe>
+            </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/portal-app-shell.js"></script>
 </body>
 </html>
