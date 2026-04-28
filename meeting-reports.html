@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meeting reports (Kobo) — Ecoexist</title>
+    <title>Meeting reports — Ecoexist</title>
     <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
     <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
     <script type="module" src="js/firebase-config.js"></script>
@@ -12,13 +12,13 @@
     <script>
       (async function() {
         try {
-          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'meeting-reports-kobo.html');
-          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'meeting-reports-kobo.html')) {
-            window.location.replace('login.html?return=meeting-reports-kobo.html');
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'meeting-reports.html');
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'meeting-reports.html')) {
+            window.location.replace('login.html?return=meeting-reports.html');
             return;
           }
         } catch (e) {
-          window.location.replace('login.html?return=meeting-reports-kobo.html');
+          window.location.replace('login.html?return=meeting-reports.html');
           return;
         }
         function doInit() {
@@ -26,7 +26,7 @@
           if (overlay) overlay.remove();
           window.dispatchEvent(new CustomEvent('authReady'));
           if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
-            window.AuthPortal.applySidebarNavForUser({ currentPage: 'meeting-reports-kobo.html' }).catch(function (e) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'meeting-reports.html' }).catch(function (e) {
               console.warn(e);
             });
           }
@@ -94,7 +94,7 @@
 
     <div class="app-main-wrap">
         <header class="corridor-page-header">
-            <h1 class="corridor-page-heading">Meeting reports (Kobo)</h1>
+            <h1 class="corridor-page-heading">Meeting reports</h1>
         </header>
         <div class="main-content">
     <div class="table-page">
