@@ -271,9 +271,14 @@
           errEl.textContent = '';
           try {
             await window.AuthPortal.waitForFirebase();
+            if (window.AuthPortal.waitForFirestoreQueryHelpers) {
+              await window.AuthPortal.waitForFirestoreQueryHelpers();
+            }
             var fp = window.firebasePortal;
             if (!fp || !fp.db || !fp.collection || !fp.getDocs || !fp.query || !fp.limit || !fp.orderBy) {
-              throw new Error('Firestore helpers missing (reload with firebase-config module).');
+              throw new Error(
+                'Firestore helpers missing — hard-refresh the page so ecoexist-main/js/firebase-config.js loads (getDocs/query/limit/orderBy).'
+              );
             }
             var snapshot;
             try {
