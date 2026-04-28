@@ -45,13 +45,16 @@ function portalHrefForPageKey(pageKey) {
   return pageKey;
 }
 
-/** Full portal nav (same seven tools as sidebar tabs). Filtered by role. */
-const PORTAL_NAV_ITEMS = FUNDER_PAGE_OPTIONS.map((o) => ({
-  href: portalHrefForPageKey(o.value),
-  label: o.label,
-  pageKey: o.value,
-  htmlLabel: o.value === 'lightmap_100m.html'
-}));
+/** Full portal sidebar: seven tools + Admin (Admin link only for admin role; see canAccessPortalPage). */
+const PORTAL_NAV_ITEMS = [
+  ...FUNDER_PAGE_OPTIONS.map((o) => ({
+    href: portalHrefForPageKey(o.value),
+    label: o.label,
+    pageKey: o.value,
+    htmlLabel: o.value === 'lightmap_100m.html'
+  })),
+  { href: 'admin.html', label: 'Admin', pageKey: 'admin.html', htmlLabel: false }
+];
 
 /** @deprecated alias */
 const SIDEBAR_NAV_ITEMS = PORTAL_NAV_ITEMS;
