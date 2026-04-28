@@ -11,7 +11,7 @@ const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI — matches portal sidebar order. */
 const FUNDER_PAGE_OPTIONS = [
-  { value: 'dashboard_all_data.html', label: 'Dashboard all data' },
+  { value: 'dashboard_all_data.html', label: 'Elephant Movement' },
   { value: 'corridor_monitoring.html', label: 'Corridor monitoring' },
   { value: 'hec.html', label: 'HEC' },
   { value: 'lightmap_100m.html', label: 'Light map (100 m)' },
