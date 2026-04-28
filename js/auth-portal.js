@@ -29,7 +29,7 @@ const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamil
  * Default tools for role `viewer`. Cumulative wildlife map (dashboard_all_data) is not included:
  * /api/awt-data allows only admin, funder, user — same rule here.
  */
-const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html'];
+const VIEWER_ROLE_DEFAULT_PAGES = ['hec.html','ngamiland-lucis.html'];
 
 function pageFilename(page) {
   if (typeof page !== 'string') return '';
@@ -435,7 +435,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'lightmap_100m.html';
+      window.location.href = 'hec.html';
     }
     return;
   }
