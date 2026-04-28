@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Ecoexist Monitoring Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <script>
+      (async function() {
+        try {
+          const session = await window.AuthPortal.checkAuthAndRedirect(false);
+          if (window.AuthPortal.portalRole(session.role) !== 'admin') {
+            (window.top !== window ? window.top : window).location.replace('login.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html');
+          return;
+        }
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'admin.html' }).catch(function (e) {
+              console.warn(e);
+            });
+          }
+          if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else {
+          doInit();
+        }
+      })();
+    </script>
+
+    <!-- External CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Custom styles for admin page -->
+    <style>
+        .table-page {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #43512D;
+        }
+
+        .table-header h2 {
+            margin: 0;
+            color: #43512D;
+        }
+
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .table-filters {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .table-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #43512D;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .submissions-table th,
+        .submissions-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .submissions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .submissions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .submissions-table .total-column {
+            font-weight: bold;
+            color: #43512D;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .date-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-control {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .date-control label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .btn-primary {
+            background: #43512D;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary:hover {
+            background: #2c5530;
+        }
+
+        /* Admin Panel Styles */
+        .hidden {
+            display: none !important;
+        }
+
+        .login-form {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #43512D;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #43512D;
+        }
+
+        .btn {
+            background: #43512D;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #2c5530;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #43512D;
+            color: white;
+            border-color: #43512D;
+        }
+
+        .admin-tab {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #43512D;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .sortable:hover {
+            background: #e9ecef;
+        }
+
+        .sort-indicator {
+            margin-left: 5px;
+            opacity: 0.5;
+        }
+
+        .sortable.sorted .sort-indicator {
+            opacity: 1;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .funder-pages-wrap {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .funder-pages-wrap label {
+            display: block;
+            font-size: 13px;
+            margin: 4px 0;
+            cursor: pointer;
+        }
+        .funder-pages-wrap input { margin-right: 8px; }
+        .role-select {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        #edit-user-modal {
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #edit-user-modal.show {
+            display: flex !important;
+        }
+
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status.revoked {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .btn.danger { background: #e74c3c; }
+        .btn.danger:hover { background: #c0392b; }
+        .btn.success { background: #27ae60; }
+        .btn.success:hover { background: #219a52; }
+
+        .create-user-section .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+    <style>html.embed-mode .app-sidebar,html.embed-mode .user-avatar-float,html.embed-mode .corridor-page-header{display:none!important}html.embed-mode .table-page{margin-top:0!important}</style>
+    <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embed-mode');</script>
+
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
+    </div>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav"></nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <h1 class="corridor-page-heading mb-0">Admin Panel</h1>
+            <a href="https://jonobenjamin.github.io/Ecoexist_PWA/" target="_blank" rel="noopener noreferrer" class="btn btn-sm text-white px-3 py-2" style="background: linear-gradient(145deg, #526b38, #43512D); border: none;">
+                Submit Data
+            </a>
+        </header>
+
+    <div class="main-content">
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="table-page">
+        <div class="table-header">
+            <h2>Admin Dashboard</h2>
+        </div>
+
+        <div id="dashboard-alert"></div>
+
+        <!-- Admin Stats -->
+        <div class="stats" style="display: flex; gap: 20px; margin-bottom: 30px;">
+            <div class="stat-card" style="flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                <div class="stat-number" id="admin-total-users">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card" style="flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                <div class="stat-number" id="admin-active-users">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card" style="flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                <div class="stat-number" id="admin-revoked-users">0</div>
+                <div class="stat-label">Revoked Users</div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="table-controls" style="margin-bottom: 20px; padding: 15px 20px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 20px;">
+            <h3 style="margin: 0; color: #43512D; font-size: 16px;">User Submission Filter</h3>
+            <div class="table-filters">
+                <div class="date-control">
+                    <label for="filter-month">Month</label>
+                    <select id="filter-month">
+                        <option value="">All Months</option>
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="date-control">
+                    <label for="filter-year">Year</label>
+                    <select id="filter-year">
+                        <option value="">All Years</option>
+                        <option value="2020">2020</option>
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Table -->
+        <div id="users-tab" class="admin-tab">
+            <div class="table-container">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Name <span class="sort-indicator"></span></th>
+                            <th class="sortable" data-sort="email">Email/Phone <span class="sort-indicator"></span></th>
+                            <th>Role</th>
+                            <th>Password</th>
+                            <th class="sortable" data-sort="status">Status <span class="sort-indicator"></span></th>
+                            <th class="sortable" data-sort="registered">Registered <span class="sort-indicator"></span></th>
+                            <th>Last Login</th>
+                            <th class="sortable" data-sort="vehicleTrips">Vehicle Trips <span class="sort-indicator"></span></th>
+                            <th class="sortable" data-sort="corridorMonitoring">Corridor Monitoring <span class="sort-indicator"></span></th>
+                            <th class="sortable sorted" data-sort="total">Total Submissions <span class="sort-indicator">↓</span></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <!-- User data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Create User Section -->
+        <div class="create-user-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
+            <h3 style="margin: 0 0 15px 0; color: #43512D;">Create New User</h3>
+            <form id="create-user-form" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="margin: 0; min-width: 150px;">
+                    <label for="new-user-name">Name</label>
+                    <input type="text" id="new-user-name" required placeholder="Full name">
+                </div>
+                <div class="form-group" style="margin: 0; min-width: 180px;">
+                    <label for="new-user-email">Email or Phone</label>
+                    <input type="text" id="new-user-email" required placeholder="user@example.com or +1234567890">
+                </div>
+                <div class="form-group" style="margin: 0; min-width: 150px;">
+                    <label for="new-user-password">Password <span style="color: #999; font-size: 11px;">(optional)</span></label>
+                    <input type="password" id="new-user-password" minlength="6" placeholder="Optional - for admin access">
+                </div>
+                <div class="form-group" style="margin: 0; min-width: 150px;">
+                    <label for="new-user-role">Role</label>
+                    <select id="new-user-role">
+                        <option value="admin">Admin</option>
+                        <option value="funder">Funder</option>
+                        <option value="user" selected>User</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Create User</button>
+            </form>
+            <div id="new-funder-pages-wrap" class="funder-pages-wrap" style="display: none; margin-top: 12px;">
+                <strong style="font-size: 13px;">Pages this funder can open</strong>
+                <p style="font-size: 12px; color: #666; margin: 6px 0 10px 0;">Stored in Firebase (<code>users/{uid}.allowedPages</code>). Admin panel access is never granted.</p>
+                <div id="new-funder-pages"></div>
+            </div>
+            <div id="create-user-alert" style="margin-top: 10px;"></div>
+        </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background: white; padding: 30px; border-radius: 8px; max-width: 480px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin: 0 0 20px 0;">Edit User</h3>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="edit-user-name">Name</label>
+                    <input type="text" id="edit-user-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-role">Role</label>
+                    <select id="edit-user-role">
+                        <option value="admin">Admin</option>
+                        <option value="funder">Funder</option>
+                        <option value="user">User</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div id="edit-funder-pages-wrap" class="funder-pages-wrap" style="display: none;">
+                    <strong style="font-size: 13px;">Pages this funder can open</strong>
+                    <div id="edit-funder-pages" style="margin-top: 8px;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-password">New Password <span style="color: #999; font-size: 12px;">(leave blank to keep current)</span></label>
+                    <input type="password" id="edit-user-password" minlength="6" placeholder="Min 6 characters">
+                </div>
+                <div id="edit-revoke-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <button type="button" id="edit-revoke-btn" class="btn danger btn-small" style="display: none;">Revoke User</button>
+                    <button type="button" id="edit-restore-btn" class="btn success btn-small" style="display: none;">Restore User</button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn">Save Changes</button>
+                    <button type="button" class="btn" style="background: #95a5a6;" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- Bottom Ribbon -->
+    <div class="bottom-ribbon">
+        <p>© 2025 Ecoexist Monitoring | Developed by <a href="mailto:jonobenjamingis@gmail.com"> @Jonathan Benjamin</a></p>
+    </div>
+
+    </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/portal-app-shell.js"></script>
+
+    <script>
+        const API_BASE_URL = "https://ecoexist-pwa-backend.vercel.app";
+
+        /**
+         * Resolves when Firebase Auth has a signed-in user (session restored or fresh sign-in).
+         */
+        function waitForUser(timeoutMs) {
+            var maxWait = timeoutMs != null ? timeoutMs : 30000;
+            return window.AuthPortal.waitForFirebase().then(function () {
+                var auth = window.firebasePortal.auth;
+                var onAuthStateChanged = window.firebasePortal.onAuthStateChanged;
+                if (!auth || !onAuthStateChanged) {
+                    return Promise.reject(new Error('Authentication service unavailable'));
+                }
+                if (auth.currentUser) {
+                    return Promise.resolve(auth.currentUser);
+                }
+                return new Promise(function (resolve, reject) {
+                    var settled = false;
+                    var timer = setTimeout(function () {
+                        if (settled) return;
+                        settled = true;
+                        try { unsub(); } catch (e) {}
+                        reject(new Error('Not signed in'));
+                    }, maxWait);
+                    var unsub = onAuthStateChanged(auth, function (user) {
+                        if (!user || settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        try { unsub(); } catch (e) {}
+                        resolve(user);
+                    });
+                });
+            });
+        }
+
+        async function getPortalAuthHeaders() {
+            var u = await waitForUser();
+            var token = await u.getIdToken();
+            return {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function escAttr(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+        function escHtml2(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function buildFunderPageCheckboxes(containerId, selectedArr) {
+            const opts = window.AuthPortal && window.AuthPortal.FUNDER_PAGE_OPTIONS ? window.AuthPortal.FUNDER_PAGE_OPTIONS : [];
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const sel = new Set(selectedArr || []);
+            el.innerHTML = opts.map(function (o) {
+                const c = sel.has(o.value) ? ' checked' : '';
+                return '<label><input type="checkbox" value="' + escAttr(o.value) + '"' + c + '> ' + escHtml2(o.label) + '</label>';
+            }).join('');
+        }
+
+        function readCheckedFunderPages(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return [];
+            return Array.prototype.slice.call(el.querySelectorAll('input[type="checkbox"]:checked')).map(function (cb) {
+                return cb.value;
+            });
+        }
+
+        function toggleFunderPagesSection(roleSelectId, wrapId) {
+            const role = document.getElementById(roleSelectId);
+            const wrap = document.getElementById(wrapId);
+            if (!role || !wrap) return;
+            wrap.style.display = role.value === 'funder' ? 'block' : 'none';
+        }
+
+        /**
+         * Portal reads role + allowedPages from Firestore. The PWA API may only persist "user";
+         * this merge fixes funder (and keeps pages in sync).
+         */
+        async function syncUserRoleAndPagesToFirestore(uid, role, allowedPages) {
+            if (!uid || !window.firebasePortal) return;
+            const { db, doc, setDoc } = window.firebasePortal;
+            const pages = role === 'funder' && Array.isArray(allowedPages) ? allowedPages : [];
+            try {
+                await setDoc(
+                    doc(db, 'users', uid),
+                    {
+                        role: role,
+                        allowedPages: pages
+                    },
+                    { merge: true }
+                );
+            } catch (e) {
+                console.error('Firestore user sync:', e);
+                showAlert('dashboard-alert', 'User saved but could not sync role/pages in Firebase: ' + (e.message || e), 'danger');
+            }
+        }
+
+        let allObservations = [];
+        let allTracking = [];
+
+        async function loadObservations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/observations`, { headers: await getPortalAuthHeaders() });
+                if (!response.ok) throw new Error(`Observations API returned ${response.status}`);
+                const data = await response.json();
+                if (data.success && data.data) allObservations = data.data;
+                else allObservations = [];
+            } catch (error) {
+                console.error('Error loading observations:', error);
+                showError('Failed to load observation data');
+            }
+        }
+
+        async function loadTracking() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tracking`, { headers: await getPortalAuthHeaders() });
+                if (!response.ok) throw new Error(`Tracking API returned ${response.status}`);
+                const data = await response.json();
+                if (data.success && data.data) {
+                    allTracking = data.data.filter(t => (t.trackingType || '').toLowerCase() === 'vehicle');
+                } else allTracking = [];
+            } catch (e) {
+                console.error('Error loading tracking:', e);
+                allTracking = [];
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: fixed; top: 100px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 300px;';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.parentNode?.removeChild(errorDiv), 5000);
+        }
+
+        let usersSortColumn = 'total';
+        let usersSortDirection = 'desc';
+        let allUsersWithStats = [];
+
+        async function loadUserManagementData() {
+            try {
+                await waitForUser();
+                if (allObservations.length === 0) await loadObservations();
+                if (allTracking.length === 0) await loadTracking();
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: await getPortalAuthHeaders() });
+                if (!response.ok) throw new Error(`API returned ${response.status}`);
+                const data = await response.json();
+                if (!data.success || !data.users) throw new Error(data.message || 'Failed to load users');
+
+                const filterMonth = document.getElementById('filter-month')?.value || '';
+                const filterYear = document.getElementById('filter-year')?.value || '';
+
+                const filteredObs = allObservations.filter(obs => {
+                    if (!filterMonth && !filterYear) return true;
+                    const d = new Date(obs.timestamp);
+                    if (filterMonth && d.getMonth() + 1 !== parseInt(filterMonth)) return false;
+                    if (filterYear && d.getFullYear() !== parseInt(filterYear)) return false;
+                    return true;
+                });
+
+                const filteredTracking = allTracking.filter(t => {
+                    if (!filterMonth && !filterYear) return true;
+                    const t0 = t.startTime || t.timestamp || t.endTime;
+                    if (!t0) return false;
+                    const d = new Date(t0);
+                    if (filterMonth && d.getMonth() + 1 !== parseInt(filterMonth)) return false;
+                    if (filterYear && d.getFullYear() !== parseInt(filterYear)) return false;
+                    return true;
+                });
+
+                const corridorStats = {};
+                filteredObs.forEach(obs => {
+                    if (obs.category !== 'Corridor monitoring') return;
+                    const userKey = obs.user || 'Anonymous';
+                    corridorStats[userKey] = (corridorStats[userKey] || 0) + 1;
+                });
+
+                const vehicleStats = {};
+                filteredTracking.forEach(t => {
+                    const userKey = t.user || 'Anonymous';
+                    vehicleStats[userKey] = (vehicleStats[userKey] || 0) + 1;
+                });
+
+                const findStats = (user) => {
+                    const matchKey = user.email || user.name || user.phone || user.uid || user.id;
+                    let v = vehicleStats[matchKey] || vehicleStats[user.email] || vehicleStats[user.name];
+                    let c = corridorStats[matchKey] || corridorStats[user.email] || corridorStats[user.name];
+                    if (v == null) {
+                        for (const [key, val] of Object.entries(vehicleStats)) {
+                            if (user.email && key.toLowerCase().includes((user.email || '').split('@')[0])) { v = val; break; }
+                            if (user.name && key.toLowerCase().includes((user.name || '').toLowerCase())) { v = val; break; }
+                        }
+                    }
+                    if (c == null) {
+                        for (const [key, val] of Object.entries(corridorStats)) {
+                            if (user.email && key.toLowerCase().includes((user.email || '').split('@')[0])) { c = val; break; }
+                            if (user.name && key.toLowerCase().includes((user.name || '').toLowerCase())) { c = val; break; }
+                        }
+                    }
+                    return { vehicleTrips: v || 0, corridorMonitoring: c || 0, total: (v || 0) + (c || 0) };
+                };
+
+                let usersWithStats = data.users.map(user => {
+                    const s = findStats(user);
+                    return {
+                        ...user,
+                        uid: user.uid || user.id,
+                        vehicleTrips: s.vehicleTrips,
+                        corridorMonitoring: s.corridorMonitoring,
+                        total: s.total,
+                        registered: user.registeredAt,
+                        lastLogin: user.lastLogin
+                    };
+                });
+
+                if (filterMonth || filterYear) {
+                    usersWithStats = usersWithStats.filter(u => (u.total || 0) > 0);
+                }
+
+                allUsersWithStats = usersWithStats;
+                sortAndDisplayUsers(allUsersWithStats);
+                updateAdminStats(data.stats);
+
+            } catch (error) {
+                console.error('Error loading user management data:', error);
+                showAlert('dashboard-alert', 'Failed to load user data: ' + error.message, 'danger');
+            }
+        }
+
+        function displayUserManagement(users) {
+            const tbody = document.getElementById('users-tbody');
+            const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            tbody.innerHTML = users.map(user => {
+                const uid = user.id || user.uid || '';
+                const pwdDisplay = user.hasPassword ? '••••••' : '—';
+                return `
+                <tr>
+                    <td>${esc(user.name) || 'N/A'}</td>
+                    <td>${esc(user.email || user.phone) || 'N/A'}</td>
+                    <td>
+                        <select class="role-select" data-user-id="${uid}" onchange="updateUserRole(this.getAttribute('data-user-id'), this.value)">
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="funder" ${user.role === 'funder' ? 'selected' : ''}>Funder</option>
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                            <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                        </select>
+                    </td>
+                    <td style="color: #666; user-select: none;">${pwdDisplay}</td>
+                    <td><span class="status ${user.status}">${user.status}</span></td>
+                    <td>${user.registered ? new Date(user.registered).toLocaleDateString() : 'N/A'}</td>
+                    <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
+                    <td>${user.vehicleTrips || 0}</td>
+                    <td>${user.corridorMonitoring || 0}</td>
+                    <td class="total-column">${user.total || 0}</td>
+                    <td>
+                        <button class="btn btn-small" onclick="openEditModal(this)" data-user-id="${uid}" data-name="${esc(user.name)}" data-role="${user.role || 'user'}" data-status="${user.status || 'active'}">Edit</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function sortAndDisplayUsers(users) {
+            const sorted = [...users].sort((a, b) => {
+                let aVal, bVal;
+                switch (usersSortColumn) {
+                    case 'name': aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase(); break;
+                    case 'email': aVal = (a.email || a.phone || '').toLowerCase(); bVal = (b.email || b.phone || '').toLowerCase(); break;
+                    case 'status': aVal = (a.status || '').toLowerCase(); bVal = (b.status || '').toLowerCase(); break;
+                    case 'registered': aVal = a.registered || ''; bVal = b.registered || ''; break;
+                    case 'vehicleTrips': aVal = a.vehicleTrips || 0; bVal = b.vehicleTrips || 0; break;
+                    case 'corridorMonitoring': aVal = a.corridorMonitoring || 0; bVal = b.corridorMonitoring || 0; break;
+                    case 'total':
+                    default: aVal = a.total || 0; bVal = b.total || 0; break;
+                }
+                if (typeof aVal === 'string') return usersSortDirection === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+                return usersSortDirection === 'desc' ? bVal - aVal : aVal - bVal;
+            });
+            displayUserManagement(sorted);
+        }
+
+        function updateAdminStats(stats) {
+            document.getElementById('admin-total-users').textContent = stats.total || 0;
+            document.getElementById('admin-active-users').textContent = stats.active || 0;
+            document.getElementById('admin-revoked-users').textContent = stats.revoked || 0;
+        }
+
+        document.getElementById('new-user-role').addEventListener('change', function () {
+            toggleFunderPagesSection('new-user-role', 'new-funder-pages-wrap');
+        });
+        buildFunderPageCheckboxes('new-funder-pages', []);
+
+        document.getElementById('create-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-user-name').value.trim();
+            const identifier = document.getElementById('new-user-email').value.trim();
+            const password = document.getElementById('new-user-password').value;
+            const role = document.getElementById('new-user-role').value;
+            const allowedPages = role === 'funder' ? readCheckedFunderPages('new-funder-pages') : [];
+            const body = identifier.includes('@')
+                ? { name, email: identifier, password, role, allowedPages }
+                : { name, phone: identifier, password, role, allowedPages };
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, { method: 'POST', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                if (data.success) {
+                    const newUid = data.uid || data.userId || (data.user && (data.user.uid || data.user.id));
+                    let funderWarn = '';
+                    if (newUid) {
+                        await syncUserRoleAndPagesToFirestore(newUid, role, role === 'funder' ? allowedPages : []);
+                    } else if (role === 'funder') {
+                        funderWarn =
+                            '<div class="alert alert-warning" style="margin-top:8px">Funder created; API did not return a user id — open <strong>Edit user</strong> and save once to sync role and pages in Firebase.</div>';
+                    }
+                    document.getElementById('create-user-form').reset();
+                    document.getElementById('new-user-role').value = 'user';
+                    toggleFunderPagesSection('new-user-role', 'new-funder-pages-wrap');
+                    buildFunderPageCheckboxes('new-funder-pages', []);
+                    document.getElementById('create-user-alert').innerHTML =
+                        '<div class="alert alert-success">User created successfully!</div>' + funderWarn;
+                    loadUserManagementData();
+                    setTimeout(() => document.getElementById('create-user-alert').innerHTML = '', funderWarn ? 8000 : 3000);
+                } else {
+                    document.getElementById('create-user-alert').innerHTML = '<div class="alert alert-danger">' + (data.message || 'Failed to create user') + '</div>';
+                }
+            } catch (error) {
+                document.getElementById('create-user-alert').innerHTML = '<div class="alert alert-danger">Failed to create user</div>';
+            }
+        });
+
+        function detachEditFunderListener() {
+            if (typeof window.__editFunderPagesUnsub === 'function') {
+                try { window.__editFunderPagesUnsub(); } catch (e) { /* ignore */ }
+                window.__editFunderPagesUnsub = null;
+            }
+        }
+
+        async function openEditModal(btn) {
+            detachEditFunderListener();
+            const userId = btn.getAttribute('data-user-id') || '';
+            const name = btn.getAttribute('data-name') || '';
+            const role = btn.getAttribute('data-role') || 'user';
+            const status = btn.getAttribute('data-status') || 'active';
+            document.getElementById('edit-user-id').value = userId;
+            document.getElementById('edit-user-name').value = name;
+            document.getElementById('edit-user-role').value = role;
+            document.getElementById('edit-user-password').value = '';
+            toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
+            const applyPagesToForm = function (rawPages) {
+                const norm = window.AuthPortal && window.AuthPortal.normalizeAllowedPagesList
+                    ? window.AuthPortal.normalizeAllowedPagesList(rawPages)
+                    : (Array.isArray(rawPages) ? rawPages : []);
+                if (document.getElementById('edit-user-role').value === 'funder') {
+                    buildFunderPageCheckboxes('edit-funder-pages', norm);
+                }
+            };
+            if (userId && window.firebasePortal && window.firebasePortal.onSnapshot) {
+                const { db, doc, onSnapshot } = window.firebasePortal;
+                const ref = doc(db, 'users', userId);
+                window.__editFunderPagesUnsub = onSnapshot(ref, function (snap) {
+                    var raw = [];
+                    if (snap.exists()) {
+                        var d = snap.data();
+                        if (Array.isArray(d.allowedPages)) raw = d.allowedPages;
+                    }
+                    applyPagesToForm(raw);
+                });
+            } else if (userId && window.firebasePortal && window.firebasePortal.getDoc) {
+                try {
+                    const { db, doc, getDoc } = window.firebasePortal;
+                    const snap = await getDoc(doc(db, 'users', userId));
+                    var rawOne = [];
+                    if (snap.exists()) {
+                        var d0 = snap.data();
+                        if (Array.isArray(d0.allowedPages)) rawOne = d0.allowedPages;
+                    }
+                    applyPagesToForm(rawOne);
+                } catch (e) {
+                    buildFunderPageCheckboxes('edit-funder-pages', []);
+                }
+            } else {
+                buildFunderPageCheckboxes('edit-funder-pages', []);
+            }
+            document.getElementById('edit-revoke-btn').style.display = status === 'active' ? 'inline-block' : 'none';
+            document.getElementById('edit-revoke-btn').onclick = () => { revokeUser(userId).then(() => closeEditModal()); };
+            document.getElementById('edit-restore-btn').style.display = status === 'revoked' ? 'inline-block' : 'none';
+            document.getElementById('edit-restore-btn').onclick = () => { activateUser(userId); closeEditModal(); };
+            document.getElementById('edit-user-modal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            detachEditFunderListener();
+            document.getElementById('edit-user-modal').classList.remove('show');
+        }
+
+        document.getElementById('edit-user-role').addEventListener('change', function () {
+            toggleFunderPagesSection('edit-user-role', 'edit-funder-pages-wrap');
+            if (this.value === 'funder') {
+                const uid = document.getElementById('edit-user-id').value;
+                if (uid && window.firebasePortal && window.firebasePortal.getDoc) {
+                    (async function () {
+                        try {
+                            const { db, doc, getDoc } = window.firebasePortal;
+                            const snap = await getDoc(doc(db, 'users', uid));
+                            var raw = [];
+                            if (snap.exists()) {
+                                var d = snap.data();
+                                if (Array.isArray(d.allowedPages)) raw = d.allowedPages;
+                            }
+                            const norm = window.AuthPortal.normalizeAllowedPagesList(raw);
+                            buildFunderPageCheckboxes('edit-funder-pages', norm);
+                        } catch (e) {
+                            buildFunderPageCheckboxes('edit-funder-pages', []);
+                        }
+                    })();
+                }
+            }
+        });
+
+        document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('edit-user-id').value;
+            const name = document.getElementById('edit-user-name').value.trim();
+            const role = document.getElementById('edit-user-role').value;
+            const password = document.getElementById('edit-user-password').value;
+            const allowedPages = role === 'funder' ? readCheckedFunderPages('edit-funder-pages') : [];
+            const body = { name, role, allowedPages };
+            if (password && password.length >= 6) body.password = password;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                if (data.success) {
+                    await syncUserRoleAndPagesToFirestore(userId, role, allowedPages);
+                    closeEditModal();
+                    showAlert('dashboard-alert', 'User updated successfully', 'success');
+                    loadUserManagementData();
+                } else showAlert('dashboard-alert', data.message || 'Failed to update user', 'danger');
+            } catch (error) { showAlert('dashboard-alert', 'Failed to update user', 'danger'); }
+        });
+
+        async function updateUserRole(userId, role) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ role }) });
+                const data = await response.json();
+                if (data.success) {
+                    let pagesForSync = [];
+                    if (role === 'funder' && window.firebasePortal && window.firebasePortal.getDoc) {
+                        try {
+                            const { db, doc, getDoc } = window.firebasePortal;
+                            const snap = await getDoc(doc(db, 'users', userId));
+                            if (snap.exists()) {
+                                const d = snap.data();
+                                if (Array.isArray(d.allowedPages)) {
+                                    pagesForSync = window.AuthPortal.normalizeAllowedPagesList(d.allowedPages);
+                                }
+                            }
+                        } catch (e) { /* keep [] */ }
+                    }
+                    await syncUserRoleAndPagesToFirestore(userId, role, role === 'funder' ? pagesForSync : []);
+                    showAlert('dashboard-alert', 'Role updated' + (role === 'funder' ? ' — use Edit to change page access' : ''), 'success');
+                } else { showAlert('dashboard-alert', data.message || 'Failed to update role', 'danger'); loadUserManagementData(); }
+            } catch (error) { showAlert('dashboard-alert', 'Failed to update role', 'danger'); loadUserManagementData(); }
+        }
+
+        async function revokeUser(userId) {
+            if (!confirm('Are you sure you want to revoke this user?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'revoked' }) });
+                const data = await response.json();
+                if (data.success) { showAlert('dashboard-alert', 'User access revoked', 'success'); loadUserManagementData(); }
+                else showAlert('dashboard-alert', data.message || 'Failed to revoke user', 'danger');
+            } catch (error) { showAlert('dashboard-alert', 'Failed to revoke user', 'danger'); }
+        }
+
+        async function activateUser(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PATCH', headers: await getPortalAuthHeaders(), body: JSON.stringify({ status: 'active' }) });
+                const data = await response.json();
+                if (data.success) { showAlert('dashboard-alert', 'User access restored', 'success'); loadUserManagementData(); }
+                else showAlert('dashboard-alert', data.message || 'Failed to restore user', 'danger');
+            } catch (error) { showAlert('dashboard-alert', 'Failed to restore user', 'danger'); }
+        }
+
+        function showAlert(elementId, message, type = 'info') {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            alertDiv.style.display = 'block';
+            setTimeout(() => { alertDiv.style.display = 'none'; }, 5000);
+        }
+
+        document.getElementById('filter-month')?.addEventListener('change', loadUserManagementData);
+        document.getElementById('filter-year')?.addEventListener('change', loadUserManagementData);
+
+        document.querySelectorAll('#users-table th.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const sortBy = this.dataset.sort;
+                if (usersSortColumn === sortBy) usersSortDirection = usersSortDirection === 'desc' ? 'asc' : 'desc';
+                else { usersSortColumn = sortBy; usersSortDirection = ['vehicleTrips','corridorMonitoring','total','registered'].includes(sortBy) ? 'desc' : 'asc'; }
+                document.querySelectorAll('#users-table th.sortable').forEach(th => { th.classList.remove('sorted'); const ind = th.querySelector('.sort-indicator'); if (ind) ind.textContent = ''; });
+                this.classList.add('sorted');
+                const ind = this.querySelector('.sort-indicator');
+                if (ind) ind.textContent = usersSortDirection === 'desc' ? '↓' : '↑';
+                sortAndDisplayUsers(allUsersWithStats);
+            });
+        });
+
+        (async function adminBootstrap() {
+            try {
+                await waitForUser();
+                await loadUserManagementData();
+            } catch (e) {
+                console.error('Admin bootstrap:', e);
+                showAlert('dashboard-alert', (e && e.message) ? e.message : 'Authentication required', 'danger');
+            }
+        })();
+    </script>
+</body>
+</html>
