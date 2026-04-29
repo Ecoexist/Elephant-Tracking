@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting reports — Ecoexist</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
+    <!-- modulepreload ensures Firestore helpers load before deferred module runs (same origin as page) -->
+    <link rel="modulepreload" href="js/firebase-config.js">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+      (async function() {
+        try {
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'meeting-reports.html');
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'meeting-reports.html')) {
+            window.location.replace('login.html?return=meeting-reports.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html?return=meeting-reports.html');
+          return;
+        }
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'meeting-reports.html' }).catch(function (e) {
+              console.warn(e);
+            });
+          }
+          if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else {
+          doInit();
+        }
+      })();
+    </script>
+        <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .table-page { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #43512D; }
+        .table-header h2 { margin: 0; color: #43512D; }
+        .table-controls { padding: 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .table-filters { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .date-control { display: flex; flex-direction: column; }
+        .date-control label { font-size: 12px; color: #6c757d; margin-bottom: 5px; }
+        .date-control select { padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 14px; min-width: 140px; }
+        .btn-primary { background: #43512D; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-primary:hover { background: #2c5530; }
+        .btn-secondary { background: #95a5a6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin: 0 4px; }
+        .btn-secondary.active { background: #43512D; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-secondary.active:hover { background: #2c5530; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; }
+        .metric-card .value { font-size: 2.5rem; font-weight: 700; color: #43512D; line-height: 1.2; }
+        .metric-card .label { font-size: 14px; color: #6c757d; margin-top: 8px; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 30px; }
+        .chart-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .chart-card h3 { margin: 0 0 16px 0; font-size: 16px; color: #43512D; }
+        .chart-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+        .chart-controls .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .chart-wrapper { position: relative; height: 320px; }
+        /** Outer scroll wraps a tall horizontal bar chart so labels are not smashed (fixes “only ~6 visible”). */
+        .staff-chart-scroll-wrap {
+          max-height: min(94vh, 4000px);
+          overflow-x: hidden;
+          overflow-y: auto;
+          border-radius: 6px;
+          border: 1px solid #e9ecef;
+          background: #fafafa;
+        }
+        .chart-wrapper--staff {
+          height: auto;
+          min-height: 260px;
+        }
+        .loading { text-align: center; padding: 40px; color: #6c757d; }
+        .source-note { font-size: 0.85rem; color: #6c757d; margin-bottom: 1rem; }
+        #meeting-locations-map { height: 420px; border-radius: 10px; border: 1px solid #dee2e6; z-index: 1; background: #e8ebe4; }
+    </style>
+</head>
+<body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
+    </div>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav"></nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">Meeting reports</h1>
+        </header>
+        <div class="main-content">
+    <div class="table-page">
+        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>: metrics use rows after <strong>Meeting scope</strong> + Month/Year. <strong>Total people engaged</strong> = sum of Kobo field <code>Total_number_of_Attendees</code> (<code>group_ee_organisedby/…/Total_number_of_Attendees</code>) across those rows.</p>
+        <div class="table-header">
+            <h2>Meeting reports analytics</h2>
+        </div>
+
+        <div class="table-controls">
+            <div class="table-filters">
+                <div class="date-control">
+                    <label for="filter-month">Month</label>
+                    <select id="filter-month">
+                        <option value="">All Months</option>
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="date-control">
+                    <label for="filter-year">Year</label>
+                    <select id="filter-year">
+                        <option value="">All Years</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
+                    </select>
+                </div>
+                <div class="date-control">
+                    <label for="filter-meeting-scope">Meeting scope</label>
+                    <select id="filter-meeting-scope" title="Narrows rows before charts and totals">
+                        <option value="all">All meetings</option>
+                        <option value="ecoexist">Meetings organised by Ecoexist</option>
+                        <option value="organiser_other">Organiser is other</option>
+                    </select>
+                </div>
+                <button id="refresh-btn" class="btn-primary">Refresh</button>
+            </div>
+        </div>
+
+        <p id="load-error" class="text-danger small" style="display:none;"></p>
+        <p id="count-footnote" class="source-note mb-2" style="display:none;" aria-live="polite"></p>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="value" id="metric-meetings">0</div>
+                <div class="label">Number of meetings</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="metric-people">0</div>
+                <div class="label">Total people engaged</div>
+                <div class="metric-hint text-muted small mt-2" style="font-size:0.8rem;">Sum of Total_number_of_Attendees (per filtered meeting)</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Gender distribution</h3>
+                <div class="chart-wrapper"><canvas id="chart-gender"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Age distribution</h3>
+                <div class="chart-wrapper"><canvas id="chart-age"></canvas></div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Meetings organised: Ecoexist vs other</h3>
+                <p class="text-muted small mb-2">By month/year only (ignores Meeting scope).</p>
+                <div class="chart-wrapper"><canvas id="chart-organiser"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Ecoexist staff involvement</h3>
+                <p class="text-muted small mb-2">Uses <code>Ecoexist_employees_involved</code>. Names are normalized to the onboard Ecoexist roster; abbreviations in brackets (e.g. Ipey, KK, Mojita) roll into each primary staff member. Repeated occurrences across meetings still stack counts.</p>
+                <div class="staff-chart-scroll-wrap" id="staff-chart-scroll-wrap" aria-label="Ecoexist staff bar chart scroll area">
+                  <div class="chart-wrapper chart-wrapper--staff" id="staff-chart-inner">
+                    <canvas id="chart-staff"></canvas>
+                  </div>
+                </div>
+                <p id="staff-chart-footnote" class="source-note mb-0" style="display:none;"></p>
+            </div>
+        </div>
+        <div class="chart-card" style="margin-top: 24px;">
+            <h3>Trends over time</h3>
+            <p class="text-muted small mb-2" id="trends-view-hint" style="margin-top:-8px;"></p>
+            <div class="chart-controls">
+                <span style="font-size: 13px; color: #6c757d; margin-right: 12px;">Metric:</span>
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary active" data-trend="meetings">Meetings</button>
+                    <button type="button" class="btn-secondary" data-trend="people">People</button>
+                    <button type="button" class="btn-secondary" data-trend="gender">Men &amp; Women</button>
+                </div>
+                <span style="font-size: 13px; color: #6c757d; margin: 0 12px 0 24px;">View:</span>
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary active" data-view="year">By Year</button>
+                    <button type="button" class="btn-secondary" data-view="month" title="January–December, all years combined">By Calendar Month</button>
+                </div>
+            </div>
+            <div class="chart-wrapper" style="height: 360px;"><canvas id="chart-trends"></canvas></div>
+        </div>
+
+        <div class="chart-card" style="margin-top: 24px;">
+            <h3>Meeting hotspots (north-west Botswana)</h3>
+            <p class="text-muted small mb-2">
+                Each mapped settlement sums <strong>one meeting count per filtered row</strong> matched to village / meeting location text in Kobo/Firestore
+                (<code>meetingVenue</code>). Unmatched settlements do not infer points elsewhere.
+                Coordinates PAC / Anna / Katlego reference layers (see GIS table).
+            </p>
+            <div id="meeting-locations-map" aria-label="Northern Botswana settlement meeting counts"></div>
+            <p id="meeting-locations-map-footnote" class="source-note mb-0 mt-2" aria-live="polite"></p>
+        </div>
+    </div>
+
+    <div class="bottom-ribbon">
+        <p>© 2025 Ecoexist Monitoring | <a href="mailto:jonobenjamingis@gmail.com">Jonathan Benjamin</a></p>
+    </div>
+        </div>
+    </div>
+
+    <script>
+        /** Kobo field paths stored in Firestore (flat keys from Kobo export). */
+        const KOBO = {
+          meetingOrganiser: 'Meeting_Organiser',
+          activityStartDate: 'group_ee_organisedby/group_ee_activitydetails/Activity_start_Date',
+          activityEndDate: 'group_ee_organisedby/group_ee_activitydetails/Activity_end_Date',
+          totalAttendees: 'group_ee_organisedby/group_ee_attendance/Total_number_of_Attendees',
+          numMales: 'group_ee_organisedby/group_ee_attendance/Number_of_Males',
+          numFemales: 'group_ee_organisedby/group_ee_attendance/Number_of_Females',
+          numSchoolYouth: 'group_ee_organisedby/group_ee_attendance/Number_of_school_aged_youth',
+          numYouth1834: 'group_ee_organisedby/group_ee_attendance/Number_of_youth_aged_18_34',
+          numAdults35: 'group_ee_organisedby/group_ee_attendance/Number_of_adults_aged_35_and_above',
+          ecoexistEmployeesInvolved: 'group_ee_organisedby/group_ee_activitydetails/Ecoexist_employees_involved',
+          submissionTime: '_submission_time'
+        };
+
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        /**
+         * Parses Kobo date strings without UTC-vs-local pitfalls for bare YYYY-MM-DD
+         * (Safari/chrome treat those as UTC midnight, which can shift the calendar month).
+         */
+        function parseKoboDateValue(val) {
+          if (val == null || val === '') return null;
+          if (val && typeof val.toDate === 'function') {
+            try {
+              var t = val.toDate();
+              return t && !isNaN(t.getTime()) ? t : null;
+            } catch (e) {
+              return null;
+            }
+          }
+          if (typeof val === 'number' && !isNaN(val)) {
+            var d = new Date(val);
+            return isNaN(d.getTime()) ? null : d;
+          }
+          var s = String(val).trim();
+          if (!s) return null;
+          var isoDay = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+          if (isoDay) {
+            var y = parseInt(isoDay[1], 10);
+            var mo = parseInt(isoDay[2], 10) - 1;
+            var day = parseInt(isoDay[3], 10);
+            var local = new Date(y, mo, day);
+            return isNaN(local.getTime()) ? null : local;
+          }
+          var d = new Date(s);
+          return isNaN(d.getTime()) ? null : d;
+        }
+
+        function pick(raw, path) {
+          if (!raw || typeof raw !== 'object') return null;
+          return raw[path] !== undefined ? raw[path] : null;
+        }
+
+        /** Kobo paths commonly used for community / settlement (first non-empty wins). Also scans group_ee_* keys containing community|village|venue|location. */
+        const KOBO_VENUE_KEYS = [
+          'group_ee_organisedby/group_ee_activitydetails/Meeting_community',
+          'group_ee_organisedby/group_ee_activitydetails/Community',
+          'group_ee_organisedby/group_ee_activitydetails/Community_where_the_meeting_was_held',
+          'group_ee_organisedby/group_ee_activitydetails/Village',
+          'group_ee_organisedby/group_ee_activitydetails/Settlement',
+          'group_ee_organisedby/group_ee_activitydetails/Meeting_venue'
+        ];
+
+        function extractVenueString(raw) {
+          if (!raw || typeof raw !== 'object') return '';
+          var k = 0;
+          for (; k < KOBO_VENUE_KEYS.length; k++) {
+            var vv = pick(raw, KOBO_VENUE_KEYS[k]);
+            if (vv != null && String(vv).trim() !== '') return String(vv).trim();
+          }
+          var kk = void 0;
+          for (kk in raw) {
+            if (!raw.hasOwnProperty(kk)) continue;
+            if (!/^group_ee_/i.test(kk)) continue;
+            var klow = kk.toLowerCase();
+            if (!/ommunity|village|venue|ettlement|location|place/.test(klow)) continue;
+            var v2 = raw[kk];
+            if (v2 == null) continue;
+            if (typeof v2 === 'object') continue;
+            var s = String(v2).trim();
+            if (s) return s;
+          }
+          return '';
+        }
+
+        /** Format: slug|lat|lng|comma-separated lowercase synonyms (includes slug fragments). Settlement GPS from PAC / Anna / Katlego GIS table. */
+        var MEETING_VENUE_POINTS = [];
+        (function buildMeetingVenuePoints() {
+          var rawTxt =
+            'badiba|-18.60331|22.20918|badiba,mangau\n' +
+            'beetsha|-18.71200187|22.74238419|beetsha\n' +
+            'danga|-18.63137282|22.23622989|danga\n' +
+            'dlumudlana|-18.84452965|22.55459192|dlumudlana\n' +
+            'dungu|-18.76095898|22.35911069|dungu\n' +
+            'dutwe|-18.60873|22.8853|dutwe\n' +
+            'dxoro|-18.69067|22.29657|dxoro\n' +
+            'eretsha|-18.77762304|22.70253628|eretsha\n' +
+            'gamokwe|-18.41785113|22.04004005|gamokwe\n' +
+            'gando|-18.76591587|22.6837288|gando\n' +
+            'gowa|-18.27394|21.86811|gowa\n' +
+            'guchao|-18.81297|22.58814|guchao,senxanxa\n' +
+            'gudigwa|-18.59619163|22.91307637|gudigwa\n' +
+            'gunotsoga|-18.82696026|22.59045247|gunotsoga\n' +
+            'hongwa_1|-18.48063578|22.11394982|hongwa 1,hongwa i,hongwa1\n' +
+            'hongwa_2|-18.49032559|22.12121056|hongwa 2,hongwa2\n' +
+            'jungwe|-18.7546448|22.71605236|jungwe\n' +
+            'kachirachira|-18.79243864|22.64560129|kachirachira\n' +
+            'kadobe|-18.59905|22.91163|kadobe\n' +
+            'kaodobe|-18.61566|22.9336|kaodobe\n' +
+            'kaputura|-18.24503599|21.87125517|kaputura\n' +
+            'kauxwi|-18.28576089|21.84959139|kauxwi\n' +
+            'khwisabana|-18.56247207|22.95849061|khwisabana\n' +
+            'kotakae|-18.26559|21.79308|kotakae\n' +
+            'kweedxhana|-18.77628|22.39364|kweedxhana\n' +
+            'letsau|-18.64454|22.25851|letsau\n' +
+            'makaxau|-18.27158|22.06243|makaxau\n' +
+            'matheatau|-18.79617|22.40735|matheatau\n' +
+            'matswii_1|-18.70519971|22.77407055|matswii 1,matswii1\n' +
+            'matswii_2|-18.68481391|22.79632534|matswii 2,matswii2\n' +
+            'mawana|-18.7071|22.31421|mawana\n' +
+            'mbiroba|-18.82363|22.43376|mbiroba\n' +
+            'mogotho|-18.52369278|22.15125793|mogotho\n' +
+            'mohembo_east|-18.26207262|21.81350679|mohembo east,mohembo\n' +
+            'mokatcha|-18.66695174|22.26968877|mokatcha\n' +
+            'ndorotsha_1|-18.81113254|22.61241557|ndorotsha 1,ndorotsha1\n' +
+            'ndorotsha_2|-18.80659576|22.61673653|ndorotsha 2,ndorotsha2\n' +
+            'ngarange|-18.38472904|22.01125969|ngarange\n' +
+            'nnende|-18.57599|22.1838|nnende,nnninende,ninende\n' +
+            'nxiniga|-18.72646|22.32986|nxiniga,nxinigia,nxinigiag,nxiniha,xiniha,kavumo\n' +
+            'oxharo|-18.34682|22.56131|oxharo\n' +
+            'samaungoro|-18.84329|22.53149|samaungoro\n' +
+            'samoti|-18.8287296|22.5853986|samoti\n' +
+            'samuquma|-18.78241|22.39899|samuquma\n' +
+            'sechenje|-18.33244641|21.93804754|sechenje\n' +
+            'sekondeko|-18.251|21.87877|sekondeko\n' +
+            'sekondomboro|-18.34918097|21.96135585|sekondomboro\n' +
+            'seronga|-18.81230126|22.41757981|seronga\n' +
+            'seronga_2|-18.86752515|22.51997986|seronga 2,seronga2\n' +
+            'seshakoro|-18.11574991|23.00529029|seshakoro\n' +
+            'shamathu|-18.26401|21.87709|shamathu\n' +
+            'shauwe|-18.55476877|22.16854024|shauwe\n' +
+            'tanejo|-18.68494|22.79578|tanejo\n' +
+            'teekae|-18.85015969|22.48697008|teekae\n' +
+            'tinxo|-18.67832|22.28341|tinxo\n' +
+            'tobera|-18.25422733|22.01202085|tobera\n' +
+            'tobera_takhwe|-18.25233|22.04214|tobera takhwe,toberatakwe,takhwe\n' +
+            'tsaha|-18.83702|22.57388|tsaha\n' +
+            'twimanganye|-18.26345|22.0151|twimanganye,twimannganye,twiminganye\n' +
+            'xakao|-18.3083326|21.88829231|xakao\n' +
+            'xau_1|-18.86125004|22.55178482|xau 1,xau1\n' +
+            'xau_2|-18.86616846|22.53176632|xau 2,xau2\n' +
+            'xhoroxhomo|-18.60935|22.91078|xhoroxhomo,xoroxomo\n' +
+            'zambia_1|-18.75819144|22.72923332|zambia 1,zambia1';
+
+          rawTxt.split(/\n/).forEach(function (line) {
+            if (!line || !line.trim()) return;
+            var p = line.split('|');
+            if (p.length < 4) return;
+            var slug = String(p[0]).trim();
+            var la = parseFloat(p[1]);
+            var ln = parseFloat(p[2]);
+            if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
+            var namesRaw = String(p[3]).trim();
+            var namesSet = {};
+            namesRaw.split(',').forEach(function (x) {
+              var t = String(x || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '');
+              if (t) namesSet[t] = true;
+            });
+            var names = Object.keys(namesSet);
+            names.sort(function (a, b) {
+              return b.length - a.length;
+            });
+            MEETING_VENUE_POINTS.push({ id: slug, lat: la, lng: ln, names: names });
+          });
+        })();
+
+        /** @returns {(typeof MEETING_VENUE_POINTS)[number]|null} */
+        function resolveVenueToPoint(meetingVenueStr) {
+          if (meetingVenueStr == null || String(meetingVenueStr).trim() === '') return null;
+          var n = String(meetingVenueStr)
+            .trim()
+            .toLowerCase()
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/,/g, ' ')
+            .trim();
+          if (!n) return null;
+
+          /** Exact synonym match against prepared names lists. */
+          var vi = void 0;
+          for (vi = 0; vi < MEETING_VENUE_POINTS.length; vi++) {
+            var pt = MEETING_VENUE_POINTS[vi];
+            var nj = void 0;
+            for (nj = 0; nj < pt.names.length; nj++) {
+              var nm = pt.names[nj];
+              if (n === nm) return pt;
+            }
+          }
+
+          /** Substring heuristic: venue text contains synonym (handles “Meeting at Beetsha”). */
+          for (vi = 0; vi < MEETING_VENUE_POINTS.length; vi++) {
+            var pt2 = MEETING_VENUE_POINTS[vi];
+            for (nj = 0; nj < pt2.names.length; nj++) {
+              var sn = pt2.names[nj];
+              if (sn.length >= 4 && (n.indexOf(sn) !== -1 || (' ' + n + ' ').indexOf(' ' + sn + ' ') !== -1)) return pt2;
+            }
+          }
+          return null;
+        }
+
+        /** Shape compatible with meeting-reports.html chart helpers (missing fields → 0 in charts). */
+        function normalizeKoboRow(raw) {
+          return {
+            meetingOrganiser: pick(raw, KOBO.meetingOrganiser),
+            meetingVenue: extractVenueString(raw),
+            activityStartDate: pick(raw, KOBO.activityStartDate),
+            activityEndDate: pick(raw, KOBO.activityEndDate),
+            submittedAt: pick(raw, KOBO.submissionTime),
+            timestamp: pick(raw, KOBO.submissionTime),
+            totalAttendees: pick(raw, KOBO.totalAttendees),
+            numMales: pick(raw, KOBO.numMales),
+            numFemales: pick(raw, KOBO.numFemales),
+            numSchoolYouth: pick(raw, KOBO.numSchoolYouth),
+            numYouth1834: pick(raw, KOBO.numYouth1834),
+            numAdults35: pick(raw, KOBO.numAdults35),
+            ecoexistEmployeesInvolved: pick(raw, KOBO.ecoexistEmployeesInvolved)
+          };
+        }
+
+        let allReports = [];
+        let chartGender, chartAge, chartTrends, chartOrganiser, chartStaff;
+        let meetingLocationsMapInst = null;
+        let meetingLocationsLayerGroup = null;
+        let meetingLocationsHeatLayer = null;
+        /** Filled in loadReportsFromFirestore for the footnote. */
+        let loadStats = { rawDocs: 0, atQueryLimit: false };
+
+        function getReportDate(report) {
+          var keys = [report.activityStartDate, report.activityEndDate, report.submittedAt, report.timestamp];
+          for (var i = 0; i < keys.length; i++) {
+            var dt = parseKoboDateValue(keys[i]);
+            if (dt) return dt;
+          }
+          return null;
+        }
+
+        function filterByMonthYear(reports, month, year) {
+          if (!month && !year) return reports;
+          return reports.filter(function (r) {
+            var d = getReportDate(r);
+            if (!d || isNaN(d.getTime())) return false;
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var y = String(d.getFullYear());
+            if (month && m !== month) return false;
+            if (year && y !== year) return false;
+            return true;
+          });
+        }
+
+        function isOrganisedByEcoexistRow(r) {
+          var v = r.meetingOrganiser;
+          if (v == null || String(v).trim() === '') return false;
+          return String(v).trim().toLowerCase().indexOf('ecoexist') !== -1;
+        }
+
+        /** Other organiser: non-empty Meeting_Organiser field that does not reference Ecoexist. */
+        function isOrganiserOtherRow(r) {
+          var v = r.meetingOrganiser;
+          if (v == null || String(v).trim() === '') return false;
+          return String(v).trim().toLowerCase().indexOf('ecoexist') === -1;
+        }
+
+        /** @param {'all'|'ecoexist'|'organiser_other'} scope */
+        function applyMeetingScopeFilter(reports, scope) {
+          if (scope === 'ecoexist') return reports.filter(isOrganisedByEcoexistRow);
+          if (scope === 'organiser_other') return reports.filter(isOrganiserOtherRow);
+          return reports;
+        }
+
+        function getScopeFootnotePhrase(scope) {
+          if (scope === 'ecoexist') return 'scope: Meeting_Organiser contains Ecoexist only.';
+          if (scope === 'organiser_other') return 'scope: Meeting_Organiser set and does not reference Ecoexist.';
+          return 'scope: all documents.';
+        }
+        function toNum(v) {
+          var n = parseInt(v, 10);
+          return isNaN(n) ? 0 : n;
+        }
+
+        async function loadReportsFromFirestore() {
+          var errEl = document.getElementById('load-error');
+          errEl.style.display = 'none';
+          errEl.textContent = '';
+          loadStats.rawDocs = 0;
+          loadStats.atQueryLimit = false;
+          try {
+            await window.AuthPortal.waitForFirebase();
+            if (window.AuthPortal.waitForFirestoreQueryHelpers) {
+              await window.AuthPortal.waitForFirestoreQueryHelpers();
+            }
+            var fp = window.firebasePortal;
+            if (!fp || !fp.db || !fp.collection || !fp.getDocs || !fp.query || !fp.limit || !fp.orderBy) {
+              throw new Error(
+                'Firestore helpers missing — hard-refresh the page so ecoexist-main/js/firebase-config.js loads (getDocs/query/limit/orderBy).'
+              );
+            }
+            var snapshot;
+            try {
+              snapshot = await fp.getDocs(fp.query(
+                fp.collection(fp.db, 'kobo_submissions'),
+                fp.orderBy('lastSyncedAt', 'desc'),
+                fp.limit(2500)
+              ));
+            } catch (eOrder) {
+              /** Fallback without orderBy if index on lastSyncedAt is missing (first deploy). */
+              snapshot = await fp.getDocs(fp.query(fp.collection(fp.db, 'kobo_submissions'), fp.limit(2500)));
+            }
+            var rows = [];
+            loadStats.rawDocs = snapshot.size;
+            loadStats.atQueryLimit = snapshot.size >= 2500;
+            snapshot.forEach(function (docSnap) {
+              var data = docSnap.data();
+              if (!data || typeof data !== 'object') return;
+              rows.push(normalizeKoboRow(data));
+            });
+            allReports = rows;
+          } catch (e) {
+            console.error('Failed to load kobo_submissions:', e);
+            allReports = [];
+            loadStats.rawDocs = 0;
+            loadStats.atQueryLimit = false;
+            errEl.style.display = 'block';
+            errEl.textContent = (e && e.message) ? e.message : String(e);
+          }
+        }
+
+        function updateCountFootnote(filteredCount) {
+          var el = document.getElementById('count-footnote');
+          if (!el) return;
+          var scopeEl = document.getElementById('filter-meeting-scope');
+          var scope = scopeEl ? scopeEl.value : 'all';
+          var msg =
+            loadStats.rawDocs +
+            ' document(s) loaded (1 meeting per document). ' +
+            filteredCount +
+            ' shown after scope + month/year filters. ';
+          msg += getScopeFootnotePhrase(scope) + ' ';
+          msg +=
+            'People engaged = sum of Total_number_of_Attendees in the filtered set. ';
+          if (loadStats.atQueryLimit) {
+            msg += 'Query limited to 2500 documents. ';
+          }
+          msg += 'Date order for filters: activity start → end → submission time.';
+          el.textContent = msg;
+          el.style.display = 'block';
+        }
+
+        function renderMetrics(filtered) {
+          var meetings = filtered.length;
+          var people = filtered.reduce(function (sum, r) { return sum + toNum(r.totalAttendees); }, 0);
+          document.getElementById('metric-meetings').textContent = meetings.toLocaleString();
+          document.getElementById('metric-people').textContent = people.toLocaleString();
+          updateCountFootnote(meetings);
+        }
+
+        function renderGenderChart(filtered) {
+          var totalM = 0, totalF = 0;
+          filtered.forEach(function (r) {
+            totalM += toNum(r.numMales);
+            totalF += toNum(r.numFemales);
+          });
+          var ctx = document.getElementById('chart-gender').getContext('2d');
+          if (chartGender) chartGender.destroy();
+          var total = totalM + totalF;
+          if (total === 0) {
+            chartGender = new Chart(ctx, {
+              type: 'doughnut',
+              data: { labels: ['No data'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'], borderWidth: 0 }] },
+              options: { plugins: { legend: { position: 'bottom' }, tooltip: { enabled: false } } }
+            });
+            return;
+          }
+          var pctM = (totalM / total * 100).toFixed(1);
+          var pctF = (totalF / total * 100).toFixed(1);
+          chartGender = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Males (' + pctM + '%)', 'Females (' + pctF + '%)'],
+              datasets: [{
+                data: [totalM, totalF],
+                backgroundColor: ['#526b38', '#c44d6a'],
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      var v = c.raw;
+                      var p = total ? ((v / total) * 100).toFixed(1) : 0;
+                      return c.label.split('(')[0].trim() + ': ' + v + ' (' + p + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        function renderAgeChart(filtered) {
+          var school = 0, youth = 0, adults = 0;
+          filtered.forEach(function (r) {
+            school += toNum(r.numSchoolYouth);
+            youth += toNum(r.numYouth1834);
+            adults += toNum(r.numAdults35);
+          });
+          var ctx = document.getElementById('chart-age').getContext('2d');
+          if (chartAge) chartAge.destroy();
+          chartAge = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['School-aged youth', 'Youth 18–34', 'Adults 35+'],
+              datasets: [{
+                data: [school, youth, adults],
+                backgroundColor: ['#8e6eab', '#43512D', '#526b38'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function (c) { return c.label + ': ' + c.raw; } } }
+              },
+              scales: {
+                x: { beginAtZero: true, grid: { color: '#eee' } },
+                y: { grid: { display: false } }
+              }
+            }
+          });
+        }
+
+        /** Lowercase key so tallies merge reliably. */
+        function normalizePersonKey(name) {
+          return String(name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        }
+
+        /** Main name for display histogram: strips trailing " (Nickname)" bracket. */
+        function primaryNameFromParenForm(s) {
+          var m = /^(.+?)\s*\(([^)]*)\)\s*$/.exec(String(s || '').trim());
+          if (!m) return String(s || '').trim();
+          return m[1].trim();
+        }
+
+        /**
+         * Authoritative Ecoexist staff names — primary label is always the words before parentheses;
+         * nicknames in brackets count toward that person only.
+         */
+        var STAFF_CANON_LINES = [
+          'Anna Songhurst',
+          'Arang Jwee',
+          'Bashi Poroto',
+          'Ben Mateusa',
+          'Benny Wright',
+          'Boiteko Tlale',
+          'Cecilia Dikoro',
+          'Graham McCulloch',
+          'Ipelafatso Nkalolang (Ipey)',
+          'Ipolokeng Tetuka',
+          'Kebonye Botshelo (KB)',
+          'Kemetlha Rebahelwang',
+          'Ketlhobogile Changwe',
+          'Ketshotseng Moikumiso (Kertz)',
+          'Kutlwano Karundu (KK)',
+          'Lethata Gaborekwe',
+          'Maipelo Gotswakgosi',
+          'Maipelo Molathegi',
+          'Makata Baitseng',
+          'Masimo Mate',
+          'Mellinah Mojasagagwe',
+          'Motoloki Morena',
+          'Oboletse Tiego',
+          'Ogone Yayuya',
+          'Ohitiseng Mosupi (Mojita)',
+          'Papadi Mwezi',
+          'Rukonga Namavunga',
+          'Salvation Motswereng',
+          'Thusego Tareka (George)',
+          'Thuso Mareko',
+          'Tracey Taylor',
+          'William Moniwe',
+          'Omphile Monnawakgotla',
+          'Jonathan Benjamin',
+          'Onalenna Monnaaleso',
+          'Goreelwang Lefatshe',
+          'Obamelang Maheta',
+          'Josephine Samahupe',
+          'Katlego Oromeng'
+        ];
+
+        /** Built once: canonical display (main without dropping nick in global map) vs primary display for bars. */
+        var STAFF_ROSTER_INDEX = (function () {
+          var entries = [];
+          var aliasToPrimaryDisplay = Object.create(null);
+          STAFF_CANON_LINES.forEach(function (line) {
+            var raw = line.trim();
+            if (!raw) return;
+            var mainDisplay = primaryNameFromParenForm(raw);
+            var nk = normalizePersonKey(mainDisplay);
+            /** Normalized main — used for greedy substring extraction from messy text. */
+            entries.push({
+              display: mainDisplay,
+              norm: nk
+            });
+            aliasToPrimaryDisplay[nk] = mainDisplay;
+            aliasToPrimaryDisplay[normalizePersonKey(raw)] = mainDisplay;
+            var parens = /\(([^)]+)\)/.exec(raw);
+            if (parens) {
+              var nick = parens[1].trim().replace(/\s+/g, ' ');
+              if (nick) aliasToPrimaryDisplay[normalizePersonKey(nick)] = mainDisplay;
+            }
+          });
+          entries.sort(function (a, b) {
+            return b.norm.length - a.norm.length;
+          });
+          return { entries: entries, aliasMap: aliasToPrimaryDisplay };
+        })();
+
+        /** Repair CamelCase-ish glue ("benjaminGraham") and stray underscores in free text. */
+        function normalizeStaffSegmentRough(s) {
+          var x = String(s || '')
+            .replace(/(?:_(?:_)+|;+|\/+)/g, ' ')
+            .replace(/\s+/g, ' ')
+            /** Insert space lowercase followed by uppercase (glue fix). */
+            .replace(/([a-záéíóú])([A-Z])/g, '$1 $2')
+            .trim();
+          return x;
+        }
+
+        /** First split meeting field into rough segments (separate people / entries). */
+        function splitEcoexistRoughSegments(val) {
+          if (val == null) return [];
+          var s = normalizeStaffSegmentRough(String(val).trim());
+          if (!s || /^n\/?a$/i.test(s)) return [];
+          var out = [];
+          s.split(/\s+and\s+|(?:\s*[;,]\s*)|(?:\s*\|\s*)|(?:\s*\/+\s*)|(?:_{2,})|\t|\r?\n+/).forEach(function (segment) {
+            var t = segment.replace(/^[\s;,._]+|[\s;,._]+$/g, '').replace(/\s+/g, ' ').trim();
+            if (!t || /^n\/?a$/i.test(t)) return;
+            out.push(t);
+          });
+          return out;
+        }
+
+        /** Pull longest-first roster mains from flattened lowercase string; removes matches so adjacent names detach. */
+        function extractCanonNamesGreedy(normWorkChunk) {
+          var extracted = [];
+          var work = normWorkChunk.replace(/\s+/g, ' ').trim();
+          var guard = 0;
+          while (work.length > 2 && guard++ < 64) {
+            var bestIx = Infinity;
+            var bestNorm = '';
+            var bestDisplay = '';
+            var bestLen = -1;
+            for (var i = 0; i < STAFF_ROSTER_INDEX.entries.length; i++) {
+              var e = STAFF_ROSTER_INDEX.entries[i];
+              var ix = work.indexOf(e.norm);
+              if (
+                ix !== -1 &&
+                (e.norm.length > bestLen ||
+                  (e.norm.length === bestLen && ix < bestIx))
+              ) {
+                bestLen = e.norm.length;
+                bestIx = ix;
+                bestNorm = e.norm;
+                bestDisplay = e.display;
+              }
+            }
+            if (!bestNorm) break;
+            extracted.push(bestDisplay);
+            work = (work.slice(0, bestIx) + ' ' + work.slice(bestIx + bestNorm.length)).replace(/\s+/g, ' ').trim();
+          }
+          var leftover = work;
+          var extra = scanLeftoversForAliases(leftover);
+          return extracted.concat(extra);
+        }
+
+        /** Sliding window against alias map — picks up scraps like single "Ipey" tokens. */
+        function scanLeftoversForAliases(leftoverNormWords) {
+            var words = leftoverNormWords
+            .split(/\s+/)
+            .map(function (w) {
+              return w.replace(/^[\s.,;:'"_()/\\\[`@-]+|[\s.,;:'"_()/\\\[`@-]+$/g, '');
+            })
+            .filter(Boolean);
+          var got = [];
+          var i = 0;
+          var guard = 0;
+          while (i < words.length && guard++ < 120) {
+            var hit = false;
+            for (var win = Math.min(6, words.length - i); win >= 1; win--) {
+              var phrase = words.slice(i, i + win).join(' ');
+              var pkey = normalizePersonKey(phrase);
+              var disp = STAFF_ROSTER_INDEX.aliasMap[pkey];
+              if (disp) {
+                got.push(disp);
+                i += win;
+                hit = true;
+                break;
+              }
+            }
+            if (!hit) i += 1;
+          }
+          return got;
+        }
+
+        /** All canonical staff appearances for Ecoexist involvement field — one tally per occurrence. */
+        function extractCanonicalStaffAppearances(ecoEmployFieldRaw) {
+          var rough = splitEcoexistRoughSegments(ecoEmployFieldRaw);
+          var canonical = [];
+          rough.forEach(function (seg) {
+            var nk = normalizePersonKey(normalizeStaffSegmentRough(seg));
+            if (!nk) return;
+            if (STAFF_ROSTER_INDEX.aliasMap[nk]) {
+              canonical.push(STAFF_ROSTER_INDEX.aliasMap[nk]);
+              return;
+            }
+            var greeded = extractCanonNamesGreedy(nk);
+            if (greeded.length > 0) {
+              Array.prototype.push.apply(canonical, greeded);
+            } else {
+              Array.prototype.push.apply(canonical, scanLeftoversForAliases(nk));
+            }
+          });
+          return canonical;
+        }
+
+        /**
+         * @deprecated Legacy split helper — superseded by extractCanonicalStaffAppearances.
+         * Kept as thin wrapper used only if needed.
+         */
+        function splitEcoexistEmployeeNames(val) {
+          return extractCanonicalStaffAppearances(val);
+        }
+
+        function tallyStaffInvolvementCounts(reports) {
+          var tally = Object.create(null);
+          reports.forEach(function (r) {
+            extractCanonicalStaffAppearances(r.ecoexistEmployeesInvolved).forEach(function (displayMain) {
+              var key = normalizePersonKey(primaryNameFromParenForm(displayMain));
+              if (!key) return;
+              if (!tally[key]) tally[key] = { label: primaryNameFromParenForm(displayMain), n: 0 };
+              tally[key].n++;
+            });
+          });
+          var rows = Object.keys(tally).map(function (k) {
+            return { key: k, label: tally[k].label, count: tally[k].n };
+          });
+          rows.sort(function (a, b) {
+            return b.count - a.count;
+          });
+          return rows;
+        }
+
+        function renderOrganiserPie(dateFiltered) {
+          var eco = 0;
+          var other = 0;
+          dateFiltered.forEach(function (r) {
+            if (isOrganisedByEcoexistRow(r)) eco++;
+            else other++;
+          });
+          var ctx = document.getElementById('chart-organiser').getContext('2d');
+          if (chartOrganiser) chartOrganiser.destroy();
+          var totalMeetings = eco + other;
+          if (totalMeetings === 0) {
+            chartOrganiser = new Chart(ctx, {
+              type: 'doughnut',
+              data: { labels: ['No data'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'], borderWidth: 0 }] },
+              options: { plugins: { legend: { position: 'bottom' }, tooltip: { enabled: false } } }
+            });
+            return;
+          }
+          var pe = ((eco / totalMeetings) * 100).toFixed(1);
+          var po = ((other / totalMeetings) * 100).toFixed(1);
+          chartOrganiser = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Ecoexist (' + pe + '%)', 'Other / not listed (' + po + '%)'],
+              datasets: [{
+                data: [eco, other],
+                backgroundColor: ['#43512D', '#b8c4a8'],
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      var v = c.raw;
+                      var p = totalMeetings ? ((v / totalMeetings) * 100).toFixed(1) : 0;
+                      return c.label.split('(')[0].trim() + ': ' + v + ' meetings (' + p + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        function renderStaffHistogram(dateFiltered) {
+          var tallyRows = tallyStaffInvolvementCounts(dateFiltered);
+          var footEl = document.getElementById('staff-chart-footnote');
+          var limited = tallyRows;
+          if (footEl) {
+            if (tallyRows.length > 0) {
+              footEl.style.display = 'block';
+              footEl.textContent =
+                tallyRows.length +
+                ' name(s). Scroll inside the bordered area to see everyone. Each bar counts how often that name appears in staff-involved lists for the filtered meetings.';
+            } else {
+              footEl.style.display = 'none';
+              footEl.textContent = '';
+            }
+          }
+
+          var wrap = document.getElementById('staff-chart-inner');
+          var labels = limited.map(function (row) {
+            return row.label;
+          });
+          var data = limited.map(function (row) {
+            return row.count;
+          });
+
+          if (wrap && labels.length > 0) {
+            var pxBar = labels.length <= 12 ? 34 : labels.length <= 35 ? 26 : 22;
+            wrap.style.height = Math.max(240, labels.length * pxBar + 80) + 'px';
+          }
+
+          var ctx = document.getElementById('chart-staff').getContext('2d');
+          if (chartStaff) chartStaff.destroy();
+
+          if (labels.length === 0) {
+            if (wrap) wrap.style.height = '260px';
+            chartStaff = new Chart(ctx, {
+              type: 'bar',
+              data: { labels: ['No staff names'], datasets: [{ data: [0], backgroundColor: '#e0e0e0' }] },
+              options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            return;
+          }
+
+          chartStaff = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: 'Listed involvements',
+                  data: data,
+                  backgroundColor: '#526b38',
+                  borderWidth: 0
+                }
+              ]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      return String(c.parsed.x);
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eee' } },
+                y: {
+                  ticks: {
+                    autoSkip: false,
+                    maxTicksLimit: Math.max(labels.length, 24),
+                    font: { size: labels.length > 35 ? 9 : labels.length > 22 ? 10 : 11 }
+                  },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+
+        function aggregateByYear(filtered) {
+          var byYear = {};
+          filtered.forEach(function (r) {
+            var d = getReportDate(r);
+            if (!d || isNaN(d.getTime())) return;
+            var y = d.getFullYear();
+            if (!byYear[y]) byYear[y] = { meetings: 0, people: 0, males: 0, females: 0 };
+            byYear[y].meetings++;
+            byYear[y].people += toNum(r.totalAttendees);
+            byYear[y].males += toNum(r.numMales);
+            byYear[y].females += toNum(r.numFemales);
+          });
+          return byYear;
+        }
+
+        function aggregateByCalendarMonth(filtered) {
+          var bins = [];
+          for (var mi = 0; mi < 12; mi++) {
+            bins.push({ meetings: 0, people: 0, males: 0, females: 0, label: MONTH_NAMES[mi] });
+          }
+          filtered.forEach(function (r) {
+            var d = getReportDate(r);
+            if (!d || isNaN(d.getTime())) return;
+            var monthIndex = d.getMonth();
+            bins[monthIndex].meetings++;
+            bins[monthIndex].people += toNum(r.totalAttendees);
+            bins[monthIndex].males += toNum(r.numMales);
+            bins[monthIndex].females += toNum(r.numFemales);
+          });
+          return bins;
+        }
+
+        function renderTrendsChart(filtered, trendMode, viewMode) {
+          var isYear = viewMode === 'year';
+          var labels, dataMeetings, dataPeople, dataMales, dataFemales;
+
+          if (isYear) {
+            var byYear = aggregateByYear(filtered);
+            var years = Object.keys(byYear).sort();
+            labels = years;
+            dataMeetings = years.map(function (y) { return byYear[y].meetings; });
+            dataPeople = years.map(function (y) { return byYear[y].people; });
+            dataMales = years.map(function (y) { return byYear[y].males; });
+            dataFemales = years.map(function (y) { return byYear[y].females; });
+          } else {
+            var byCalendarMonth = aggregateByCalendarMonth(filtered);
+            labels = byCalendarMonth.map(function (m) { return m.label; });
+            dataMeetings = byCalendarMonth.map(function (m) { return m.meetings; });
+            dataPeople = byCalendarMonth.map(function (m) { return m.people; });
+            dataMales = byCalendarMonth.map(function (m) { return m.males; });
+            dataFemales = byCalendarMonth.map(function (m) { return m.females; });
+          }
+
+          var ctx = document.getElementById('chart-trends').getContext('2d');
+          if (chartTrends) chartTrends.destroy();
+
+          var datasets;
+          if (trendMode === 'meetings') {
+            datasets = [{ label: 'Meetings', data: dataMeetings, borderColor: '#43512D', backgroundColor: 'rgba(67,81,45,0.12)', fill: true, tension: 0.3 }];
+          } else if (trendMode === 'people') {
+            datasets = [{ label: 'People', data: dataPeople, borderColor: '#526b38', backgroundColor: 'rgba(82,107,56,0.12)', fill: true, tension: 0.3 }];
+          } else {
+            datasets = [
+              { label: 'Males', data: dataMales, borderColor: '#526b38', backgroundColor: 'rgba(82,107,56,0.1)', fill: true, tension: 0.3 },
+              { label: 'Females', data: dataFemales, borderColor: '#c44d6a', backgroundColor: 'rgba(196,77,106,0.1)', fill: true, tension: 0.3 }
+            ];
+          }
+
+          chartTrends = new Chart(ctx, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+              },
+              scales: {
+                x: { grid: { color: '#eee' } },
+                y: { beginAtZero: true, grid: { color: '#eee' } }
+              }
+            }
+          });
+        }
+
+        function escapeHtmlMeeting(str) {
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function renderMeetingLocationsMap(filtered) {
+          var mapEl = document.getElementById('meeting-locations-map');
+          var fn = document.getElementById('meeting-locations-map-footnote');
+          if (!mapEl) return;
+
+          var tally = {};
+          var noVenue = 0;
+          var unmapped = 0;
+          var mappedRows = 0;
+          filtered.forEach(function (r) {
+            var vs = r.meetingVenue && String(r.meetingVenue).trim() !== '' ? String(r.meetingVenue).trim() : '';
+            if (!vs) {
+              noVenue++;
+              return;
+            }
+            var pt = resolveVenueToPoint(vs);
+            if (!pt) {
+              unmapped++;
+              return;
+            }
+            tally[pt.id] = (tally[pt.id] || 0) + 1;
+            mappedRows++;
+          });
+
+          if (typeof L === 'undefined') {
+            if (!meetingLocationsMapInst) mapEl.innerHTML = '<div class="p-3 small text-muted">Leaflet failed to load. Check connectivity and refresh.</div>';
+            return;
+          }
+
+          if (!meetingLocationsMapInst) {
+            meetingLocationsMapInst = L.map('meeting-locations-map', { scrollWheelZoom: false, zoomControl: true }).setView([-18.55, 22.42], 8);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+              attribution: '© Esri',
+              maxZoom: 17,
+              opacity: 0.76
+            }).addTo(meetingLocationsMapInst);
+            L.control.scale({ metric: true, imperial: false }).addTo(meetingLocationsMapInst);
+            meetingLocationsLayerGroup = L.layerGroup().addTo(meetingLocationsMapInst);
+          } else {
+            meetingLocationsLayerGroup.clearLayers();
+            if (meetingLocationsHeatLayer) {
+              meetingLocationsMapInst.removeLayer(meetingLocationsHeatLayer);
+              meetingLocationsHeatLayer = null;
+            }
+          }
+
+          var maxC = 0;
+          var pk;
+          for (pk in tally) {
+            if (Object.prototype.hasOwnProperty.call(tally, pk)) maxC = Math.max(maxC, tally[pk]);
+          }
+          if (maxC < 1) maxC = 1;
+
+          var heatPts = [];
+          MEETING_VENUE_POINTS.forEach(function (pt) {
+            var c0 = tally[pt.id] || 0;
+            if (c0 < 1) return;
+            heatPts.push([pt.lat, pt.lng, c0]);
+          });
+          if (heatPts.length && typeof L.heatLayer === 'function') {
+            meetingLocationsHeatLayer = L.heatLayer(heatPts, {
+              radius: 44,
+              blur: 38,
+              minOpacity: 0.38,
+              max: maxC,
+              maxZoom: 15,
+              gradient: {
+                '0': '#dfead7',
+                '0.35': '#7d9960',
+                '0.65': '#c9823a',
+                '1': '#9b2226'
+              }
+            });
+            meetingLocationsHeatLayer.addTo(meetingLocationsMapInst);
+          }
+
+          MEETING_VENUE_POINTS.forEach(function (pt) {
+            var cnt = tally[pt.id] || 0;
+            if (cnt < 1) return;
+            var frac = cnt / maxC;
+            var g = frac < 0.5 ? '#588157' : frac < 0.85 ? '#bc6c25' : '#bc4749';
+            var rad = Math.max(8, Math.min(36, 6 + Math.sqrt(cnt) * 4));
+            var lblRaw = pt.names.length ? pt.names[0] : pt.id.replace(/_/g, ' ');
+            var lbl = lblRaw.length ? lblRaw.charAt(0).toUpperCase() + lblRaw.slice(1) : pt.id;
+
+            L.circleMarker([pt.lat, pt.lng], {
+              radius: rad,
+              color: '#283618',
+              weight: 1.25,
+              fillColor: g,
+              fillOpacity: 0.88
+            })
+              .bindPopup(
+                '<strong>' + escapeHtmlMeeting(lbl) + '</strong><br>' +
+                  cnt +
+                  ' meeting' +
+                  (cnt === 1 ? '' : 's') +
+                  ' (current filters)'
+              )
+              .bindTooltip(cnt + ' · ' + lbl, { direction: 'top' })
+              .addTo(meetingLocationsLayerGroup);
+          });
+
+          var boundsPts = [];
+          MEETING_VENUE_POINTS.forEach(function (pt) {
+            if ((tally[pt.id] || 0) > 0) boundsPts.push([pt.lat, pt.lng]);
+          });
+          if (boundsPts.length === 1) {
+            meetingLocationsMapInst.setView(boundsPts[0], 11);
+          } else if (boundsPts.length > 1) {
+            meetingLocationsMapInst.fitBounds(boundsPts, { padding: [48, 72], maxZoom: 10 });
+          }
+          setTimeout(function () {
+            if (meetingLocationsMapInst) meetingLocationsMapInst.invalidateSize();
+          }, 220);
+
+          if (fn) {
+            var locWithData = Object.keys(tally).filter(function (k) {
+              return tally[k] > 0;
+            }).length;
+            fn.innerHTML =
+              '<strong>' +
+              mappedRows +
+              '</strong> meeting row(s) matched to ' +
+              locWithData +
+              ' settlement hotspot(s). ';
+            if (noVenue) {
+              fn.innerHTML +=
+                '<span class="text-muted">' + noVenue + ' row(s) had no venue text in the synced document. </span>';
+            }
+            if (unmapped) {
+              fn.innerHTML +=
+                '<span class="text-warning">' +
+                unmapped +
+                ' row(s) had venue text that did not match this synonym list — extend aliases or <code>KOBO_VENUE_KEYS</code> if the field path differs. </span>';
+            }
+          }
+        }
+
+        function render() {
+          var month = document.getElementById('filter-month').value;
+          var year = document.getElementById('filter-year').value;
+          var scope = document.getElementById('filter-meeting-scope').value;
+
+          var dateFilteredOnly = filterByMonthYear(allReports, month, year);
+          renderOrganiserPie(dateFilteredOnly);
+          renderStaffHistogram(dateFilteredOnly);
+
+          var scoped = applyMeetingScopeFilter(allReports, scope);
+          var filtered = filterByMonthYear(scoped, month, year);
+          var trendBtn = document.querySelector('.chart-controls .btn-secondary[data-trend].active');
+          var viewBtn = document.querySelector('.chart-controls .btn-secondary[data-view].active');
+          var trendMode = trendBtn ? trendBtn.dataset.trend : 'meetings';
+          var viewMode = viewBtn ? viewBtn.dataset.view : 'year';
+
+          renderMetrics(filtered);
+          renderGenderChart(filtered);
+          renderAgeChart(filtered);
+          var hintEl = document.getElementById('trends-view-hint');
+          if (hintEl) {
+            hintEl.textContent =
+              viewMode === 'month'
+                ? 'By calendar month: each point is January–December with all filtered years combined (seasonal shape).'
+                : 'By year: one point per calendar year.';
+          }
+          renderTrendsChart(filtered, trendMode, viewMode);
+          renderMeetingLocationsMap(filtered);
+        }
+
+        async function init() {
+          document.getElementById('metric-meetings').textContent = '…';
+          document.getElementById('metric-people').textContent = '…';
+          await loadReportsFromFirestore();
+          render();
+        }
+
+        document.getElementById('refresh-btn').addEventListener('click', init);
+        document.getElementById('filter-month').addEventListener('change', render);
+        document.getElementById('filter-year').addEventListener('change', render);
+        document.getElementById('filter-meeting-scope').addEventListener('change', render);
+
+        document.querySelectorAll('.chart-controls .btn-secondary[data-trend]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            document.querySelectorAll('.btn-secondary[data-trend]').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            render();
+          });
+        });
+        document.querySelectorAll('.chart-controls .btn-secondary[data-view]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            document.querySelectorAll('.btn-secondary[data-view]').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            render();
+          });
+        });
+
+        document.getElementById('filter-month').value = '';
+        /** All years + all months so metrics match Firestore unless you filter (previous default was current year only). */
+        document.getElementById('filter-year').value = '';
+
+        /** Do not call init() synchronously here: firebase-config.js is `type=module` (deferred) and attaches
+            getDocs/query/limit/orderBy to window.firebasePortal *after* this parser chunk. DOMContentLoaded
+            fires only after deferred modules have executed, so data load runs when helpers exist. */
+        function startMeetingReportsData() {
+          init();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', startMeetingReportsData);
+        } else {
+          /** Past `loading` (e.g. dynamic insert): deferred modules should already have run. */
+          setTimeout(startMeetingReportsData, 0);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/portal-app-shell.js"></script>
+</body>
+</html>
