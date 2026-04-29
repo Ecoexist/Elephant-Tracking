@@ -100,7 +100,7 @@
         </header>
         <div class="main-content">
     <div class="table-page">
-        <p class="source-note mb-0">Analytics from Firestore collection <code>kobo_submissions</code> (Kobo Toolbox sync). Same Firebase project as the rest of the portal.</p>
+        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>, same project as the portal. Month/Year narrow the view — default is <strong>all months · all years</strong>.</p>
         <div class="table-header">
             <h2>Meeting reports analytics</h2>
         </div>
@@ -145,6 +145,7 @@
         </div>
 
         <p id="load-error" class="text-danger small" style="display:none;"></p>
+        <p id="count-footnote" class="source-note mb-2" style="display:none;" aria-live="polite"></p>
 
         <div class="metrics-grid">
             <div class="metric-card">
@@ -209,12 +210,45 @@
 
         const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-        /** Only include rows that match the Ecoexist “organiser” attendance / activity shape. */
+        /** Only include rows that match the Ecoexist “organiser” form shape (exclude unrelated Kobo forms in the same collection). */
         function looksLikeEcoexistMeetingRow(raw) {
           if (!raw || typeof raw !== 'object') return false;
           if (raw[KOBO.totalAttendees] != null && String(raw[KOBO.totalAttendees]).trim() !== '') return true;
           if (raw[KOBO.activityStartDate] != null && String(raw[KOBO.activityStartDate]).trim() !== '') return true;
+          if (raw[KOBO.activityEndDate] != null && String(raw[KOBO.activityEndDate]).trim() !== '') return true;
           return false;
+        }
+
+        /**
+         * Parses Kobo date strings without UTC-vs-local pitfalls for bare YYYY-MM-DD
+         * (Safari/chrome treat those as UTC midnight, which can shift the calendar month).
+         */
+        function parseKoboDateValue(val) {
+          if (val == null || val === '') return null;
+          if (val && typeof val.toDate === 'function') {
+            try {
+              var t = val.toDate();
+              return t && !isNaN(t.getTime()) ? t : null;
+            } catch (e) {
+              return null;
+            }
+          }
+          if (typeof val === 'number' && !isNaN(val)) {
+            var d = new Date(val);
+            return isNaN(d.getTime()) ? null : d;
+          }
+          var s = String(val).trim();
+          if (!s) return null;
+          var isoDay = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+          if (isoDay) {
+            var y = parseInt(isoDay[1], 10);
+            var mo = parseInt(isoDay[2], 10) - 1;
+            var day = parseInt(isoDay[3], 10);
+            var local = new Date(y, mo, day);
+            return isNaN(local.getTime()) ? null : local;
+          }
+          var d = new Date(s);
+          return isNaN(d.getTime()) ? null : d;
         }
 
         function pick(raw, path) {
@@ -240,12 +274,15 @@
 
         let allReports = [];
         let chartGender, chartAge, chartTrends;
+        /** Filled in loadReportsFromFirestore for the footnote. */
+        let loadStats = { rawDocs: 0, meetingShaped: 0, atQueryLimit: false };
 
         function getReportDate(report) {
-          var d = report.activityStartDate || report.activityEndDate || report.submittedAt || report.timestamp;
-          if (d == null) return null;
-          var dt = new Date(d);
-          if (!isNaN(dt.getTime())) return dt;
+          var keys = [report.activityStartDate, report.activityEndDate, report.submittedAt, report.timestamp];
+          for (var i = 0; i < keys.length; i++) {
+            var dt = parseKoboDateValue(keys[i]);
+            if (dt) return dt;
+          }
           return null;
         }
 
@@ -271,6 +308,9 @@
           var errEl = document.getElementById('load-error');
           errEl.style.display = 'none';
           errEl.textContent = '';
+          loadStats.rawDocs = 0;
+          loadStats.meetingShaped = 0;
+          loadStats.atQueryLimit = false;
           try {
             await window.AuthPortal.waitForFirebase();
             if (window.AuthPortal.waitForFirestoreQueryHelpers) {
@@ -294,19 +334,48 @@
               snapshot = await fp.getDocs(fp.query(fp.collection(fp.db, 'kobo_submissions'), fp.limit(2500)));
             }
             var rows = [];
+            loadStats.rawDocs = snapshot.size;
+            loadStats.atQueryLimit = snapshot.size >= 2500;
             snapshot.forEach(function (docSnap) {
               var data = docSnap.data();
               if (!data || typeof data !== 'object') return;
               if (!looksLikeEcoexistMeetingRow(data)) return;
               rows.push(normalizeKoboRow(data));
             });
+            loadStats.meetingShaped = rows.length;
             allReports = rows;
           } catch (e) {
             console.error('Failed to load kobo_submissions:', e);
             allReports = [];
+            loadStats.rawDocs = 0;
+            loadStats.meetingShaped = 0;
+            loadStats.atQueryLimit = false;
             errEl.style.display = 'block';
             errEl.textContent = (e && e.message) ? e.message : String(e);
           }
+        }
+
+        function updateCountFootnote(filteredCount) {
+          var el = document.getElementById('count-footnote');
+          if (!el) return;
+          var msg =
+            loadStats.rawDocs +
+            ' document(s) loaded from Firestore. ' +
+            loadStats.meetingShaped +
+            ' match the Ecoexist meeting keys';
+          if (loadStats.rawDocs > loadStats.meetingShaped) {
+            msg += ' (' + (loadStats.rawDocs - loadStats.meetingShaped) + ' skipped: other forms or incomplete keys)';
+          }
+          msg +=
+            '. ' +
+            filteredCount +
+            ' shown after month/year filters.';
+          if (loadStats.atQueryLimit) {
+            msg += ' (capped at 2500 documents per query.)';
+          }
+          msg += ' Dates: activity start → end → submission time (local calendar for YYYY-MM-DD).';
+          el.textContent = msg;
+          el.style.display = 'block';
         }
 
         function renderMetrics(filtered) {
@@ -314,6 +383,7 @@
           var people = filtered.reduce(function (sum, r) { return sum + toNum(r.totalAttendees); }, 0);
           document.getElementById('metric-meetings').textContent = meetings.toLocaleString();
           document.getElementById('metric-people').textContent = people.toLocaleString();
+          updateCountFootnote(meetings);
         }
 
         function renderGenderChart(filtered) {
@@ -529,9 +599,9 @@
           });
         });
 
-        var now = new Date();
         document.getElementById('filter-month').value = '';
-        document.getElementById('filter-year').value = String(now.getFullYear());
+        /** All years + all months so metrics match Firestore unless you filter (previous default was current year only). */
+        document.getElementById('filter-year').value = '';
 
         /** Do not call init() synchronously here: firebase-config.js is `type=module` (deferred) and attaches
             getDocs/query/limit/orderBy to window.firebasePortal *after* this parser chunk. DOMContentLoaded
