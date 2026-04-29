@@ -100,7 +100,7 @@
         </header>
         <div class="main-content">
     <div class="table-page">
-        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>, same project as the portal. Month/Year narrow the view — default is <strong>all months · all years</strong>.</p>
+        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>: each document counts as one meeting. People engaged = sum of <code>Total_number_of_Attendees</code> on each row (0 if missing). We do <strong>not</strong> filter by who organised the meeting. Month/Year narrow by activity or submission date.</p>
         <div class="table-header">
             <h2>Meeting reports analytics</h2>
         </div>
@@ -210,15 +210,6 @@
 
         const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-        /** Only include rows that match the Ecoexist “organiser” form shape (exclude unrelated Kobo forms in the same collection). */
-        function looksLikeEcoexistMeetingRow(raw) {
-          if (!raw || typeof raw !== 'object') return false;
-          if (raw[KOBO.totalAttendees] != null && String(raw[KOBO.totalAttendees]).trim() !== '') return true;
-          if (raw[KOBO.activityStartDate] != null && String(raw[KOBO.activityStartDate]).trim() !== '') return true;
-          if (raw[KOBO.activityEndDate] != null && String(raw[KOBO.activityEndDate]).trim() !== '') return true;
-          return false;
-        }
-
         /**
          * Parses Kobo date strings without UTC-vs-local pitfalls for bare YYYY-MM-DD
          * (Safari/chrome treat those as UTC midnight, which can shift the calendar month).
@@ -256,7 +247,7 @@
           return raw[path] !== undefined ? raw[path] : null;
         }
 
-        /** Shape compatible with meeting-reports.html chart helpers. */
+        /** Shape compatible with meeting-reports.html chart helpers (missing fields → 0 in charts). */
         function normalizeKoboRow(raw) {
           return {
             activityStartDate: pick(raw, KOBO.activityStartDate),
@@ -275,7 +266,7 @@
         let allReports = [];
         let chartGender, chartAge, chartTrends;
         /** Filled in loadReportsFromFirestore for the footnote. */
-        let loadStats = { rawDocs: 0, meetingShaped: 0, atQueryLimit: false };
+        let loadStats = { rawDocs: 0, atQueryLimit: false };
 
         function getReportDate(report) {
           var keys = [report.activityStartDate, report.activityEndDate, report.submittedAt, report.timestamp];
@@ -309,7 +300,6 @@
           errEl.style.display = 'none';
           errEl.textContent = '';
           loadStats.rawDocs = 0;
-          loadStats.meetingShaped = 0;
           loadStats.atQueryLimit = false;
           try {
             await window.AuthPortal.waitForFirebase();
@@ -339,16 +329,13 @@
             snapshot.forEach(function (docSnap) {
               var data = docSnap.data();
               if (!data || typeof data !== 'object') return;
-              if (!looksLikeEcoexistMeetingRow(data)) return;
               rows.push(normalizeKoboRow(data));
             });
-            loadStats.meetingShaped = rows.length;
             allReports = rows;
           } catch (e) {
             console.error('Failed to load kobo_submissions:', e);
             allReports = [];
             loadStats.rawDocs = 0;
-            loadStats.meetingShaped = 0;
             loadStats.atQueryLimit = false;
             errEl.style.display = 'block';
             errEl.textContent = (e && e.message) ? e.message : String(e);
@@ -360,20 +347,15 @@
           if (!el) return;
           var msg =
             loadStats.rawDocs +
-            ' document(s) loaded from Firestore. ' +
-            loadStats.meetingShaped +
-            ' match the Ecoexist meeting keys';
-          if (loadStats.rawDocs > loadStats.meetingShaped) {
-            msg += ' (' + (loadStats.rawDocs - loadStats.meetingShaped) + ' skipped: other forms or incomplete keys)';
-          }
-          msg +=
-            '. ' +
+            ' document(s) loaded (1 meeting per document). ' +
             filteredCount +
-            ' shown after month/year filters.';
+            ' shown after month/year filters. ';
+          msg +=
+            'People engaged = sum of Total_number_of_Attendees in the filtered set. ';
           if (loadStats.atQueryLimit) {
-            msg += ' (capped at 2500 documents per query.)';
+            msg += 'Query limited to 2500 documents. ';
           }
-          msg += ' Dates: activity start → end → submission time (local calendar for YYYY-MM-DD).';
+          msg += 'Date order for filters: activity start → end → submission time.';
           el.textContent = msg;
           el.style.display = 'block';
         }
