@@ -100,7 +100,7 @@
         </header>
         <div class="main-content">
     <div class="table-page">
-        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>: each document counts as one meeting. People engaged = sum of <code>Total_number_of_Attendees</code> on each row (0 if missing). We do <strong>not</strong> filter by who organised the meeting. Month/Year narrow by activity or submission date.</p>
+        <p class="source-note mb-0">Firestore <code>kobo_submissions</code>: metrics use rows after <strong>Meeting scope</strong> + Month/Year. <strong>Total people engaged</strong> = sum of Kobo field <code>Total_number_of_Attendees</code> (<code>group_ee_organisedby/…/Total_number_of_Attendees</code>) across those rows.</p>
         <div class="table-header">
             <h2>Meeting reports analytics</h2>
         </div>
@@ -140,6 +140,14 @@
                         <option value="2030">2030</option>
                     </select>
                 </div>
+                <div class="date-control">
+                    <label for="filter-meeting-scope">Meeting scope</label>
+                    <select id="filter-meeting-scope" title="Narrows rows before charts and totals">
+                        <option value="all">All meetings</option>
+                        <option value="ecoexist">Meetings organised by Ecoexist</option>
+                        <option value="complete">Complete attendance &amp; dates only</option>
+                    </select>
+                </div>
                 <button id="refresh-btn" class="btn-primary">Refresh</button>
             </div>
         </div>
@@ -155,6 +163,7 @@
             <div class="metric-card">
                 <div class="value" id="metric-people">0</div>
                 <div class="label">Total people engaged</div>
+                <div class="metric-hint text-muted small mt-2" style="font-size:0.8rem;">Sum of Total_number_of_Attendees (per filtered meeting)</div>
             </div>
         </div>
 
@@ -171,6 +180,7 @@
 
         <div class="chart-card" style="margin-top: 24px;">
             <h3>Trends over time</h3>
+            <p class="text-muted small mb-2" id="trends-view-hint" style="margin-top:-8px;"></p>
             <div class="chart-controls">
                 <span style="font-size: 13px; color: #6c757d; margin-right: 12px;">Metric:</span>
                 <div class="btn-group">
@@ -181,7 +191,7 @@
                 <span style="font-size: 13px; color: #6c757d; margin: 0 12px 0 24px;">View:</span>
                 <div class="btn-group">
                     <button type="button" class="btn-secondary active" data-view="year">By Year</button>
-                    <button type="button" class="btn-secondary" data-view="month">By Month</button>
+                    <button type="button" class="btn-secondary" data-view="month" title="January–December, all years combined">By Calendar Month</button>
                 </div>
             </div>
             <div class="chart-wrapper" style="height: 360px;"><canvas id="chart-trends"></canvas></div>
@@ -197,6 +207,7 @@
     <script>
         /** Kobo field paths stored in Firestore (flat keys from Kobo export). */
         const KOBO = {
+          meetingOrganiser: 'Meeting_Organiser',
           activityStartDate: 'group_ee_organisedby/group_ee_activitydetails/Activity_start_Date',
           activityEndDate: 'group_ee_organisedby/group_ee_activitydetails/Activity_end_Date',
           totalAttendees: 'group_ee_organisedby/group_ee_attendance/Total_number_of_Attendees',
@@ -250,6 +261,7 @@
         /** Shape compatible with meeting-reports.html chart helpers (missing fields → 0 in charts). */
         function normalizeKoboRow(raw) {
           return {
+            meetingOrganiser: pick(raw, KOBO.meetingOrganiser),
             activityStartDate: pick(raw, KOBO.activityStartDate),
             activityEndDate: pick(raw, KOBO.activityEndDate),
             submittedAt: pick(raw, KOBO.submissionTime),
@@ -290,6 +302,32 @@
           });
         }
 
+        function isOrganisedByEcoexistRow(r) {
+          var v = r.meetingOrganiser;
+          if (v == null || String(v).trim() === '') return false;
+          return String(v).trim().toLowerCase().indexOf('ecoexist') !== -1;
+        }
+
+        /** Total attendees present + activity start or end date (submission-only rows excluded here). */
+        function hasCompleteMeetingFields(r) {
+          var att = r.totalAttendees != null && String(r.totalAttendees).trim() !== '';
+          var hasStart = r.activityStartDate != null && String(r.activityStartDate).trim() !== '';
+          var hasEnd = r.activityEndDate != null && String(r.activityEndDate).trim() !== '';
+          return att && (hasStart || hasEnd);
+        }
+
+        /** @param {'all'|'ecoexist'|'complete'} scope */
+        function applyMeetingScopeFilter(reports, scope) {
+          if (scope === 'ecoexist') return reports.filter(isOrganisedByEcoexistRow);
+          if (scope === 'complete') return reports.filter(hasCompleteMeetingFields);
+          return reports;
+        }
+
+        function getScopeFootnotePhrase(scope) {
+          if (scope === 'ecoexist') return 'scope: Ecoexist organiser column only.';
+          if (scope === 'complete') return 'scope: rows with attendee total + activity start or end.';
+          return 'scope: all documents.';
+        }
         function toNum(v) {
           var n = parseInt(v, 10);
           return isNaN(n) ? 0 : n;
@@ -345,11 +383,14 @@
         function updateCountFootnote(filteredCount) {
           var el = document.getElementById('count-footnote');
           if (!el) return;
+          var scopeEl = document.getElementById('filter-meeting-scope');
+          var scope = scopeEl ? scopeEl.value : 'all';
           var msg =
             loadStats.rawDocs +
             ' document(s) loaded (1 meeting per document). ' +
             filteredCount +
-            ' shown after month/year filters. ';
+            ' shown after scope + month/year filters. ';
+          msg += getScopeFootnotePhrase(scope) + ' ';
           msg +=
             'People engaged = sum of Total_number_of_Attendees in the filtered set. ';
           if (loadStats.atQueryLimit) {
@@ -467,23 +508,21 @@
           return byYear;
         }
 
-        function aggregateByMonth(filtered) {
-          var byKey = {};
+        function aggregateByCalendarMonth(filtered) {
+          var bins = [];
+          for (var mi = 0; mi < 12; mi++) {
+            bins.push({ meetings: 0, people: 0, males: 0, females: 0, label: MONTH_NAMES[mi] });
+          }
           filtered.forEach(function (r) {
             var d = getReportDate(r);
             if (!d || isNaN(d.getTime())) return;
-            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-            if (!byKey[key]) {
-              byKey[key] = { meetings: 0, people: 0, males: 0, females: 0, label: MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear() };
-            }
-            byKey[key].meetings++;
-            byKey[key].people += toNum(r.totalAttendees);
-            byKey[key].males += toNum(r.numMales);
-            byKey[key].females += toNum(r.numFemales);
+            var monthIndex = d.getMonth();
+            bins[monthIndex].meetings++;
+            bins[monthIndex].people += toNum(r.totalAttendees);
+            bins[monthIndex].males += toNum(r.numMales);
+            bins[monthIndex].females += toNum(r.numFemales);
           });
-          return Object.entries(byKey).sort(function (a, b) { return a[0].localeCompare(b[0]); }).map(function (e) {
-            return Object.assign({ key: e[0] }, e[1]);
-          });
+          return bins;
         }
 
         function renderTrendsChart(filtered, trendMode, viewMode) {
@@ -499,12 +538,12 @@
             dataMales = years.map(function (y) { return byYear[y].males; });
             dataFemales = years.map(function (y) { return byYear[y].females; });
           } else {
-            var byMonth = aggregateByMonth(filtered);
-            labels = byMonth.map(function (m) { return m.label; });
-            dataMeetings = byMonth.map(function (m) { return m.meetings; });
-            dataPeople = byMonth.map(function (m) { return m.people; });
-            dataMales = byMonth.map(function (m) { return m.males; });
-            dataFemales = byMonth.map(function (m) { return m.females; });
+            var byCalendarMonth = aggregateByCalendarMonth(filtered);
+            labels = byCalendarMonth.map(function (m) { return m.label; });
+            dataMeetings = byCalendarMonth.map(function (m) { return m.meetings; });
+            dataPeople = byCalendarMonth.map(function (m) { return m.people; });
+            dataMales = byCalendarMonth.map(function (m) { return m.males; });
+            dataFemales = byCalendarMonth.map(function (m) { return m.females; });
           }
 
           var ctx = document.getElementById('chart-trends').getContext('2d');
@@ -543,7 +582,9 @@
         function render() {
           var month = document.getElementById('filter-month').value;
           var year = document.getElementById('filter-year').value;
-          var filtered = filterByMonthYear(allReports, month, year);
+          var scope = document.getElementById('filter-meeting-scope').value;
+          var scoped = applyMeetingScopeFilter(allReports, scope);
+          var filtered = filterByMonthYear(scoped, month, year);
           var trendBtn = document.querySelector('.chart-controls .btn-secondary[data-trend].active');
           var viewBtn = document.querySelector('.chart-controls .btn-secondary[data-view].active');
           var trendMode = trendBtn ? trendBtn.dataset.trend : 'meetings';
@@ -552,6 +593,13 @@
           renderMetrics(filtered);
           renderGenderChart(filtered);
           renderAgeChart(filtered);
+          var hintEl = document.getElementById('trends-view-hint');
+          if (hintEl) {
+            hintEl.textContent =
+              viewMode === 'month'
+                ? 'By calendar month: each point is January–December with all filtered years combined (seasonal shape).'
+                : 'By year: one point per calendar year.';
+          }
           renderTrendsChart(filtered, trendMode, viewMode);
         }
 
@@ -565,6 +613,7 @@
         document.getElementById('refresh-btn').addEventListener('click', init);
         document.getElementById('filter-month').addEventListener('change', render);
         document.getElementById('filter-year').addEventListener('change', render);
+        document.getElementById('filter-meeting-scope').addEventListener('change', render);
 
         document.querySelectorAll('.chart-controls .btn-secondary[data-trend]').forEach(function (btn) {
           btn.addEventListener('click', function () {
