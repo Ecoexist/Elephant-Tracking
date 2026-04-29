@@ -187,7 +187,7 @@
             </div>
             <div class="chart-card">
                 <h3>Ecoexist staff involvement</h3>
-                <p class="text-muted small mb-2">Uses <code>Ecoexist_employees_involved</code>. Each listed name occurrence counts toward that person (meetings/month/year filtered only).</p>
+                <p class="text-muted small mb-2">Uses <code>Ecoexist_employees_involved</code>. Names are normalized to the onboard Ecoexist roster; abbreviations in brackets (e.g. Ipey, KK, Mojita) roll into each primary staff member. Repeated occurrences across meetings still stack counts.</p>
                 <div class="chart-wrapper chart-wrapper--staff"><canvas id="chart-staff"></canvas></div>
                 <p id="staff-chart-footnote" class="source-note mb-0" style="display:none;"></p>
             </div>
@@ -508,7 +508,7 @@
           });
         }
 
-        /** Lowercase key so "Tracey" merges with "tracey". */
+        /** Lowercase key so tallies merge reliably. */
         function normalizePersonKey(name) {
           return String(name || '')
             .trim()
@@ -516,41 +516,210 @@
             .replace(/\s+/g, ' ');
         }
 
-        function titleCaseLabel(s) {
-          return String(s || '')
-            .trim()
-            .split(/\s+/)
-            .filter(Boolean)
-            .map(function (word) {
-              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            })
-            .join(' ');
+        /** Main name for display histogram: strips trailing " (Nickname)" bracket. */
+        function primaryNameFromParenForm(s) {
+          var m = /^(.+?)\s*\(([^)]*)\)\s*$/.exec(String(s || '').trim());
+          if (!m) return String(s || '').trim();
+          return m[1].trim();
         }
 
         /**
-         * Ecoexist employees field often joins names with __ , ; / or "and".
-         * Each substring counts once per meeting when it appears in this field (same name twice = +2).
+         * Authoritative Ecoexist staff names — primary label is always the words before parentheses;
+         * nicknames in brackets count toward that person only.
          */
-        function splitEcoexistEmployeeNames(val) {
+        var STAFF_CANON_LINES = [
+          'Anna Songhurst',
+          'Arang Jwee',
+          'Bashi Poroto',
+          'Ben Mateusa',
+          'Benny Wright',
+          'Boiteko Tlale',
+          'Cecilia Dikoro',
+          'Graham McCulloch',
+          'Ipelafatso Nkalolang (Ipey)',
+          'Ipolokeng Tetuka',
+          'Kebonye Botshelo (KB)',
+          'Kemetlha Rebahelwang',
+          'Ketlhobogile Changwe',
+          'Ketshotseng Moikumiso (Kertz)',
+          'Kutlwano Karundu (KK)',
+          'Lethata Gaborekwe',
+          'Maipelo Gotswakgosi',
+          'Maipelo Molathegi',
+          'Makata Baitseng',
+          'Masimo Mate',
+          'Mellinah Mojasagagwe',
+          'Motoloki Morena',
+          'Oboletse Tiego',
+          'Ogone Yayuya',
+          'Ohitiseng Mosupi (Mojita)',
+          'Papadi Mwezi',
+          'Rukonga Namavunga',
+          'Salvation Motswereng',
+          'Thusego Tareka (George)',
+          'Thuso Mareko',
+          'Tracey Taylor',
+          'William Moniwe',
+          'Omphile Monnawakgotla',
+          'Jonathan Benjamin',
+          'Onalenna Monnaaleso',
+          'Goreelwang Lefatshe',
+          'Obamelang Maheta',
+          'Josephine Samahupe',
+          'Katlego Oromeng'
+        ];
+
+        /** Built once: canonical display (main without dropping nick in global map) vs primary display for bars. */
+        var STAFF_ROSTER_INDEX = (function () {
+          var entries = [];
+          var aliasToPrimaryDisplay = Object.create(null);
+          STAFF_CANON_LINES.forEach(function (line) {
+            var raw = line.trim();
+            if (!raw) return;
+            var mainDisplay = primaryNameFromParenForm(raw);
+            var nk = normalizePersonKey(mainDisplay);
+            /** Normalized main — used for greedy substring extraction from messy text. */
+            entries.push({
+              display: mainDisplay,
+              norm: nk
+            });
+            aliasToPrimaryDisplay[nk] = mainDisplay;
+            aliasToPrimaryDisplay[normalizePersonKey(raw)] = mainDisplay;
+            var parens = /\(([^)]+)\)/.exec(raw);
+            if (parens) {
+              var nick = parens[1].trim().replace(/\s+/g, ' ');
+              if (nick) aliasToPrimaryDisplay[normalizePersonKey(nick)] = mainDisplay;
+            }
+          });
+          entries.sort(function (a, b) {
+            return b.norm.length - a.norm.length;
+          });
+          return { entries: entries, aliasMap: aliasToPrimaryDisplay };
+        })();
+
+        /** Repair CamelCase-ish glue ("benjaminGraham") and stray underscores in free text. */
+        function normalizeStaffSegmentRough(s) {
+          var x = String(s || '')
+            .replace(/(?:_(?:_)+|;+|\/+)/g, ' ')
+            .replace(/\s+/g, ' ')
+            /** Insert space lowercase followed by uppercase (glue fix). */
+            .replace(/([a-záéíóú])([A-Z])/g, '$1 $2')
+            .trim();
+          return x;
+        }
+
+        /** First split meeting field into rough segments (separate people / entries). */
+        function splitEcoexistRoughSegments(val) {
           if (val == null) return [];
-          var s = String(val).trim();
+          var s = normalizeStaffSegmentRough(String(val).trim());
           if (!s || /^n\/?a$/i.test(s)) return [];
           var out = [];
-          s.split(/\s*(?:_(?:_)+|(?:\s*[;,]\s*)|(?:\s*\/+\s*)|(?:\s*\|\s*)|(?:\s+and\s+))\s*/i).forEach(function (segment) {
-            var t = segment.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+          s.split(/\s+and\s+|(?:\s*[;,]\s*)|(?:\s*\|\s*)|(?:\s*\/+\s*)|(?:_{2,})|\t|\r?\n+/).forEach(function (segment) {
+            var t = segment.replace(/^[\s;,._]+|[\s;,._]+$/g, '').replace(/\s+/g, ' ').trim();
             if (!t || /^n\/?a$/i.test(t)) return;
             out.push(t);
           });
           return out;
         }
 
+        /** Pull longest-first roster mains from flattened lowercase string; removes matches so adjacent names detach. */
+        function extractCanonNamesGreedy(normWorkChunk) {
+          var extracted = [];
+          var work = normWorkChunk.replace(/\s+/g, ' ').trim();
+          var guard = 0;
+          while (work.length > 2 && guard++ < 64) {
+            var bestIx = Infinity;
+            var bestNorm = '';
+            var bestDisplay = '';
+            var bestLen = -1;
+            for (var i = 0; i < STAFF_ROSTER_INDEX.entries.length; i++) {
+              var e = STAFF_ROSTER_INDEX.entries[i];
+              var ix = work.indexOf(e.norm);
+              if (
+                ix !== -1 &&
+                (e.norm.length > bestLen ||
+                  (e.norm.length === bestLen && ix < bestIx))
+              ) {
+                bestLen = e.norm.length;
+                bestIx = ix;
+                bestNorm = e.norm;
+                bestDisplay = e.display;
+              }
+            }
+            if (!bestNorm) break;
+            extracted.push(bestDisplay);
+            work = (work.slice(0, bestIx) + ' ' + work.slice(bestIx + bestNorm.length)).replace(/\s+/g, ' ').trim();
+          }
+          var leftover = work;
+          var extra = scanLeftoversForAliases(leftover);
+          return extracted.concat(extra);
+        }
+
+        /** Sliding window against alias map — picks up scraps like single "Ipey" tokens. */
+        function scanLeftoversForAliases(leftoverNormWords) {
+            var words = leftoverNormWords
+            .split(/\s+/)
+            .map(function (w) {
+              return w.replace(/^[\s.,;:'"_()/\\\[`@-]+|[\s.,;:'"_()/\\\[`@-]+$/g, '');
+            })
+            .filter(Boolean);
+          var got = [];
+          var i = 0;
+          var guard = 0;
+          while (i < words.length && guard++ < 120) {
+            var hit = false;
+            for (var win = Math.min(6, words.length - i); win >= 1; win--) {
+              var phrase = words.slice(i, i + win).join(' ');
+              var pkey = normalizePersonKey(phrase);
+              var disp = STAFF_ROSTER_INDEX.aliasMap[pkey];
+              if (disp) {
+                got.push(disp);
+                i += win;
+                hit = true;
+                break;
+              }
+            }
+            if (!hit) i += 1;
+          }
+          return got;
+        }
+
+        /** All canonical staff appearances for Ecoexist involvement field — one tally per occurrence. */
+        function extractCanonicalStaffAppearances(ecoEmployFieldRaw) {
+          var rough = splitEcoexistRoughSegments(ecoEmployFieldRaw);
+          var canonical = [];
+          rough.forEach(function (seg) {
+            var nk = normalizePersonKey(normalizeStaffSegmentRough(seg));
+            if (!nk) return;
+            if (STAFF_ROSTER_INDEX.aliasMap[nk]) {
+              canonical.push(STAFF_ROSTER_INDEX.aliasMap[nk]);
+              return;
+            }
+            var greeded = extractCanonNamesGreedy(nk);
+            if (greeded.length > 0) {
+              Array.prototype.push.apply(canonical, greeded);
+            } else {
+              Array.prototype.push.apply(canonical, scanLeftoversForAliases(nk));
+            }
+          });
+          return canonical;
+        }
+
+        /**
+         * @deprecated Legacy split helper — superseded by extractCanonicalStaffAppearances.
+         * Kept as thin wrapper used only if needed.
+         */
+        function splitEcoexistEmployeeNames(val) {
+          return extractCanonicalStaffAppearances(val);
+        }
+
         function tallyStaffInvolvementCounts(reports) {
           var tally = Object.create(null);
           reports.forEach(function (r) {
-            splitEcoexistEmployeeNames(r.ecoexistEmployeesInvolved).forEach(function (rawName) {
-              var key = normalizePersonKey(rawName);
+            extractCanonicalStaffAppearances(r.ecoexistEmployeesInvolved).forEach(function (displayMain) {
+              var key = normalizePersonKey(primaryNameFromParenForm(displayMain));
               if (!key) return;
-              if (!tally[key]) tally[key] = { label: titleCaseLabel(rawName), n: 0 };
+              if (!tally[key]) tally[key] = { label: primaryNameFromParenForm(displayMain), n: 0 };
               tally[key].n++;
             });
           });
@@ -563,7 +732,7 @@
           return rows;
         }
 
-        var STAFF_CHART_MAX_BARS = 42;
+        var STAFF_CHART_MAX_BARS = 50;
 
         function renderOrganiserPie(dateFiltered) {
           var eco = 0;
