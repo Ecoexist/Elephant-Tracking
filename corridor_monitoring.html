@@ -170,7 +170,7 @@
                             <div id="crossings-trend-wrap">
                                 <canvas id="chart-crossings-trend" aria-label="Crossings trend chart"></canvas>
                             </div>
-                            <p class="small text-muted mb-0 mt-2" id="chartCrossingsHint">Counts use the same filters as the map (year, month, elephant). Crossings without a valid crossing time are excluded.</p>
+                            <p class="small text-muted mb-0 mt-2" id="chartCrossingsHint">Counts use the same filters as the map (year, month, elephant). Crossings without a valid crossing time are excluded. <strong>By month</strong> sums crossings by calendar month (Jan–Dec) across the filtered set.</p>
                         </div>
                     </div>
                 </div>
@@ -647,23 +647,17 @@
                     values.push(byY[y]);
                 });
             } else {
-                const byM = {};
+                /** One series Jan–Dec: count every crossing whose calendar month matches (years combined within filter). */
+                const byMo = Array(12).fill(0);
                 list.forEach(function (c) {
                     const ts = Number(c.estimated_crossing_time);
-                    const d = new Date(ts * 1000);
-                    const y = d.getFullYear();
-                    const mo = d.getMonth() + 1;
-                    const key = y + '-' + String(mo).padStart(2, '0');
-                    byM[key] = (byM[key] || 0) + 1;
+                    const mo = new Date(ts * 1000).getMonth();
+                    if (mo >= 0 && mo <= 11) byMo[mo]++;
                 });
-                const keys = Object.keys(byM).sort();
-                keys.forEach(function (k) {
-                    const parts = k.split('-');
-                    const yy = Number(parts[0]);
-                    const mm = Number(parts[1]);
-                    labels.push(CROSSING_TREND_MONTH_NAMES[mm - 1] + ' ' + yy);
-                    values.push(byM[k]);
-                });
+                for (var mi = 0; mi < 12; mi++) {
+                    labels.push(CROSSING_TREND_MONTH_NAMES[mi]);
+                    values.push(byMo[mi]);
+                }
             }
 
             chartCrossingsTrend = new Chart(ctx, {
@@ -677,9 +671,9 @@
                             borderColor: '#4a7c59',
                             backgroundColor: 'rgba(74,124,89,0.18)',
                             fill: true,
-                            tension: 0.25,
+                            tension: crossingsChartPeriod === 'month' ? 0.2 : 0.25,
                             borderWidth: 2,
-                            pointRadius: labels.length > 36 ? 2 : 4,
+                            pointRadius: crossingsChartPeriod === 'month' ? 4 : labels.length > 36 ? 2 : 4,
                             pointHoverRadius: 6
                         }
                     ]
@@ -704,9 +698,9 @@
                     scales: {
                         x: {
                             ticks: {
-                                maxRotation: crossingsChartPeriod === 'month' && labels.length > 12 ? 45 : 0,
-                                autoSkip: true,
-                                maxTicksLimit: crossingsChartPeriod === 'month' ? 24 : 20
+                                maxRotation: 0,
+                                autoSkip: false,
+                                maxTicksLimit: crossingsChartPeriod === 'month' ? 12 : 20
                             },
                             grid: { color: 'rgba(0,0,0,0.06)' }
                         },
