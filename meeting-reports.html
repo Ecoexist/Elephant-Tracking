@@ -68,6 +68,7 @@
         .chart-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
         .chart-controls .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
         .chart-wrapper { position: relative; height: 320px; }
+        .chart-wrapper--staff { height: auto; min-height: 420px; max-height: 720px; }
         .loading { text-align: center; padding: 40px; color: #6c757d; }
         .source-note { font-size: 0.85rem; color: #6c757d; margin-bottom: 1rem; }
     </style>
@@ -145,7 +146,7 @@
                     <select id="filter-meeting-scope" title="Narrows rows before charts and totals">
                         <option value="all">All meetings</option>
                         <option value="ecoexist">Meetings organised by Ecoexist</option>
-                        <option value="complete">Complete attendance &amp; dates only</option>
+                        <option value="organiser_other">Organiser is other</option>
                     </select>
                 </div>
                 <button id="refresh-btn" class="btn-primary">Refresh</button>
@@ -178,6 +179,19 @@
             </div>
         </div>
 
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Meetings organised: Ecoexist vs other</h3>
+                <p class="text-muted small mb-2">By month/year only (ignores Meeting scope).</p>
+                <div class="chart-wrapper"><canvas id="chart-organiser"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Ecoexist staff involvement</h3>
+                <p class="text-muted small mb-2">Uses <code>Ecoexist_employees_involved</code>. Each listed name occurrence counts toward that person (meetings/month/year filtered only).</p>
+                <div class="chart-wrapper chart-wrapper--staff"><canvas id="chart-staff"></canvas></div>
+                <p id="staff-chart-footnote" class="source-note mb-0" style="display:none;"></p>
+            </div>
+        </div>
         <div class="chart-card" style="margin-top: 24px;">
             <h3>Trends over time</h3>
             <p class="text-muted small mb-2" id="trends-view-hint" style="margin-top:-8px;"></p>
@@ -216,6 +230,7 @@
           numSchoolYouth: 'group_ee_organisedby/group_ee_attendance/Number_of_school_aged_youth',
           numYouth1834: 'group_ee_organisedby/group_ee_attendance/Number_of_youth_aged_18_34',
           numAdults35: 'group_ee_organisedby/group_ee_attendance/Number_of_adults_aged_35_and_above',
+          ecoexistEmployeesInvolved: 'group_ee_organisedby/group_ee_activitydetails/Ecoexist_employees_involved',
           submissionTime: '_submission_time'
         };
 
@@ -271,12 +286,13 @@
             numFemales: pick(raw, KOBO.numFemales),
             numSchoolYouth: pick(raw, KOBO.numSchoolYouth),
             numYouth1834: pick(raw, KOBO.numYouth1834),
-            numAdults35: pick(raw, KOBO.numAdults35)
+            numAdults35: pick(raw, KOBO.numAdults35),
+            ecoexistEmployeesInvolved: pick(raw, KOBO.ecoexistEmployeesInvolved)
           };
         }
 
         let allReports = [];
-        let chartGender, chartAge, chartTrends;
+        let chartGender, chartAge, chartTrends, chartOrganiser, chartStaff;
         /** Filled in loadReportsFromFirestore for the footnote. */
         let loadStats = { rawDocs: 0, atQueryLimit: false };
 
@@ -308,24 +324,23 @@
           return String(v).trim().toLowerCase().indexOf('ecoexist') !== -1;
         }
 
-        /** Total attendees present + activity start or end date (submission-only rows excluded here). */
-        function hasCompleteMeetingFields(r) {
-          var att = r.totalAttendees != null && String(r.totalAttendees).trim() !== '';
-          var hasStart = r.activityStartDate != null && String(r.activityStartDate).trim() !== '';
-          var hasEnd = r.activityEndDate != null && String(r.activityEndDate).trim() !== '';
-          return att && (hasStart || hasEnd);
+        /** Other organiser: non-empty Meeting_Organiser field that does not reference Ecoexist. */
+        function isOrganiserOtherRow(r) {
+          var v = r.meetingOrganiser;
+          if (v == null || String(v).trim() === '') return false;
+          return String(v).trim().toLowerCase().indexOf('ecoexist') === -1;
         }
 
-        /** @param {'all'|'ecoexist'|'complete'} scope */
+        /** @param {'all'|'ecoexist'|'organiser_other'} scope */
         function applyMeetingScopeFilter(reports, scope) {
           if (scope === 'ecoexist') return reports.filter(isOrganisedByEcoexistRow);
-          if (scope === 'complete') return reports.filter(hasCompleteMeetingFields);
+          if (scope === 'organiser_other') return reports.filter(isOrganiserOtherRow);
           return reports;
         }
 
         function getScopeFootnotePhrase(scope) {
-          if (scope === 'ecoexist') return 'scope: Ecoexist organiser column only.';
-          if (scope === 'complete') return 'scope: rows with attendee total + activity start or end.';
+          if (scope === 'ecoexist') return 'scope: Meeting_Organiser contains Ecoexist only.';
+          if (scope === 'organiser_other') return 'scope: Meeting_Organiser set and does not reference Ecoexist.';
           return 'scope: all documents.';
         }
         function toNum(v) {
@@ -493,6 +508,195 @@
           });
         }
 
+        /** Lowercase key so "Tracey" merges with "tracey". */
+        function normalizePersonKey(name) {
+          return String(name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        }
+
+        function titleCaseLabel(s) {
+          return String(s || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(function (word) {
+              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            })
+            .join(' ');
+        }
+
+        /**
+         * Ecoexist employees field often joins names with __ , ; / or "and".
+         * Each substring counts once per meeting when it appears in this field (same name twice = +2).
+         */
+        function splitEcoexistEmployeeNames(val) {
+          if (val == null) return [];
+          var s = String(val).trim();
+          if (!s || /^n\/?a$/i.test(s)) return [];
+          var out = [];
+          s.split(/\s*(?:_(?:_)+|(?:\s*[;,]\s*)|(?:\s*\/+\s*)|(?:\s*\|\s*)|(?:\s+and\s+))\s*/i).forEach(function (segment) {
+            var t = segment.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!t || /^n\/?a$/i.test(t)) return;
+            out.push(t);
+          });
+          return out;
+        }
+
+        function tallyStaffInvolvementCounts(reports) {
+          var tally = Object.create(null);
+          reports.forEach(function (r) {
+            splitEcoexistEmployeeNames(r.ecoexistEmployeesInvolved).forEach(function (rawName) {
+              var key = normalizePersonKey(rawName);
+              if (!key) return;
+              if (!tally[key]) tally[key] = { label: titleCaseLabel(rawName), n: 0 };
+              tally[key].n++;
+            });
+          });
+          var rows = Object.keys(tally).map(function (k) {
+            return { key: k, label: tally[k].label, count: tally[k].n };
+          });
+          rows.sort(function (a, b) {
+            return b.count - a.count;
+          });
+          return rows;
+        }
+
+        var STAFF_CHART_MAX_BARS = 42;
+
+        function renderOrganiserPie(dateFiltered) {
+          var eco = 0;
+          var other = 0;
+          dateFiltered.forEach(function (r) {
+            if (isOrganisedByEcoexistRow(r)) eco++;
+            else other++;
+          });
+          var ctx = document.getElementById('chart-organiser').getContext('2d');
+          if (chartOrganiser) chartOrganiser.destroy();
+          var totalMeetings = eco + other;
+          if (totalMeetings === 0) {
+            chartOrganiser = new Chart(ctx, {
+              type: 'doughnut',
+              data: { labels: ['No data'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'], borderWidth: 0 }] },
+              options: { plugins: { legend: { position: 'bottom' }, tooltip: { enabled: false } } }
+            });
+            return;
+          }
+          var pe = ((eco / totalMeetings) * 100).toFixed(1);
+          var po = ((other / totalMeetings) * 100).toFixed(1);
+          chartOrganiser = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Ecoexist (' + pe + '%)', 'Other / not listed (' + po + '%)'],
+              datasets: [{
+                data: [eco, other],
+                backgroundColor: ['#43512D', '#b8c4a8'],
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      var v = c.raw;
+                      var p = totalMeetings ? ((v / totalMeetings) * 100).toFixed(1) : 0;
+                      return c.label.split('(')[0].trim() + ': ' + v + ' meetings (' + p + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        function renderStaffHistogram(dateFiltered) {
+          var tallyRows = tallyStaffInvolvementCounts(dateFiltered);
+          var footEl = document.getElementById('staff-chart-footnote');
+          var limited = tallyRows.slice(0, STAFF_CHART_MAX_BARS);
+          if (footEl) {
+            if (tallyRows.length > STAFF_CHART_MAX_BARS) {
+              footEl.style.display = 'block';
+              footEl.textContent =
+                'Showing top ' +
+                STAFF_CHART_MAX_BARS +
+                ' by involvement count (' +
+                tallyRows.length +
+                ' distinct names).';
+            } else if (tallyRows.length > 0) {
+              footEl.style.display = 'block';
+              footEl.textContent =
+                tallyRows.length +
+                ' name(s). Each bar = how often that name appears on staff lists in the filtered meetings.';
+            } else {
+              footEl.style.display = 'none';
+              footEl.textContent = '';
+            }
+          }
+
+          var wrap = document.querySelector('.chart-wrapper--staff');
+          if (wrap) {
+            wrap.style.height = Math.min(720, Math.max(260, 44 + limited.length * 24)) + 'px';
+          }
+
+          var labels = limited.map(function (row) {
+            return row.label;
+          });
+          var data = limited.map(function (row) {
+            return row.count;
+          });
+          var ctx = document.getElementById('chart-staff').getContext('2d');
+          if (chartStaff) chartStaff.destroy();
+
+          if (labels.length === 0) {
+            chartStaff = new Chart(ctx, {
+              type: 'bar',
+              data: { labels: ['No staff names'], datasets: [{ data: [0], backgroundColor: '#e0e0e0' }] },
+              options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            return;
+          }
+
+          chartStaff = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: 'Listed involvements',
+                  data: data,
+                  backgroundColor: '#526b38',
+                  borderWidth: 0
+                }
+              ]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      return String(c.parsed.x);
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eee' } },
+                y: { ticks: { autoSkip: false }, grid: { display: false } }
+              }
+            }
+          });
+        }
+
         function aggregateByYear(filtered) {
           var byYear = {};
           filtered.forEach(function (r) {
@@ -583,6 +787,11 @@
           var month = document.getElementById('filter-month').value;
           var year = document.getElementById('filter-year').value;
           var scope = document.getElementById('filter-meeting-scope').value;
+
+          var dateFilteredOnly = filterByMonthYear(allReports, month, year);
+          renderOrganiserPie(dateFilteredOnly);
+          renderStaffHistogram(dateFilteredOnly);
+
           var scoped = applyMeetingScopeFilter(allReports, scope);
           var filtered = filterByMonthYear(scoped, month, year);
           var trendBtn = document.querySelector('.chart-controls .btn-secondary[data-trend].active');
