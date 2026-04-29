@@ -11,145 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* App shell: left sidebar + main (ribbon nav removed from top) */
-        body.app-layout-corridor {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: row;
-            align-items: stretch;
-        }
-        .app-layout-corridor .app-sidebar {
-            width: 189px;
-            flex-shrink: 0;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            color: #fff;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.12);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .app-layout-corridor .app-sidebar-inner {
-            padding: 0.85rem 0.65rem 1.5rem 0.65rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            flex: 1;
-        }
-        .app-layout-corridor .app-sidebar-logo {
-            display: block;
-            text-align: center;
-            padding: 0.25rem 0;
-        }
-        .app-layout-corridor .app-sidebar-logo img {
-            width: 58px;
-            height: auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-        .app-layout-corridor .app-sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .app-layout-corridor .app-sidebar-nav a {
-            display: block;
-            padding: 10px 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: rgba(255,255,255,0.92);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: background 0.15s ease, color 0.15s ease;
-            border-left: 3px solid transparent;
-        }
-        .app-layout-corridor .app-sidebar-nav a:hover {
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-        }
-        .app-layout-corridor .app-sidebar-nav a.app-nav-current {
-            background: rgba(39, 174, 96, 0.25);
-            border-left-color: #27ae60;
-            color: #fff;
-        }
-        .app-layout-corridor .app-main-wrap {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        /* Floating user avatar — top-right, above page chrome */
-        .user-avatar-float {
-            position: fixed;
-            top: 14px;
-            right: 14px;
-            left: auto;
-            z-index: 10060;
-        }
-        .user-avatar-float .user-avatar-btn {
-            position: relative;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.95);
-            background: linear-gradient(145deg, #4a7c59, #2c5530);
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-            padding: 0;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .user-avatar-float .user-avatar-btn:hover {
-            transform: scale(1.04);
-            box-shadow: 0 6px 22px rgba(0,0,0,0.28);
-        }
-        .user-avatar-float .user-status-dot {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 11px;
-            height: 11px;
-            background: #22c55e;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .user-avatar-float .dropdown-menu {
-            margin-top: 8px;
-            min-width: 160px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 10070;
-        }
-        .corridor-page-header {
-            padding: 0.75rem 1rem 0.25rem 1rem;
-            padding-right: 4.5rem;
-            flex-shrink: 0;
-        }
-        .corridor-page-heading {
-            margin: 0;
-            font-size: 1.6875rem;
-            font-weight: 700;
-            color: #1a4a2e;
-            letter-spacing: -0.02em;
-        }
-        /* Override global styles.css .main-content height (was for top ribbon) */
-        body.app-layout-corridor .main-content {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            height: auto;
-            overflow-y: auto;
-        }
+        /* App shell in styles.css; corridor map + panels below */
         #map-container.card {
             border-radius: 10px;
             overflow: hidden;
@@ -215,13 +77,14 @@
         .view-mode-buttons button { flex: 1; min-width: 120px; }
         .info-icon-btn { width: 2rem; height: 2rem; padding: 0; border-radius: 50%; font-weight: 700; font-size: 0.95rem; line-height: 1; }
         .corridor-last-ele { font-size: 0.7rem; line-height: 1.25; }
+        #crossings-trend-wrap { position: relative; height: 300px; }
     </style>
     <script>
       (async function() {
         try {
           const result = await window.AuthPortal.checkAuthAndRedirect(false, 'corridor_monitoring.html');
           if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'corridor_monitoring.html')) {
-            window.location.replace('dashboard_public_firebase.html');
+            window.location.replace('login.html?return=corridor_monitoring.html');
             return;
           }
         } catch (e) {
@@ -266,16 +129,7 @@
             <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
                 <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
             </a>
-            <nav class="app-sidebar-nav">
-                <a href="admin.html">Admin</a>
-                <a href="vehicle-tracker.html">Vehicle Tracker</a>
-                <a href="dashboard_all_data.html">Wildlife Map</a>
-                <a href="corridor_monitoring.html" class="app-nav-current">Corridor monitoring</a>
-                <a href="lightmap_100m.html">Light map (100&nbsp;m)</a>
-                <a href="ngamiland-lucis.html">Ngamiland LUCIS</a>
-                <a href="hec.html">HEC</a>
-                <a href="kaza/land_use_conflict.html">Land Use Conflict</a>
-            </nav>
+            <nav class="app-sidebar-nav"></nav>
         </div>
     </aside>
 
@@ -301,6 +155,22 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="card border-0 shadow mt-3">
+                        <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center gap-2"
+                            style="background: linear-gradient(135deg, #2c5530, #4a7c59); color: #fff; border-radius: 10px 10px 0 0;">
+                            <h6 class="mb-0">Crossings over time</h6>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Chart period">
+                                <button type="button" class="btn btn-sm btn-light" id="btnChartByYear" onclick="setCrossingsChartPeriod('year')">By year</button>
+                                <button type="button" class="btn btn-sm btn-outline-light" id="btnChartByMonth" onclick="setCrossingsChartPeriod('month')">By month</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="crossings-trend-wrap">
+                                <canvas id="chart-crossings-trend" aria-label="Crossings trend chart"></canvas>
+                            </div>
+                            <p class="small text-muted mb-0 mt-2" id="chartCrossingsHint">Counts use the same filters as the map (year, month, elephant). Crossings without a valid crossing time are excluded.</p>
                         </div>
                     </div>
                 </div>
@@ -463,6 +333,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/portal-app-shell.js"></script>
 
     <script>
         const ROAD_API = 'https://ecoexist-api.vercel.app/api/road-crossings-process';
@@ -475,132 +347,6 @@
         const ROAD_CROSSINGS_ADMIN_SECRET = '';
         const ROAD_CROSSINGS_BASIC_USER = '';
         const ROAD_CROSSINGS_BASIC_PASSWORD = '';
-
-        /** Firestore users/{uid}.name — custom-token users often have no displayName on the Auth object */
-        window._corridorProfileNameForInitials = '';
-
-        function initialsFromFirebaseUser(user) {
-            if (!user) return '?';
-            const name = (user.displayName || window._corridorProfileNameForInitials || '').trim();
-            if (name) {
-                const parts = name.split(/\s+/).filter(Boolean);
-                if (parts.length >= 2) {
-                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-                }
-                if (parts.length === 1 && parts[0].length >= 2) {
-                    return parts[0].substring(0, 2).toUpperCase();
-                }
-                return (parts[0].charAt(0) || '?').toUpperCase();
-            }
-            var emailStr = user.email || '';
-            if (!emailStr && user.providerData && user.providerData.length) {
-                emailStr = user.providerData[0].email || '';
-            }
-            const local = emailStr.split('@')[0] || '';
-            if (local) {
-                const bits = local.split(/[._-]+/).filter(Boolean);
-                if (bits.length >= 2) {
-                    return (bits[0].charAt(0) + bits[1].charAt(0)).toUpperCase();
-                }
-                if (local.length >= 2) return local.substring(0, 2).toUpperCase();
-                return (local.charAt(0) + local.charAt(0)).toUpperCase();
-            }
-            return user.uid ? user.uid.substring(0, 2).toUpperCase() : '?';
-        }
-
-        window.updateCorridorUserAvatar = function () {
-            const el = document.getElementById('userAvatarInitials');
-            if (!el) return;
-            const user = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth.currentUser : null;
-            el.textContent = initialsFromFirebaseUser(user);
-        };
-
-        async function fetchCorridorUserProfileForInitials() {
-            window._corridorProfileNameForInitials = '';
-            const auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
-            const db = window.firebasePortal && window.firebasePortal.db ? window.firebasePortal.db : null;
-            const docFn = window.firebasePortal && window.firebasePortal.doc ? window.firebasePortal.doc : null;
-            const getDocFn = window.firebasePortal && window.firebasePortal.getDoc ? window.firebasePortal.getDoc : null;
-            if (!auth || !auth.currentUser || !db || !docFn || !getDocFn) return;
-            try {
-                const snap = await getDocFn(docFn(db, 'users', auth.currentUser.uid));
-                if (snap.exists()) {
-                    const d = snap.data();
-                    let n = (d.name || d.displayName || '').trim();
-                    if (!n) {
-                        const em = (d.email || auth.currentUser.email || '').trim();
-                        if (em) {
-                            const local = em.split('@')[0];
-                            const parts = local.split(/[._-]+/).filter(Boolean);
-                            if (parts.length >= 2) {
-                                n = parts[0] + ' ' + parts[parts.length - 1];
-                            } else {
-                                n = local;
-                            }
-                        }
-                    }
-                    if (n) window._corridorProfileNameForInitials = n;
-                }
-            } catch (e) {
-                /* ignore */
-            }
-        }
-
-        function wireCorridorShellUiCore() {
-            window.updateCorridorUserAvatar();
-            fetchCorridorUserProfileForInitials().then(function () {
-                window.updateCorridorUserAvatar();
-            });
-            var auth = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
-            var oasc = window.firebasePortal && window.firebasePortal.onAuthStateChanged;
-            if (auth && oasc && !auth._corridorMonAvatarBound) {
-                auth._corridorMonAvatarBound = true;
-                oasc(auth, function (u) {
-                    window._corridorProfileNameForInitials = '';
-                    if (u) {
-                        fetchCorridorUserProfileForInitials().then(function () {
-                            window.updateCorridorUserAvatar();
-                        });
-                    } else {
-                        window.updateCorridorUserAvatar();
-                    }
-                });
-            }
-            var so = document.getElementById('userAvatarSignOut');
-            if (so && !so._corridorSignOutBound) {
-                so._corridorSignOutBound = true;
-                so.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    var a = window.firebasePortal && window.firebasePortal.auth ? window.firebasePortal.auth : null;
-                    var signOutFn = window.firebasePortal && window.firebasePortal.signOut;
-                    if (a && signOutFn) {
-                        signOutFn(a)
-                            .then(function () {
-                                window.location.href = 'login.html';
-                            })
-                            .catch(function () {
-                                window.location.href = 'login.html';
-                            });
-                    } else {
-                        window.location.href = 'login.html';
-                    }
-                });
-            }
-        }
-
-        function wireCorridorShellUi() {
-            if (window.AuthPortal && typeof window.AuthPortal.waitForFirebase === 'function') {
-                window.AuthPortal.waitForFirebase()
-                    .then(function () {
-                        wireCorridorShellUiCore();
-                    })
-                    .catch(function () {
-                        wireCorridorShellUiCore();
-                    });
-            } else {
-                setTimeout(wireCorridorShellUi, 80);
-            }
-        }
 
         async function getAuthToken(forceRefresh) {
             const user = window.firebasePortal?.auth?.currentUser;
@@ -691,6 +437,11 @@
         let roadLayer = null;
         /** Outside corridor bands are drawn only when merged cluster has this many crossings or more. */
         const MIN_OUTSIDE_CLUSTER_FOR_BAND = 3;
+
+        let chartCrossingsTrend = null;
+        /** 'year' = counts per calendar year; 'month' = counts per calendar month (year–month). */
+        let crossingsChartPeriod = 'year';
+        const CROSSING_TREND_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         function escapeHtml(s) {
             if (s == null) return '';
@@ -841,7 +592,132 @@
         function onElephantFilterChange() {
             updateCrossingStatsFigures();
             redrawCrossingDisplay();
+            updateCrossingsTrendChart();
             if (usageMode) void applyCorridorUsage();
+        }
+
+        function setCrossingsChartPeriod(period) {
+            if (period !== 'year' && period !== 'month') return;
+            crossingsChartPeriod = period;
+            const yBtn = document.getElementById('btnChartByYear');
+            const mBtn = document.getElementById('btnChartByMonth');
+            if (yBtn && mBtn) {
+                const isYear = period === 'year';
+                yBtn.className = isYear
+                    ? 'btn btn-sm btn-light'
+                    : 'btn btn-sm btn-outline-light';
+                mBtn.className = isYear
+                    ? 'btn btn-sm btn-outline-light'
+                    : 'btn btn-sm btn-light';
+            }
+            updateCrossingsTrendChart();
+        }
+
+        function updateCrossingsTrendChart() {
+            const canvas = document.getElementById('chart-crossings-trend');
+            if (!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
+            if (chartCrossingsTrend) {
+                chartCrossingsTrend.destroy();
+                chartCrossingsTrend = null;
+            }
+
+            const list = activeCrossings().filter(function (c) {
+                const ts = Number(c.estimated_crossing_time);
+                return Number.isFinite(ts);
+            });
+
+            let labels = [];
+            let values = [];
+
+            if (crossingsChartPeriod === 'year') {
+                const byY = {};
+                list.forEach(function (c) {
+                    const ts = Number(c.estimated_crossing_time);
+                    const y = new Date(ts * 1000).getFullYear();
+                    byY[y] = (byY[y] || 0) + 1;
+                });
+                const years = Object.keys(byY)
+                    .map(Number)
+                    .sort(function (a, b) {
+                        return a - b;
+                    });
+                years.forEach(function (y) {
+                    labels.push(String(y));
+                    values.push(byY[y]);
+                });
+            } else {
+                const byM = {};
+                list.forEach(function (c) {
+                    const ts = Number(c.estimated_crossing_time);
+                    const d = new Date(ts * 1000);
+                    const y = d.getFullYear();
+                    const mo = d.getMonth() + 1;
+                    const key = y + '-' + String(mo).padStart(2, '0');
+                    byM[key] = (byM[key] || 0) + 1;
+                });
+                const keys = Object.keys(byM).sort();
+                keys.forEach(function (k) {
+                    const parts = k.split('-');
+                    const yy = Number(parts[0]);
+                    const mm = Number(parts[1]);
+                    labels.push(CROSSING_TREND_MONTH_NAMES[mm - 1] + ' ' + yy);
+                    values.push(byM[k]);
+                });
+            }
+
+            chartCrossingsTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['No data'],
+                    datasets: [
+                        {
+                            label: 'Crossings',
+                            data: labels.length ? values : [0],
+                            borderColor: '#4a7c59',
+                            backgroundColor: 'rgba(74,124,89,0.18)',
+                            fill: true,
+                            tension: 0.25,
+                            borderWidth: 2,
+                            pointRadius: labels.length > 36 ? 2 : 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function (items) {
+                                    return items.length ? String(items[0].label) : '';
+                                },
+                                label: function (item) {
+                                    return 'Crossings: ' + item.formattedValue;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: crossingsChartPeriod === 'month' && labels.length > 12 ? 45 : 0,
+                                autoSkip: true,
+                                maxTicksLimit: crossingsChartPeriod === 'month' ? 24 : 20
+                            },
+                            grid: { color: 'rgba(0,0,0,0.06)' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { color: 'rgba(0,0,0,0.08)' }
+                        }
+                    }
+                }
+            });
         }
 
         function updateCrossingStatsFigures() {
@@ -1230,6 +1106,7 @@
             if (statusEl) statusEl.textContent = '';
             updateCrossingStatsFigures();
             redrawCrossingDisplay();
+            updateCrossingsTrendChart();
             if (usageMode) void applyCorridorUsage();
         }
 
@@ -1537,6 +1414,7 @@
             const okCor = await loadCorridors();
             if (!okCor || !corridorGeoJson) {
                 if (statusEl0) statusEl0.textContent = 'Could not load Corridors.geojson (expected under data/).';
+                updateCrossingsTrendChart();
                 return;
             }
             drawBaseCorridors();
@@ -1556,6 +1434,7 @@
                 populateElephantTable();
                 updateCrossingStatsFigures();
                 redrawCrossingDisplay();
+                updateCrossingsTrendChart();
                 const b = corridorLayer.getBounds();
                 if (b.isValid()) map.fitBounds(b.pad(0.08));
             } catch (e) {
@@ -1565,12 +1444,13 @@
                 populateElephantTable();
                 updateCrossingStatsFigures();
                 redrawCrossingDisplay();
+                updateCrossingsTrendChart();
             }
             setTimeout(function() { map.invalidateSize(); }, 200);
         }
 
         function runAfterAuth() {
-            wireCorridorShellUi();
+            if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
             if (window._corridorMonInit) return;
             window._corridorMonInit = true;
             requestAnimationFrame(boot);
@@ -1580,10 +1460,10 @@
         if (document.getElementById('auth-overlay') === null) runAfterAuth();
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function () {
-                wireCorridorShellUi();
+                if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
             });
         } else {
-            wireCorridorShellUi();
+            if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
         }
     </script>
 </body>
