@@ -70,7 +70,7 @@
         .chart-wrapper { position: relative; height: 320px; }
         /** Outer scroll wraps a tall horizontal bar chart so labels are not smashed (fixes “only ~6 visible”). */
         .staff-chart-scroll-wrap {
-          max-height: min(92vh, 1800px);
+          max-height: min(94vh, 4000px);
           overflow-x: hidden;
           overflow-y: auto;
           border-radius: 6px;
@@ -229,7 +229,7 @@
     </div>
 
     <div class="bottom-ribbon">
-        <p>© 2025 Ecoexist Monitoring | Developed by <a href="mailto:jonobenjamingis@gmail.com">Fieldwork Africa / @Jonathan Benjamin</a></p>
+        <p>© 2025 Ecoexist Monitoring | <a href="mailto:jonobenjamingis@gmail.com">Jonathan Benjamin</a></p>
     </div>
         </div>
     </div>
@@ -748,8 +748,6 @@
           return rows;
         }
 
-        var STAFF_CHART_MAX_BARS = 200;
-
         function renderOrganiserPie(dateFiltered) {
           var eco = 0;
           var other = 0;
@@ -803,17 +801,9 @@
         function renderStaffHistogram(dateFiltered) {
           var tallyRows = tallyStaffInvolvementCounts(dateFiltered);
           var footEl = document.getElementById('staff-chart-footnote');
-          var limited = tallyRows.slice(0, STAFF_CHART_MAX_BARS);
+          var limited = tallyRows;
           if (footEl) {
-            if (tallyRows.length > STAFF_CHART_MAX_BARS) {
-              footEl.style.display = 'block';
-              footEl.textContent =
-                'Showing top ' +
-                STAFF_CHART_MAX_BARS +
-                ' by involvement count (' +
-                tallyRows.length +
-                ' distinct names).';
-            } else if (tallyRows.length > 0) {
+            if (tallyRows.length > 0) {
               footEl.style.display = 'block';
               footEl.textContent =
                 tallyRows.length +
