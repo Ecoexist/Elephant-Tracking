@@ -68,7 +68,19 @@
         .chart-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
         .chart-controls .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
         .chart-wrapper { position: relative; height: 320px; }
-        .chart-wrapper--staff { height: auto; min-height: 420px; max-height: 720px; }
+        /** Outer scroll wraps a tall horizontal bar chart so labels are not smashed (fixes “only ~6 visible”). */
+        .staff-chart-scroll-wrap {
+          max-height: min(92vh, 1800px);
+          overflow-x: hidden;
+          overflow-y: auto;
+          border-radius: 6px;
+          border: 1px solid #e9ecef;
+          background: #fafafa;
+        }
+        .chart-wrapper--staff {
+          height: auto;
+          min-height: 260px;
+        }
         .loading { text-align: center; padding: 40px; color: #6c757d; }
         .source-note { font-size: 0.85rem; color: #6c757d; margin-bottom: 1rem; }
     </style>
@@ -188,7 +200,11 @@
             <div class="chart-card">
                 <h3>Ecoexist staff involvement</h3>
                 <p class="text-muted small mb-2">Uses <code>Ecoexist_employees_involved</code>. Names are normalized to the onboard Ecoexist roster; abbreviations in brackets (e.g. Ipey, KK, Mojita) roll into each primary staff member. Repeated occurrences across meetings still stack counts.</p>
-                <div class="chart-wrapper chart-wrapper--staff"><canvas id="chart-staff"></canvas></div>
+                <div class="staff-chart-scroll-wrap" id="staff-chart-scroll-wrap" aria-label="Ecoexist staff bar chart scroll area">
+                  <div class="chart-wrapper chart-wrapper--staff" id="staff-chart-inner">
+                    <canvas id="chart-staff"></canvas>
+                  </div>
+                </div>
                 <p id="staff-chart-footnote" class="source-note mb-0" style="display:none;"></p>
             </div>
         </div>
@@ -732,7 +748,7 @@
           return rows;
         }
 
-        var STAFF_CHART_MAX_BARS = 50;
+        var STAFF_CHART_MAX_BARS = 200;
 
         function renderOrganiserPie(dateFiltered) {
           var eco = 0;
@@ -801,28 +817,31 @@
               footEl.style.display = 'block';
               footEl.textContent =
                 tallyRows.length +
-                ' name(s). Each bar = how often that name appears on staff lists in the filtered meetings.';
+                ' name(s). Scroll inside the bordered area to see everyone. Each bar counts how often that name appears in staff-involved lists for the filtered meetings.';
             } else {
               footEl.style.display = 'none';
               footEl.textContent = '';
             }
           }
 
-          var wrap = document.querySelector('.chart-wrapper--staff');
-          if (wrap) {
-            wrap.style.height = Math.min(720, Math.max(260, 44 + limited.length * 24)) + 'px';
-          }
-
+          var wrap = document.getElementById('staff-chart-inner');
           var labels = limited.map(function (row) {
             return row.label;
           });
           var data = limited.map(function (row) {
             return row.count;
           });
+
+          if (wrap && labels.length > 0) {
+            var pxBar = labels.length <= 12 ? 34 : labels.length <= 35 ? 26 : 22;
+            wrap.style.height = Math.max(240, labels.length * pxBar + 80) + 'px';
+          }
+
           var ctx = document.getElementById('chart-staff').getContext('2d');
           if (chartStaff) chartStaff.destroy();
 
           if (labels.length === 0) {
+            if (wrap) wrap.style.height = '260px';
             chartStaff = new Chart(ctx, {
               type: 'bar',
               data: { labels: ['No staff names'], datasets: [{ data: [0], backgroundColor: '#e0e0e0' }] },
@@ -860,7 +879,14 @@
               },
               scales: {
                 x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eee' } },
-                y: { ticks: { autoSkip: false }, grid: { display: false } }
+                y: {
+                  ticks: {
+                    autoSkip: false,
+                    maxTicksLimit: Math.max(labels.length, 24),
+                    font: { size: labels.length > 35 ? 9 : labels.length > 22 ? 10 : 11 }
+                  },
+                  grid: { display: false }
+                }
               }
             }
           });
