@@ -24,7 +24,10 @@
         .metric-card .label { font-size: 15px; font-weight: 600; color: #2c3e50; margin-top: 10px; }
         .metric-card .hint { font-size: 0.8rem; color: #6c757d; margin-top: 8px; line-height: 1.35; }
         .metric-card--wide { grid-column: 1 / -1; }
-        .metric-footer { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e9ecef; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .metric-footer { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e9ecef; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+        .village-filter { min-width: 160px; max-width: 220px; }
+        .village-filter label { font-size: 11px; color: #6c757d; margin-bottom: 4px; display: block; }
+        .village-filter select { font-size: 0.85rem; padding: 4px 8px; }
         .form-check-input:checked { background-color: #43512D; border-color: #43512D; }
         .alert-metrics { font-size: 0.9rem; }
         .btn-refresh { background: #43512D; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; }
@@ -108,7 +111,7 @@
                     <div class="metric-card">
                         <div class="value loading" id="metricCorridors">…</div>
                         <div class="label">Elephant corridors</div>
-                        <div class="hint">Polygon count in <code>data/Corridors.geojson</code></div>
+                        <div class="hint">Corridor polygons in <code>data/Corridors.geojson</code> (excludes <code>buffer</code>)</div>
                     </div>
                     <div class="metric-card">
                         <div class="value loading" id="metricCollars">…</div>
@@ -125,11 +128,12 @@
                         <div class="label">Annual HEC incidents</div>
                         <div class="hint">ArcGIS HWC Survey layer — all survey points for the selected year</div>
                         <div class="metric-footer">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="toggleUniqueVillage" role="switch">
-                                <label class="form-check-label" for="toggleUniqueVillage">Count unique villages (<code>vlge</code>) instead of all incident records</label>
+                            <div class="village-filter">
+                                <label for="incidentVillageFilter">Filter by village</label>
+                                <select id="incidentVillageFilter" class="form-select form-select-sm" aria-label="Village filter for HEC incidents">
+                                    <option value="">All villages</option>
+                                </select>
                             </div>
-                            <span class="text-muted" id="incidentModeLabel" style="font-size: 0.85rem;">Showing: all records</span>
                         </div>
                     </div>
                 </div>
@@ -176,10 +180,20 @@
           box.classList.remove('d-none');
         }
 
+        function corridorLabel(f) {
+          const p = (f && f.properties) || {};
+          return String(p.Corridor != null ? p.Corridor : p.corridor != null ? p.corridor : p.name || '').trim();
+        }
+
+        function isBufferCorridor(f) {
+          return corridorLabel(f).toLowerCase() === 'buffer';
+        }
+
         function countCorridorPolygons(geojson) {
           const feats = geojson && Array.isArray(geojson.features) ? geojson.features : [];
           let n = 0;
           for (const f of feats) {
+            if (isBufferCorridor(f)) continue;
             const g = f && f.geometry;
             if (!g) continue;
             if (g.type === 'Polygon' || g.type === 'MultiPolygon') n += 1;
@@ -234,23 +248,57 @@
           return typeof data.count === 'number' ? data.count : 0;
         }
 
-        async function arcgisUniqueVillageCount(where) {
-          const params = new URLSearchParams({
-            where: where || '1=1',
-            groupByFieldsForStatistics: 'vlge',
-            outStatistics: JSON.stringify([
-              { statisticType: 'count', onStatisticField: 'OBJECTID', outStatisticFieldName: 'cnt' }
-            ]),
-            f: 'json'
-          });
-          const data = await fetch(HWC_LAYER_URL + '/query?' + params.toString()).then((r) => r.json());
-          if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-          let n = 0;
-          for (const f of data.features || []) {
-            const v = f.attributes && f.attributes.vlge;
-            if (v != null && String(v).trim() !== '') n += 1;
+        function villageClause(village) {
+          const v = village != null ? String(village).trim() : '';
+          if (!v) return '';
+          return "vlge = '" + v.replace(/'/g, "''") + "'";
+        }
+
+        async function loadVillageNamesForYear(year) {
+          const where = buildWhere([yearClause(year) || '1=1', 'vlge IS NOT NULL']);
+          const names = new Set();
+          let offset = 0;
+          const pageSize = 2000;
+          while (true) {
+            const params = new URLSearchParams({
+              where,
+              outFields: 'vlge',
+              returnGeometry: 'false',
+              resultOffset: String(offset),
+              resultRecordCount: String(pageSize),
+              f: 'json'
+            });
+            const data = await fetch(HWC_LAYER_URL + '/query?' + params.toString()).then((r) => r.json());
+            if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+            const feats = data.features || [];
+            if (!feats.length) break;
+            for (const f of feats) {
+              const v = f.attributes && f.attributes.vlge;
+              if (v != null && String(v).trim() !== '') names.add(String(v).trim());
+            }
+            if (feats.length < pageSize) break;
+            offset += pageSize;
           }
-          return n;
+          return [...names].sort((a, b) => a.localeCompare(b));
+        }
+
+        async function populateVillageSelect(year) {
+          const sel = document.getElementById('incidentVillageFilter');
+          if (!sel) return;
+          const prev = sel.value;
+          sel.innerHTML = '<option value="">All villages</option>';
+          try {
+            const villages = await loadVillageNamesForYear(year);
+            for (const name of villages) {
+              const opt = document.createElement('option');
+              opt.value = name;
+              opt.textContent = name;
+              sel.appendChild(opt);
+            }
+            if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+          } catch (e) {
+            console.warn('Village list:', e);
+          }
         }
 
         function populateYearSelect() {
@@ -267,20 +315,10 @@
           sel.value = String(now);
         }
 
-        function updateIncidentModeLabel(uniqueVillages) {
-          const el = document.getElementById('incidentModeLabel');
-          if (el) {
-            el.textContent = uniqueVillages
-              ? 'Showing: one count per unique village (vlge)'
-              : 'Showing: all incident records';
-          }
-        }
-
         window.refreshNgoMetrics = async function () {
           showAlert('');
           const year = document.getElementById('metricYear')?.value;
-          const uniqueVillages = document.getElementById('toggleUniqueVillage')?.checked === true;
-          updateIncidentModeLabel(uniqueVillages);
+          const village = document.getElementById('incidentVillageFilter')?.value || '';
 
           ['metricCorridors', 'metricCollars', 'metricMortalities', 'metricIncidents'].forEach((id) => {
             const el = document.getElementById(id);
@@ -296,7 +334,7 @@
             "ele_dead_injured = 'Dead'",
             yearClause(year)
           ]);
-          const incidentWhere = buildWhere([yearClause(year) || '1=1']);
+          const incidentWhere = buildWhere([yearClause(year) || '1=1', villageClause(village)]);
 
           await Promise.all([
             loadCorridorCount()
@@ -308,7 +346,7 @@
             arcgisCount(mortalityWhere)
               .then((n) => setMetricValue('metricMortalities', n))
               .catch((e) => { errors.push('Mortalities: ' + e.message); setMetricValue('metricMortalities', e.message, true); }),
-            (uniqueVillages ? arcgisUniqueVillageCount(incidentWhere) : arcgisCount(incidentWhere))
+            arcgisCount(incidentWhere)
               .then((n) => setMetricValue('metricIncidents', n))
               .catch((e) => { errors.push('HEC incidents: ' + e.message); setMetricValue('metricIncidents', e.message, true); })
           ]);
@@ -316,10 +354,21 @@
           if (errors.length) showAlert('Some metrics could not be loaded: ' + errors.join('; '));
         };
 
+        async function onYearChange() {
+          const year = document.getElementById('metricYear')?.value;
+          await populateVillageSelect(year);
+          return window.refreshNgoMetrics();
+        }
+
         populateYearSelect();
-        document.getElementById('metricYear')?.addEventListener('change', window.refreshNgoMetrics);
-        document.getElementById('toggleUniqueVillage')?.addEventListener('change', window.refreshNgoMetrics);
-        document.getElementById('btnRefreshMetrics')?.addEventListener('click', window.refreshNgoMetrics);
+        document.getElementById('metricYear')?.addEventListener('change', onYearChange);
+        document.getElementById('incidentVillageFilter')?.addEventListener('change', window.refreshNgoMetrics);
+        document.getElementById('btnRefreshMetrics')?.addEventListener('click', async function () {
+          const year = document.getElementById('metricYear')?.value;
+          await populateVillageSelect(year);
+          return window.refreshNgoMetrics();
+        });
+        onYearChange();
       })();
     </script>
 </body>
