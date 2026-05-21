@@ -7,7 +7,11 @@
  * PORTAL_NAV_ITEMS drives sidebars/ribbons; applySidebarNavForUser / applyRibbonNavForUser show only pages the role may access (admin: all; funder: allowedPages; user/viewer: defaults).
  */
 
-const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
+/** Same host as login.html — do not use ecoexist-pwa-backend.vercel.app here (CORS). */
+const API_BASE =
+  typeof window !== 'undefined' && window.location && window.location.origin
+    ? window.location.origin
+    : '';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI — matches portal sidebar order. */
 const FUNDER_PAGE_OPTIONS = [
@@ -24,13 +28,13 @@ const FUNDER_PAGE_OPTIONS = [
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
 /** Default tool pages for role `user` (Firestore role). */
-const USER_ROLE_DEFAULT_PAGES = ['ngo_metrics.html','hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
+const USER_ROLE_DEFAULT_PAGES = ['ngo_metrics.html', 'hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
 
 /**
  * Default tools for role `viewer`. Cumulative wildlife map (dashboard_all_data) is not included:
  * /api/awt-data allows only admin, funder, user — same rule here.
  */
-const VIEWER_ROLE_DEFAULT_PAGES = ['hec.html','ngamiland-lucis.html'];
+const VIEWER_ROLE_DEFAULT_PAGES = ['lightmap_100m.html'];
 
 function pageFilename(page) {
   if (typeof page !== 'string') return '';
@@ -283,6 +287,37 @@ async function waitForFirebase(timeoutMs = 10000) {
   });
 }
 
+/** After waitForFirebase: ensures js/firebase-config.js finished (ES modules) exposing query helpers. */
+async function waitForFirestoreQueryHelpers(timeoutMs = 8000) {
+  const need = ['getDocs', 'query', 'limit', 'orderBy', 'collection'];
+  const start = Date.now();
+  return new Promise((resolve, reject) => {
+    const check = () => {
+      const fp = window.firebasePortal;
+      const ok =
+        fp &&
+        fp.db &&
+        need.every(function (k) {
+          return typeof fp[k] === 'function';
+        });
+      if (ok) {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        reject(
+          new Error(
+            'Firestore query API not loaded. Hard-refresh (cache) or confirm ecoexist-main/js/firebase-config.js exposes getDocs, query, limit, orderBy on window.firebasePortal.'
+          )
+        );
+        return;
+      }
+      setTimeout(check, 40);
+    };
+    check();
+  });
+}
+
 /**
  * @returns {Promise<{ role: string, allowedPages: string[] }|null>} null if revoked
  */
@@ -313,8 +348,7 @@ async function getUserRole(uid) {
 }
 
 async function loginWithPassword(name, password) {
-  // const res = await fetch(`${API_BASE}/api/auth/login`, {
-  const res = await fetch(`${API_BASE}/api/auth`, {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password })
@@ -437,7 +471,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'hec.html';
+      window.location.href = 'he.html';
     }
     return;
   }
@@ -447,7 +481,7 @@ function redirectByRole(role, returnUrl, allowedPages = []) {
     if (name && canAccessPortalPage(r, pages, name)) {
       window.location.href = name;
     } else {
-      window.location.href = 'hec.html';
+      window.location.href = 'corridor_monitoring.html';
     }
     return;
   }
@@ -522,7 +556,6 @@ function canAccessPage(role, page) {
 window.addEventListener('load', () => {
   const authEl = document.getElementById('auth-overlay');
   if (authEl) {
-    console.warn('[AuthPortal] Removing auth-overlay at window load (stuck guard)');
     authEl.remove();
     window.dispatchEvent(new CustomEvent('authReady'));
   }
@@ -534,6 +567,7 @@ window.addEventListener('load', () => {
 
 window.AuthPortal = {
   waitForFirebase,
+  waitForFirestoreQueryHelpers,
   getUserRole,
   getUserAccess,
   loginWithPassword,
