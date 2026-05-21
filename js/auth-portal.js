@@ -313,7 +313,8 @@ async function getUserRole(uid) {
 }
 
 async function loginWithPassword(name, password) {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
+  // const res = await fetch(`${API_BASE}/api/auth/login`, {
+  const res = await fetch(`${API_BASE}/api/auth`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password })
