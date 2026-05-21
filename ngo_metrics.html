@@ -32,6 +32,18 @@
         .alert-metrics { font-size: 0.9rem; }
         .btn-refresh { background: #43512D; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; }
         .btn-refresh:hover { background: #2c5530; color: #fff; }
+        .metrics-section-title { font-size: 1.1rem; font-weight: 600; color: #43512D; margin: 28px 0 16px; padding-top: 8px; border-top: 1px solid #dee2e6; }
+        .metric-card--chart { text-align: center; }
+        .metric-card--chart .value-head { font-size: 2.5rem; font-weight: 700; color: #43512D; line-height: 1.1; margin-bottom: 8px; }
+        .metric-card--chart .value-head.loading { font-size: 1.1rem; color: #6c757d; font-weight: 500; }
+        .chart-wrapper-population { position: relative; height: 220px; margin: 8px 0 12px; }
+        .population-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 8px; border-top: 1px solid #e9ecef; }
+        .population-nav .btn-pop-arrow {
+            width: 36px; height: 36px; border-radius: 50%; border: 2px solid #43512D; background: #fff;
+            color: #43512D; font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0;
+        }
+        .population-nav .btn-pop-arrow:hover { background: #43512D; color: #fff; }
+        .population-nav .series-label { font-size: 0.85rem; color: #495057; font-weight: 600; min-width: 140px; text-align: center; }
     </style>
     <script>
       (async function() {
@@ -94,7 +106,7 @@
             <div class="table-page">
                 <div class="table-header">
                     <h2>Programme indicators</h2>
-                    <p class="text-muted mb-0" style="font-size: 0.9rem;">Summary metrics for corridors, collared elephants, and human–elephant conflict (HEC) surveys.</p>
+                    <p class="text-muted mb-0" style="font-size: 0.9rem;">Summary metrics for corridors, collared elephants, HEC surveys, and Firestore impact submissions.</p>
                 </div>
 
                 <div id="metricsAlert" class="alert alert-warning alert-metrics d-none" role="alert"></div>
@@ -137,11 +149,39 @@
                         </div>
                     </div>
                 </div>
+
+                <h3 class="metrics-section-title">Impact submissions (Firestore <code>impacts</code>)</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="value loading" id="metricAerialSurveys">…</div>
+                        <div class="label">Aerial surveys</div>
+                        <div class="hint">Total records with <code>impactType: aerial_survey</code></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricStudents">…</div>
+                        <div class="label">Students supported</div>
+                        <div class="hint">Total records with <code>impactType: students_supported</code></div>
+                    </div>
+                    <div class="metric-card metric-card--wide metric-card--chart">
+                        <div class="value-head loading" id="metricPopulationHead">…</div>
+                        <div class="label">Elephant population</div>
+                        <div class="chart-wrapper-population">
+                            <canvas id="populationChart" aria-label="Elephant population over time"></canvas>
+                        </div>
+                        <div class="population-nav">
+                            <button type="button" class="btn-pop-arrow" id="btnPopulationPrev" aria-label="Previous population series">‹</button>
+                            <span class="series-label" id="populationSeriesLabel">Botswana</span>
+                            <button type="button" class="btn-pop-arrow" id="btnPopulationNext" aria-label="Next population series">›</button>
+                        </div>
+                        <div class="hint">Latest value above chart; arrows switch Botswana vs NG11 (<code>impacts</code>)</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/portal-app-shell.js"></script>
     <script>
       (function () {
@@ -149,6 +189,13 @@
           'https://services2.arcgis.com/yQ7Kef2Q14sLNyEQ/arcgis/rest/services/HWC_Survey_V3_ViewLayer/FeatureServer/1';
         const AWT_PUBLIC_API = 'https://ecoexist-api.vercel.app/api/awt-data-public';
         const MORTALITY_TYPE_VALUES = ['Elephant Death or Injury', 'Elephant_death_injuiry'];
+        const POPULATION_SERIES = [
+          { key: 'botswanaElephantPopulation', label: 'Botswana elephant population' },
+          { key: 'ng11Population', label: 'NG11 population' }
+        ];
+        let populationChartInstance = null;
+        let populationSeriesIndex = 0;
+        let cachedPopulationRows = [];
 
         function normalizeTagId(id) {
           if (id == null || id === '') return '';
@@ -301,6 +348,147 @@
           }
         }
 
+        function setPopulationHead(value, isError) {
+          const el = document.getElementById('metricPopulationHead');
+          if (!el) return;
+          el.classList.remove('loading');
+          if (isError) {
+            el.textContent = '—';
+            el.title = String(value);
+            return;
+          }
+          el.textContent = typeof value === 'number' ? value.toLocaleString() : String(value);
+          el.title = '';
+        }
+
+        function parseImpactDate(data) {
+          const raw = data.recordDate || data.surveyDate || data.submittedAt || data.timestamp;
+          if (!raw) return null;
+          const t = new Date(raw);
+          return isNaN(t.getTime()) ? null : t;
+        }
+
+        function toImpactNumber(v) {
+          if (v == null || v === '') return null;
+          const n = Number(v);
+          return Number.isFinite(n) ? n : null;
+        }
+
+        async function loadImpactsFromFirestore() {
+          await window.AuthPortal.waitForFirebase();
+          if (window.AuthPortal.waitForFirestoreQueryHelpers) {
+            await window.AuthPortal.waitForFirestoreQueryHelpers();
+          }
+          const fp = window.firebasePortal;
+          if (!fp || !fp.db || !fp.collection || !fp.getDocs || !fp.query || !fp.limit) {
+            throw new Error('Firestore helpers not loaded (hard-refresh the page).');
+          }
+          let snapshot;
+          try {
+            snapshot = await fp.getDocs(fp.query(
+              fp.collection(fp.db, 'impacts'),
+              fp.orderBy('submittedAt', 'desc'),
+              fp.limit(500)
+            ));
+          } catch (eOrder) {
+            snapshot = await fp.getDocs(fp.query(fp.collection(fp.db, 'impacts'), fp.limit(500)));
+          }
+          const rows = [];
+          snapshot.forEach(function (docSnap) {
+            rows.push(Object.assign({ id: docSnap.id }, docSnap.data()));
+          });
+          return rows;
+        }
+
+        function getPopulationRows(rows) {
+          return rows
+            .filter(function (r) { return r.impactType === 'elephant_population'; })
+            .map(function (r) {
+              return {
+                date: parseImpactDate(r),
+                botswanaElephantPopulation: toImpactNumber(r.botswanaElephantPopulation),
+                ng11Population: toImpactNumber(r.ng11Population)
+              };
+            })
+            .filter(function (r) { return r.date != null; })
+            .sort(function (a, b) { return a.date - b.date; });
+        }
+
+        function renderPopulationChart() {
+          const canvas = document.getElementById('populationChart');
+          if (!canvas || typeof Chart === 'undefined') return;
+          const series = POPULATION_SERIES[populationSeriesIndex] || POPULATION_SERIES[0];
+          const labelEl = document.getElementById('populationSeriesLabel');
+          if (labelEl) labelEl.textContent = series.label;
+
+          const rows = cachedPopulationRows;
+          const labels = rows.map(function (r) {
+            return r.date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+          });
+          const values = rows.map(function (r) {
+            const v = r[series.key];
+            return v == null ? null : v;
+          });
+
+          const latest = rows.length ? rows[rows.length - 1][series.key] : null;
+          if (latest == null) {
+            setPopulationHead('—');
+          } else {
+            setPopulationHead(latest);
+          }
+
+          if (populationChartInstance) {
+            populationChartInstance.destroy();
+            populationChartInstance = null;
+          }
+
+          if (!rows.length) {
+            setPopulationHead('No data');
+            return;
+          }
+
+          populationChartInstance = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: series.label,
+                data: values,
+                borderColor: '#43512D',
+                backgroundColor: 'rgba(67, 81, 45, 0.12)',
+                fill: true,
+                tension: 0.25,
+                pointRadius: 4,
+                pointBackgroundColor: '#43512D',
+                spanGaps: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: false, ticks: { precision: 0 } },
+                x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+              }
+            }
+          });
+        }
+
+        function shiftPopulationSeries(delta) {
+          populationSeriesIndex = (populationSeriesIndex + delta + POPULATION_SERIES.length) % POPULATION_SERIES.length;
+          renderPopulationChart();
+        }
+
+        function applyImpactsMetrics(rows) {
+          const aerial = rows.filter(function (r) { return r.impactType === 'aerial_survey'; }).length;
+          const students = rows.filter(function (r) { return r.impactType === 'students_supported'; }).length;
+          setMetricValue('metricAerialSurveys', aerial);
+          setMetricValue('metricStudents', students);
+          cachedPopulationRows = getPopulationRows(rows);
+          renderPopulationChart();
+        }
+
         function populateYearSelect() {
           const sel = document.getElementById('metricYear');
           if (!sel) return;
@@ -320,13 +508,18 @@
           const year = document.getElementById('metricYear')?.value;
           const village = document.getElementById('incidentVillageFilter')?.value || '';
 
-          ['metricCorridors', 'metricCollars', 'metricMortalities', 'metricIncidents'].forEach((id) => {
+          ['metricCorridors', 'metricCollars', 'metricMortalities', 'metricIncidents', 'metricAerialSurveys', 'metricStudents'].forEach((id) => {
             const el = document.getElementById(id);
             if (el) {
               el.textContent = '…';
               el.classList.add('loading');
             }
           });
+          const popHead = document.getElementById('metricPopulationHead');
+          if (popHead) {
+            popHead.textContent = '…';
+            popHead.classList.add('loading');
+          }
 
           const errors = [];
           const mortalityWhere = buildWhere([
@@ -348,7 +541,15 @@
               .catch((e) => { errors.push('Mortalities: ' + e.message); setMetricValue('metricMortalities', e.message, true); }),
             arcgisCount(incidentWhere)
               .then((n) => setMetricValue('metricIncidents', n))
-              .catch((e) => { errors.push('HEC incidents: ' + e.message); setMetricValue('metricIncidents', e.message, true); })
+              .catch((e) => { errors.push('HEC incidents: ' + e.message); setMetricValue('metricIncidents', e.message, true); }),
+            loadImpactsFromFirestore()
+              .then(function (rows) { applyImpactsMetrics(rows); })
+              .catch(function (e) {
+                errors.push('Firestore impacts: ' + e.message);
+                setMetricValue('metricAerialSurveys', e.message, true);
+                setMetricValue('metricStudents', e.message, true);
+                setPopulationHead(e.message, true);
+              })
           ]);
 
           if (errors.length) showAlert('Some metrics could not be loaded: ' + errors.join('; '));
@@ -361,6 +562,8 @@
         }
 
         populateYearSelect();
+        document.getElementById('btnPopulationPrev')?.addEventListener('click', function () { shiftPopulationSeries(-1); });
+        document.getElementById('btnPopulationNext')?.addEventListener('click', function () { shiftPopulationSeries(1); });
         document.getElementById('metricYear')?.addEventListener('change', onYearChange);
         document.getElementById('incidentVillageFilter')?.addEventListener('change', window.refreshNgoMetrics);
         document.getElementById('btnRefreshMetrics')?.addEventListener('click', async function () {
