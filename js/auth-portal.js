@@ -11,6 +11,7 @@ const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI — matches portal sidebar order. */
 const FUNDER_PAGE_OPTIONS = [
+  { value: 'ngo_metrics.html', label: 'NGO impact dashboard' },
   { value: 'dashboard_all_data.html', label: 'Elephant Movement' },
   { value: 'corridor_monitoring.html', label: 'Corridor monitoring' },
   { value: 'hec.html', label: 'HEC' },
@@ -23,7 +24,7 @@ const FUNDER_PAGE_OPTIONS = [
 const ALLOWED_RETURN_PAGES = FUNDER_PAGE_OPTIONS.map((o) => o.value);
 
 /** Default tool pages for role `user` (Firestore role). */
-const USER_ROLE_DEFAULT_PAGES = ['hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
+const USER_ROLE_DEFAULT_PAGES = ['ngo_metrics.html','hec.html', 'corridor_monitoring.html', 'ngamiland-lucis.html'];
 
 /**
  * Default tools for role `viewer`. Cumulative wildlife map (dashboard_all_data) is not included:
