@@ -8,10 +8,7 @@
  */
 
 /** Same host as login.html — do not use ecoexist-pwa-backend.vercel.app here (CORS). */
-const API_BASE =
-  (typeof window !== 'undefined' && window.ECOEXIST_API_BASE)
-    ? window.ECOEXIST_API_BASE
-    : 'https://ecoexist-pwa-backend.vercel.app';
+const API_BASE = 'https://ecoexist-pwa-backend.vercel.app';
 
 /** Pages funders may be granted (admin excluded). Labels for admin UI — matches portal sidebar order. */
 const FUNDER_PAGE_OPTIONS = [
