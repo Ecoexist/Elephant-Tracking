@@ -30,7 +30,7 @@
             margin-bottom: 24px;
         }
         @media (min-width: 1200px) {
-            .metrics-grid--indicators { grid-template-columns: repeat(3, 1fr); }
+            .metrics-grid--indicators { grid-template-columns: repeat(4, 1fr); }
             .metrics-grid--impacts { grid-template-columns: repeat(2, 1fr); }
             .metrics-grid--impacts .metric-card--chart { grid-column: 1 / -1; }
         }
@@ -151,6 +151,11 @@
                         <div class="label">Annual elephant mortalities</div>
                         <div class="hint"><code>type_of_hec</code> = Elephant death/injury and <code>ele_dead_injured</code> = Dead</div>
                     </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricFieldRaids">…</div>
+                        <div class="label">Annual field raids</div>
+                        <div class="hint"><code>type_of_hec</code> = Field Raid (HWC Survey, selected year)</div>
+                    </div>
                     <div class="metric-card metric-card--wide">
                         <div class="value loading" id="metricIncidents">…</div>
                         <div class="label">Annual HEC incidents</div>
@@ -205,6 +210,7 @@
           'https://services2.arcgis.com/yQ7Kef2Q14sLNyEQ/arcgis/rest/services/HWC_Survey_V3_ViewLayer/FeatureServer/1';
         const AWT_PUBLIC_API = 'https://ecoexist-api.vercel.app/api/awt-data-public';
         const MORTALITY_TYPE_VALUES = ['Elephant Death or Injury', 'Elephant_death_injuiry'];
+        const FIELD_RAID_TYPE_VALUES = ['Field Raid'];
         const POPULATION_SERIES = [
           { key: 'botswanaElephantPopulation', label: 'Botswana elephant population' },
           { key: 'ng11Population', label: 'NG11 population' }
@@ -289,9 +295,17 @@
           return tags.size;
         }
 
-        function mortalityTypeClause() {
-          const parts = MORTALITY_TYPE_VALUES.map((v) => "type_of_hec = '" + v.replace(/'/g, "''") + "'");
+        function hecTypeClause(values) {
+          const parts = values.map((v) => "type_of_hec = '" + v.replace(/'/g, "''") + "'");
           return '(' + parts.join(' OR ') + ')';
+        }
+
+        function mortalityTypeClause() {
+          return hecTypeClause(MORTALITY_TYPE_VALUES);
+        }
+
+        function fieldRaidTypeClause() {
+          return hecTypeClause(FIELD_RAID_TYPE_VALUES);
         }
 
         function yearClause(year) {
@@ -524,7 +538,7 @@
           const year = document.getElementById('metricYear')?.value;
           const village = document.getElementById('incidentVillageFilter')?.value || '';
 
-          ['metricCorridors', 'metricCollars', 'metricMortalities', 'metricIncidents', 'metricAerialSurveys', 'metricStudents'].forEach((id) => {
+          ['metricCorridors', 'metricCollars', 'metricMortalities', 'metricFieldRaids', 'metricIncidents', 'metricAerialSurveys', 'metricStudents'].forEach((id) => {
             const el = document.getElementById(id);
             if (el) {
               el.textContent = '…';
@@ -543,6 +557,10 @@
             "ele_dead_injured = 'Dead'",
             yearClause(year)
           ]);
+          const fieldRaidWhere = buildWhere([
+            fieldRaidTypeClause(),
+            yearClause(year)
+          ]);
           const incidentWhere = buildWhere([yearClause(year) || '1=1', villageClause(village)]);
 
           await Promise.all([
@@ -555,6 +573,9 @@
             arcgisCount(mortalityWhere)
               .then((n) => setMetricValue('metricMortalities', n))
               .catch((e) => { errors.push('Mortalities: ' + e.message); setMetricValue('metricMortalities', e.message, true); }),
+            arcgisCount(fieldRaidWhere)
+              .then((n) => setMetricValue('metricFieldRaids', n))
+              .catch((e) => { errors.push('Field raids: ' + e.message); setMetricValue('metricFieldRaids', e.message, true); }),
             arcgisCount(incidentWhere)
               .then((n) => setMetricValue('metricIncidents', n))
               .catch((e) => { errors.push('HEC incidents: ' + e.message); setMetricValue('metricIncidents', e.message, true); }),
