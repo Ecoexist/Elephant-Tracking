@@ -149,12 +149,12 @@
                     <div class="metric-card">
                         <div class="value loading" id="metricMortalities">…</div>
                         <div class="label">Annual elephant mortalities</div>
-                        <div class="hint"><code>type_of_hec</code> = Elephant death/injury and <code>ele_dead_injured</code> = Dead</div>
+                        <div class="hint"><code>type_of_hec</code> = Elephant Death or Injury and <code>ele_dead_injured</code> = Dead</div>
                     </div>
                     <div class="metric-card">
                         <div class="value loading" id="metricFieldRaids">…</div>
                         <div class="label">Annual field raids</div>
-                        <div class="hint"><code>type_of_hec</code> = Field Raid (HWC Survey, selected year)</div>
+                        <div class="hint"><code>type_of_hec</code> = Field Raid only (not mortalities or other HEC types)</div>
                     </div>
                     <div class="metric-card metric-card--wide">
                         <div class="value loading" id="metricIncidents">…</div>
@@ -210,7 +210,7 @@
           'https://services2.arcgis.com/yQ7Kef2Q14sLNyEQ/arcgis/rest/services/HWC_Survey_V3_ViewLayer/FeatureServer/1';
         const AWT_PUBLIC_API = 'https://ecoexist-api.vercel.app/api/awt-data-public';
         const MORTALITY_TYPE_VALUES = ['Elephant Death or Injury', 'Elephant_death_injuiry'];
-        const FIELD_RAID_TYPE_VALUES = ['Field Raid'];
+        const FIELD_RAID_TYPE_OF_HEC = 'Field Raid';
         const POPULATION_SERIES = [
           { key: 'botswanaElephantPopulation', label: 'Botswana elephant population' },
           { key: 'ng11Population', label: 'NG11 population' }
@@ -305,7 +305,7 @@
         }
 
         function fieldRaidTypeClause() {
-          return hecTypeClause(FIELD_RAID_TYPE_VALUES);
+          return "type_of_hec = '" + FIELD_RAID_TYPE_OF_HEC.replace(/'/g, "''") + "'";
         }
 
         function yearClause(year) {
