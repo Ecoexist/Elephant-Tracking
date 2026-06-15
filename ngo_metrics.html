@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO impact dashboard | Ecoexist</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        .table-page {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 1rem 1.5rem 2rem;
+            box-sizing: border-box;
+        }
+        .table-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #43512D; }
+        .table-header h2 { margin: 0; color: #43512D; font-size: 1.35rem; }
+        .table-controls { padding: 16px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+        .date-control label { font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block; }
+        .date-control select { padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 6px; min-width: 120px; }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        @media (min-width: 1200px) {
+            .metrics-grid--indicators { grid-template-columns: repeat(4, 1fr); }
+            .metrics-grid--impacts { grid-template-columns: repeat(3, 1fr); }
+            .metrics-grid--impacts .metric-card--chart { grid-column: 1 / -1; }
+        }
+        .metric-card { background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .metric-card .value { font-size: 2.75rem; font-weight: 700; color: #43512D; line-height: 1.1; }
+        .metric-card .value.loading { font-size: 1.25rem; color: #6c757d; font-weight: 500; }
+        .metric-card .label { font-size: 15px; font-weight: 600; color: #2c3e50; margin-top: 10px; }
+        .metric-card .hint { font-size: 0.8rem; color: #6c757d; margin-top: 8px; line-height: 1.35; }
+        .metric-card--wide { grid-column: 1 / -1; }
+        .metric-footer { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e9ecef; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+        .village-filter { min-width: 160px; max-width: 220px; }
+        .village-filter label { font-size: 11px; color: #6c757d; margin-bottom: 4px; display: block; }
+        .village-filter select { font-size: 0.85rem; padding: 4px 8px; }
+        .form-check-input:checked { background-color: #43512D; border-color: #43512D; }
+        .alert-metrics { font-size: 0.9rem; }
+        .btn-refresh { background: #43512D; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; }
+        .btn-refresh:hover { background: #2c5530; color: #fff; }
+        .metrics-section-title { font-size: 1.1rem; font-weight: 600; color: #43512D; margin: 28px 0 16px; padding-top: 8px; border-top: 1px solid #dee2e6; }
+        .metric-card--chart { text-align: center; }
+        .metric-card--chart .value-head { font-size: 2.5rem; font-weight: 700; color: #43512D; line-height: 1.1; margin-bottom: 8px; }
+        .metric-card--chart .value-head.loading { font-size: 1.1rem; color: #6c757d; font-weight: 500; }
+        .chart-wrapper-population { position: relative; height: 220px; margin: 8px 0 12px; }
+        .population-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 8px; border-top: 1px solid #e9ecef; }
+        .population-nav .btn-pop-arrow {
+            width: 36px; height: 36px; border-radius: 50%; border: 2px solid #43512D; background: #fff;
+            color: #43512D; font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0;
+        }
+        .population-nav .btn-pop-arrow:hover { background: #43512D; color: #fff; }
+        .population-nav .series-label { font-size: 0.85rem; color: #495057; font-weight: 600; min-width: 140px; text-align: center; }
+    </style>
+    <script>
+      (async function() {
+        try {
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'ngo_metrics.html');
+          if (!result || !window.AuthPortal.canAccessPortalPage(result.role, result.allowedPages, 'ngo_metrics.html')) {
+            window.location.replace('login.html?return=ngo_metrics.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html?return=ngo_metrics.html');
+          return;
+        }
+        function doInit() {
+          document.getElementById('auth-overlay')?.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'ngo_metrics.html' }).catch(function (e) {
+              console.warn(e);
+            });
+          }
+          if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
+          if (typeof window.refreshNgoMetrics === 'function') window.refreshNgoMetrics();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else {
+          doInit();
+        }
+      })();
+    </script>
+</head>
+<body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
+    </div>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="ngo_metrics.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav"></nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header">
+            <h1 class="corridor-page-heading">NGO impact dashboard</h1>
+        </header>
+        <div class="main-content" style="overflow-y: auto;">
+            <div class="table-page">
+                <div class="table-header">
+                    <h2>Programme indicators</h2>
+                    <p class="text-muted mb-0" style="font-size: 0.9rem;">Summary metrics for corridors, collared elephants, HEC surveys, and Firestore impact submissions.</p>
+                </div>
+
+                <div id="metricsAlert" class="alert alert-warning alert-metrics d-none" role="alert"></div>
+
+                <div class="table-controls">
+                    <div class="date-control">
+                        <label for="metricYear">Year (annual HEC indicators only)</label>
+                        <select id="metricYear" aria-label="Year for annual HEC metrics"></select>
+                    </div>
+                    <button type="button" class="btn-refresh" id="btnRefreshMetrics">Refresh data</button>
+                </div>
+
+                <div class="metrics-grid metrics-grid--indicators">
+                    <div class="metric-card">
+                        <div class="value loading" id="metricCorridors">…</div>
+                        <div class="label">Elephant corridors</div>
+                        <div class="hint">Corridor polygons in <code>data/Corridors.geojson</code> (excludes <code>buffer</code>)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricCollars">…</div>
+                        <div class="label">Collared elephants</div>
+                        <div class="hint">Unique collar tag IDs (same source as the public wildlife map)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricMortalities">…</div>
+                        <div class="label">Annual elephant mortalities</div>
+                        <div class="hint"><code>type_of_hec</code> = Elephant Death or Injury and <code>ele_dead_injured</code> = Dead</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricFieldRaids">…</div>
+                        <div class="label">Annual field raids</div>
+                        <div class="hint"><code>type_of_hec</code> = Field Raid (<code>Field_raid</code> in ArcGIS)</div>
+                    </div>
+                    <div class="metric-card metric-card--wide">
+                        <div class="value loading" id="metricIncidents">…</div>
+                        <div class="label">Annual HEC incidents</div>
+                        <div class="hint">ArcGIS HWC Survey layer — all survey points for the selected year</div>
+                        <div class="metric-footer">
+                            <div class="village-filter">
+                                <label for="incidentVillageFilter">Filter by village</label>
+                                <select id="incidentVillageFilter" class="form-select form-select-sm" aria-label="Village filter for HEC incidents">
+                                    <option value="">All villages</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="metrics-section-title">Impact submissions (Firestore <code>impacts</code>)</h3>
+                <div class="metrics-grid metrics-grid--impacts">
+                    <div class="metric-card">
+                        <div class="value loading" id="metricAerialSurveys">…</div>
+                        <div class="label">Aerial surveys</div>
+                        <div class="hint">Total records with <code>impactType: aerial_survey</code></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricStudents">…</div>
+                        <div class="label">Students supported</div>
+                        <div class="hint">Total records with <code>impactType: students_supported</code></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value loading" id="metricPeerArticles">…</div>
+                        <div class="label">Peer reviewed articles</div>
+                        <div class="hint">Total records with <code>impactType: peer_reviewed_articles</code></div>
+                    </div>
+                    <div class="metric-card metric-card--wide metric-card--chart">
+                        <div class="value-head loading" id="metricPopulationHead">…</div>
+                        <div class="label">Elephant population</div>
+                        <div class="chart-wrapper-population">
+                            <canvas id="populationChart" aria-label="Elephant population over time"></canvas>
+                        </div>
+                        <div class="population-nav">
+                            <button type="button" class="btn-pop-arrow" id="btnPopulationPrev" aria-label="Previous population series">‹</button>
+                            <span class="series-label" id="populationSeriesLabel">Botswana</span>
+                            <button type="button" class="btn-pop-arrow" id="btnPopulationNext" aria-label="Next population series">›</button>
+                        </div>
+                        <div class="hint">Full time series from Firestore — not filtered by the year control above</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/portal-app-shell.js"></script>
+    <script>
+      (function () {
+        const HWC_LAYER_URL =
+          'https://services2.arcgis.com/yQ7Kef2Q14sLNyEQ/arcgis/rest/services/HWC_Survey_V3_ViewLayer/FeatureServer/1';
+        const AWT_PUBLIC_API = 'https://ecoexist-api.vercel.app/api/awt-data-public';
+        const MORTALITY_TYPE_VALUES = ['Elephant Death or Injury', 'Elephant_death_injuiry'];
+        /** Survey123 domain label is "Field Raid"; ArcGIS REST stores Field_raid */
+        const FIELD_RAID_TYPE_VALUES = ['Field_raid', 'Field Raid'];
+        const POPULATION_SERIES = [
+          { key: 'botswanaElephantPopulation', label: 'Botswana elephant population' },
+          { key: 'ng11Population', label: 'NG11 population' }
+        ];
+        let populationChartInstance = null;
+        let populationSeriesIndex = 0;
+        let cachedPopulationRows = [];
+        let cachedImpactRows = null;
+
+        function normalizeTagId(id) {
+          if (id == null || id === '') return '';
+          return String(id).trim();
+        }
+
+        function setMetricValue(elId, value, isError) {
+          const el = document.getElementById(elId);
+          if (!el) return;
+          el.classList.remove('loading');
+          if (isError) {
+            el.textContent = '—';
+            el.title = String(value);
+            return;
+          }
+          el.textContent = typeof value === 'number' ? value.toLocaleString() : String(value);
+          el.title = '';
+        }
+
+        function showAlert(msg) {
+          const box = document.getElementById('metricsAlert');
+          if (!box) return;
+          if (!msg) {
+            box.classList.add('d-none');
+            box.textContent = '';
+            return;
+          }
+          box.textContent = msg;
+          box.classList.remove('d-none');
+        }
+
+        function corridorLabel(f) {
+          const p = (f && f.properties) || {};
+          return String(p.Corridor != null ? p.Corridor : p.corridor != null ? p.corridor : p.name || '').trim();
+        }
+
+        function isBufferCorridor(f) {
+          return corridorLabel(f).toLowerCase() === 'buffer';
+        }
+
+        function countCorridorPolygons(geojson) {
+          const feats = geojson && Array.isArray(geojson.features) ? geojson.features : [];
+          let n = 0;
+          for (const f of feats) {
+            if (isBufferCorridor(f)) continue;
+            const g = f && f.geometry;
+            if (!g) continue;
+            if (g.type === 'Polygon' || g.type === 'MultiPolygon') n += 1;
+            else if (g.type === 'GeometryCollection' && Array.isArray(g.geometries)) {
+              for (const gg of g.geometries) {
+                if (gg.type === 'Polygon' || gg.type === 'MultiPolygon') n += 1;
+              }
+            }
+          }
+          return n;
+        }
+
+        async function loadCorridorCount() {
+          const res = await fetch('data/Corridors.geojson');
+          if (!res.ok) throw new Error('Could not load Corridors.geojson');
+          return countCorridorPolygons(await res.json());
+        }
+
+        async function loadCollaredElephantCount() {
+          const res = await fetch(AWT_PUBLIC_API);
+          if (!res.ok) throw new Error('Public wildlife API HTTP ' + res.status);
+          const raw = await res.json();
+          const rows = Array.isArray(raw) ? raw : raw && Array.isArray(raw.data) ? raw.data : [];
+          const tags = new Set();
+          for (const row of rows) {
+            if (!row || row.latitude >= 0) continue;
+            const t = normalizeTagId(row.tagId != null ? row.tagId : row.tag_id);
+            if (t) tags.add(t);
+          }
+          return tags.size;
+        }
+
+        function hecTypeClause(values) {
+          const parts = values.map((v) => "type_of_hec = '" + v.replace(/'/g, "''") + "'");
+          return '(' + parts.join(' OR ') + ')';
+        }
+
+        function mortalityTypeClause() {
+          return hecTypeClause(MORTALITY_TYPE_VALUES);
+        }
+
+        function fieldRaidTypeClause() {
+          return hecTypeClause(FIELD_RAID_TYPE_VALUES);
+        }
+
+        function yearClause(year) {
+          if (year == null || year === '' || year === 'all') return '';
+          const y = parseInt(year, 10);
+          if (!Number.isFinite(y)) return '';
+          return 'EXTRACT(YEAR FROM date_time_incdt) = ' + y;
+        }
+
+        function buildWhere(clauses) {
+          return clauses.filter(Boolean).join(' AND ');
+        }
+
+        async function arcgisCount(where) {
+          const params = new URLSearchParams({ where: where || '1=1', returnCountOnly: 'true', f: 'json' });
+          const data = await fetch(HWC_LAYER_URL + '/query?' + params.toString()).then((r) => r.json());
+          if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+          return typeof data.count === 'number' ? data.count : 0;
+        }
+
+        function villageClause(village) {
+          const v = village != null ? String(village).trim() : '';
+          if (!v) return '';
+          return "vlge = '" + v.replace(/'/g, "''") + "'";
+        }
+
+        async function loadVillageNamesForYear(year) {
+          const where = buildWhere([yearClause(year) || '1=1', 'vlge IS NOT NULL']);
+          const names = new Set();
+          let offset = 0;
+          const pageSize = 2000;
+          while (true) {
+            const params = new URLSearchParams({
+              where,
+              outFields: 'vlge',
+              returnGeometry: 'false',
+              resultOffset: String(offset),
+              resultRecordCount: String(pageSize),
+              f: 'json'
+            });
+            const data = await fetch(HWC_LAYER_URL + '/query?' + params.toString()).then((r) => r.json());
+            if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+            const feats = data.features || [];
+            if (!feats.length) break;
+            for (const f of feats) {
+              const v = f.attributes && f.attributes.vlge;
+              if (v != null && String(v).trim() !== '') names.add(String(v).trim());
+            }
+            if (feats.length < pageSize) break;
+            offset += pageSize;
+          }
+          return [...names].sort((a, b) => a.localeCompare(b));
+        }
+
+        async function populateVillageSelect(year) {
+          const sel = document.getElementById('incidentVillageFilter');
+          if (!sel) return;
+          const prev = sel.value;
+          sel.innerHTML = '<option value="">All villages</option>';
+          try {
+            const villages = await loadVillageNamesForYear(year);
+            for (const name of villages) {
+              const opt = document.createElement('option');
+              opt.value = name;
+              opt.textContent = name;
+              sel.appendChild(opt);
+            }
+            if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+          } catch (e) {
+            console.warn('Village list:', e);
+          }
+        }
+
+        function setPopulationHead(value, isError) {
+          const el = document.getElementById('metricPopulationHead');
+          if (!el) return;
+          el.classList.remove('loading');
+          if (isError) {
+            el.textContent = '—';
+            el.title = String(value);
+            return;
+          }
+          el.textContent = typeof value === 'number' ? value.toLocaleString() : String(value);
+          el.title = '';
+        }
+
+        function parseImpactDate(data) {
+          const raw = data.recordDate || data.surveyDate || data.submittedAt || data.timestamp;
+          if (!raw) return null;
+          const t = new Date(raw);
+          return isNaN(t.getTime()) ? null : t;
+        }
+
+        function toImpactNumber(v) {
+          if (v == null || v === '') return null;
+          const n = Number(v);
+          return Number.isFinite(n) ? n : null;
+        }
+
+        async function loadImpactsFromFirestore() {
+          await window.AuthPortal.waitForFirebase();
+          if (window.AuthPortal.waitForFirestoreQueryHelpers) {
+            await window.AuthPortal.waitForFirestoreQueryHelpers();
+          }
+          const fp = window.firebasePortal;
+          if (!fp || !fp.db || !fp.collection || !fp.getDocs || !fp.query || !fp.limit) {
+            throw new Error('Firestore helpers not loaded (hard-refresh the page).');
+          }
+          let snapshot;
+          try {
+            snapshot = await fp.getDocs(fp.query(
+              fp.collection(fp.db, 'impacts'),
+              fp.orderBy('submittedAt', 'desc'),
+              fp.limit(500)
+            ));
+          } catch (eOrder) {
+            snapshot = await fp.getDocs(fp.query(fp.collection(fp.db, 'impacts'), fp.limit(500)));
+          }
+          const rows = [];
+          snapshot.forEach(function (docSnap) {
+            rows.push(Object.assign({ id: docSnap.id }, docSnap.data()));
+          });
+          return rows;
+        }
+
+        function getPopulationRows(rows) {
+          return rows
+            .filter(function (r) { return r.impactType === 'elephant_population'; })
+            .map(function (r) {
+              return {
+                date: parseImpactDate(r),
+                botswanaElephantPopulation: toImpactNumber(r.botswanaElephantPopulation),
+                ng11Population: toImpactNumber(r.ng11Population)
+              };
+            })
+            .filter(function (r) { return r.date != null; })
+            .sort(function (a, b) { return a.date - b.date; });
+        }
+
+        function renderPopulationChart() {
+          const canvas = document.getElementById('populationChart');
+          if (!canvas || typeof Chart === 'undefined') return;
+          const series = POPULATION_SERIES[populationSeriesIndex] || POPULATION_SERIES[0];
+          const labelEl = document.getElementById('populationSeriesLabel');
+          if (labelEl) labelEl.textContent = series.label;
+
+          const rows = cachedPopulationRows;
+          const labels = rows.map(function (r) {
+            return r.date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+          });
+          const values = rows.map(function (r) {
+            const v = r[series.key];
+            return v == null ? null : v;
+          });
+
+          const latest = rows.length ? rows[rows.length - 1][series.key] : null;
+          if (latest == null) {
+            setPopulationHead('—');
+          } else {
+            setPopulationHead(latest);
+          }
+
+          if (populationChartInstance) {
+            populationChartInstance.destroy();
+            populationChartInstance = null;
+          }
+
+          if (!rows.length) {
+            setPopulationHead('No data');
+            return;
+          }
+
+          populationChartInstance = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: series.label,
+                data: values,
+                borderColor: '#43512D',
+                backgroundColor: 'rgba(67, 81, 45, 0.12)',
+                fill: true,
+                tension: 0.25,
+                pointRadius: 4,
+                pointBackgroundColor: '#43512D',
+                spanGaps: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: false, ticks: { precision: 0 } },
+                x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+              }
+            }
+          });
+        }
+
+        function shiftPopulationSeries(delta) {
+          populationSeriesIndex = (populationSeriesIndex + delta + POPULATION_SERIES.length) % POPULATION_SERIES.length;
+          renderPopulationChart();
+        }
+
+        function applyImpactsMetrics(rows) {
+          const aerial = rows.filter(function (r) { return r.impactType === 'aerial_survey'; }).length;
+          const students = rows.filter(function (r) { return r.impactType === 'students_supported'; }).length;
+          const peerArticles = rows.filter(function (r) { return r.impactType === 'peer_reviewed_articles'; }).length;
+          setMetricValue('metricAerialSurveys', aerial);
+          setMetricValue('metricStudents', students);
+          setMetricValue('metricPeerArticles', peerArticles);
+          cachedPopulationRows = getPopulationRows(rows);
+          renderPopulationChart();
+        }
+
+        function setImpactsLoading() {
+          ['metricAerialSurveys', 'metricStudents', 'metricPeerArticles'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.textContent = '…';
+              el.classList.add('loading');
+            }
+          });
+          const popHead = document.getElementById('metricPopulationHead');
+          if (popHead) {
+            popHead.textContent = '…';
+            popHead.classList.add('loading');
+          }
+        }
+
+        function setHecMetricsLoading() {
+          ['metricMortalities', 'metricFieldRaids', 'metricIncidents'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.textContent = '…';
+              el.classList.add('loading');
+            }
+          });
+        }
+
+        async function refreshImpactMetrics(forceReload) {
+          if (!forceReload && cachedImpactRows) {
+            applyImpactsMetrics(cachedImpactRows);
+            return;
+          }
+          setImpactsLoading();
+          try {
+            cachedImpactRows = await loadImpactsFromFirestore();
+            applyImpactsMetrics(cachedImpactRows);
+          } catch (e) {
+            setMetricValue('metricAerialSurveys', e.message, true);
+            setMetricValue('metricStudents', e.message, true);
+            setMetricValue('metricPeerArticles', e.message, true);
+            setPopulationHead(e.message, true);
+            throw e;
+          }
+        }
+
+        async function refreshHecMetrics() {
+          const year = document.getElementById('metricYear')?.value;
+          const village = document.getElementById('incidentVillageFilter')?.value || '';
+          setHecMetricsLoading();
+
+          const errors = [];
+          const mortalityWhere = buildWhere([
+            mortalityTypeClause(),
+            "ele_dead_injured = 'Dead'",
+            yearClause(year)
+          ]);
+          const fieldRaidWhere = buildWhere([
+            fieldRaidTypeClause(),
+            yearClause(year)
+          ]);
+          const incidentWhere = buildWhere([yearClause(year) || '1=1', villageClause(village)]);
+
+          await Promise.all([
+            arcgisCount(mortalityWhere)
+              .then((n) => setMetricValue('metricMortalities', n))
+              .catch((e) => { errors.push('Mortalities: ' + e.message); setMetricValue('metricMortalities', e.message, true); }),
+            arcgisCount(fieldRaidWhere)
+              .then((n) => setMetricValue('metricFieldRaids', n))
+              .catch((e) => { errors.push('Field raids: ' + e.message); setMetricValue('metricFieldRaids', e.message, true); }),
+            arcgisCount(incidentWhere)
+              .then((n) => setMetricValue('metricIncidents', n))
+              .catch((e) => { errors.push('HEC incidents: ' + e.message); setMetricValue('metricIncidents', e.message, true); })
+          ]);
+
+          if (errors.length) showAlert('Some HEC metrics could not be loaded: ' + errors.join('; '));
+          else showAlert('');
+        }
+
+        function populateYearSelect() {
+          const sel = document.getElementById('metricYear');
+          if (!sel) return;
+          const now = new Date().getFullYear();
+          sel.innerHTML = '';
+          const allOpt = document.createElement('option');
+          allOpt.value = 'all';
+          allOpt.textContent = 'All dates';
+          sel.appendChild(allOpt);
+          for (let y = now; y >= now - 12; y--) {
+            const opt = document.createElement('option');
+            opt.value = String(y);
+            opt.textContent = String(y);
+            sel.appendChild(opt);
+          }
+          sel.value = String(now);
+        }
+
+        async function refreshStaticMetrics() {
+          const errors = [];
+          ['metricCorridors', 'metricCollars'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.textContent = '…';
+              el.classList.add('loading');
+            }
+          });
+          await Promise.all([
+            loadCorridorCount()
+              .then((n) => setMetricValue('metricCorridors', n))
+              .catch((e) => { errors.push('Corridors: ' + e.message); setMetricValue('metricCorridors', e.message, true); }),
+            loadCollaredElephantCount()
+              .then((n) => setMetricValue('metricCollars', n))
+              .catch((e) => { errors.push('Collars: ' + e.message); setMetricValue('metricCollars', e.message, true); })
+          ]);
+          if (errors.length) showAlert('Some metrics could not be loaded: ' + errors.join('; '));
+        }
+
+        window.refreshNgoMetrics = async function (options) {
+          const opts = options || {};
+          const reloadImpacts = opts.reloadImpacts === true;
+          const errors = [];
+
+          if (opts.hecOnly) {
+            await refreshHecMetrics();
+            return;
+          }
+
+          showAlert('');
+          if (!opts.skipStatic) {
+            await refreshStaticMetrics();
+          }
+          try {
+            await refreshImpactMetrics(reloadImpacts);
+          } catch (e) {
+            errors.push('Firestore impacts: ' + e.message);
+          }
+          await refreshHecMetrics();
+          if (errors.length) showAlert('Some metrics could not be loaded: ' + errors.join('; '));
+        };
+
+        async function onYearChange() {
+          const year = document.getElementById('metricYear')?.value;
+          await populateVillageSelect(year);
+          return window.refreshNgoMetrics({ hecOnly: true });
+        }
+
+        populateYearSelect();
+        document.getElementById('btnPopulationPrev')?.addEventListener('click', function () { shiftPopulationSeries(-1); });
+        document.getElementById('btnPopulationNext')?.addEventListener('click', function () { shiftPopulationSeries(1); });
+        document.getElementById('metricYear')?.addEventListener('change', onYearChange);
+        document.getElementById('incidentVillageFilter')?.addEventListener('change', function () {
+          window.refreshNgoMetrics({ hecOnly: true, skipStatic: true });
+        });
+        document.getElementById('btnRefreshMetrics')?.addEventListener('click', async function () {
+          const year = document.getElementById('metricYear')?.value;
+          await populateVillageSelect(year);
+          return window.refreshNgoMetrics({ reloadImpacts: true });
+        });
+        onYearChange();
+      })();
+    </script>
+</body>
+</html>
