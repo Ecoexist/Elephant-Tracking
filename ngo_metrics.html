@@ -60,6 +60,17 @@
         }
         .population-nav .btn-pop-arrow:hover { background: #43512D; color: #fff; }
         .population-nav .series-label { font-size: 0.85rem; color: #495057; font-weight: 600; min-width: 140px; text-align: center; }
+        .metric-card--clickable { cursor: pointer; transition: box-shadow 0.15s ease, transform 0.15s ease; }
+        .metric-card--clickable:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.12); transform: translateY(-1px); }
+        .metric-card--clickable:focus-visible { outline: 2px solid #43512D; outline-offset: 2px; }
+        .peer-articles-list { list-style: none; margin: 0; padding: 0; }
+        .peer-articles-list li { padding: 14px 0; border-bottom: 1px solid #e9ecef; }
+        .peer-articles-list li:last-child { border-bottom: none; }
+        .peer-article-title { font-weight: 600; color: #2c3e50; margin-bottom: 4px; }
+        .peer-article-title a { color: #43512D; text-decoration: none; }
+        .peer-article-title a:hover { text-decoration: underline; }
+        .peer-article-meta { font-size: 0.85rem; color: #6c757d; line-height: 1.4; }
+        .peer-articles-empty { color: #6c757d; text-align: center; padding: 2rem 1rem; }
     </style>
     <script>
       (async function() {
@@ -183,10 +194,10 @@
                         <div class="label">Students supported</div>
                         <div class="hint">Total records with <code>impactType: students_supported</code></div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card metric-card--clickable" id="metricPeerArticlesCard" role="button" tabindex="0" aria-label="View peer reviewed articles list">
                         <div class="value loading" id="metricPeerArticles">…</div>
                         <div class="label">Peer reviewed articles</div>
-                        <div class="hint">Total records with <code>impactType: peer_reviewed_articles</code></div>
+                        <div class="hint">Click to view titles and links (<code>impactType: peer_reviewed_articles</code>)</div>
                     </div>
                     <div class="metric-card metric-card--wide metric-card--chart">
                         <div class="value-head loading" id="metricPopulationHead">…</div>
@@ -201,6 +212,23 @@
                         </div>
                         <div class="hint">Full time series from Firestore — not filtered by the year control above</div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="peerArticlesModal" tabindex="-1" aria-labelledby="peerArticlesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="peerArticlesModalLabel">Peer reviewed articles</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="peerArticlesModalBody">
+                    <p class="peer-articles-empty mb-0">Loading…</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -410,6 +438,127 @@
           if (v == null || v === '') return null;
           const n = Number(v);
           return Number.isFinite(n) ? n : null;
+        }
+
+        function escapeHtml(str) {
+          return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function formatAuthors(value) {
+          if (value == null || value === '') return '';
+          if (Array.isArray(value)) return value.filter(Boolean).join(', ');
+          return String(value).trim();
+        }
+
+        function normalizeArticleUrl(url) {
+          const raw = url != null ? String(url).trim() : '';
+          if (!raw) return '';
+          if (/^https?:\/\//i.test(raw)) return raw;
+          if (/^doi:/i.test(raw)) return 'https://doi.org/' + raw.replace(/^doi:/i, '').trim();
+          if (/^10\.\d{4,}\//.test(raw)) return 'https://doi.org/' + raw;
+          return 'https://' + raw.replace(/^\/+/, '');
+        }
+
+        function pickArticleField(row, keys) {
+          for (let i = 0; i < keys.length; i++) {
+            const v = row[keys[i]];
+            if (v != null && String(v).trim() !== '') return String(v).trim();
+          }
+          return '';
+        }
+
+        function expandPeerArticleRows(rows) {
+          const items = [];
+          for (const row of rows) {
+            if (!row || row.impactType !== 'peer_reviewed_articles') continue;
+            if (Array.isArray(row.articles) && row.articles.length) {
+              row.articles.forEach(function (entry, index) {
+                const nested = entry && typeof entry === 'object' ? entry : { title: entry };
+                items.push(buildPeerArticleItem(Object.assign({}, row, nested), row.id + '-' + index));
+              });
+              continue;
+            }
+            items.push(buildPeerArticleItem(row, row.id));
+          }
+          return items.sort(function (a, b) {
+            const ta = a.date ? a.date.getTime() : 0;
+            const tb = b.date ? b.date.getTime() : 0;
+            return tb - ta;
+          });
+        }
+
+        function buildPeerArticleItem(row, id) {
+          const title = pickArticleField(row, [
+            'articleTitle', 'title', 'paperTitle', 'name', 'projectNameDescription'
+          ]) || 'Untitled article';
+          const url = normalizeArticleUrl(pickArticleField(row, [
+            'articleUrl', 'url', 'link', 'articleLink', 'doi', 'paperUrl'
+          ]));
+          const authors = formatAuthors(row.authors != null ? row.authors : row.author);
+          const journal = pickArticleField(row, ['journal', 'journalName', 'publication', 'publisher']);
+          return {
+            id: id,
+            title: title,
+            url: url,
+            authors: authors,
+            journal: journal,
+            date: parseImpactDate(row)
+          };
+        }
+
+        function renderPeerArticlesModal() {
+          const body = document.getElementById('peerArticlesModalBody');
+          if (!body) return;
+          const items = expandPeerArticleRows(cachedImpactRows || []);
+          if (!items.length) {
+            body.innerHTML = '<p class="peer-articles-empty mb-0">No peer reviewed articles found in Firestore yet.</p>';
+            return;
+          }
+          const html = ['<ul class="peer-articles-list">'];
+          items.forEach(function (item) {
+            const titleHtml = item.url
+              ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title) + '</a>'
+              : escapeHtml(item.title);
+            const metaParts = [];
+            if (item.authors) metaParts.push('Authors: ' + escapeHtml(item.authors));
+            if (item.journal) metaParts.push('Journal: ' + escapeHtml(item.journal));
+            if (item.date) {
+              metaParts.push('Date: ' + escapeHtml(item.date.toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric'
+              })));
+            }
+            html.push(
+              '<li><div class="peer-article-title">' + titleHtml + '</div>' +
+              (metaParts.length ? '<div class="peer-article-meta">' + metaParts.join(' · ') + '</div>' : '') +
+              (item.url ? '<div class="peer-article-meta mt-1"><a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.url) + '</a></div>' : '') +
+              '</li>'
+            );
+          });
+          html.push('</ul>');
+          body.innerHTML = html.join('');
+        }
+
+        async function openPeerArticlesModal() {
+          const modalEl = document.getElementById('peerArticlesModal');
+          if (!modalEl) return;
+          const body = document.getElementById('peerArticlesModalBody');
+          if (body) body.innerHTML = '<p class="peer-articles-empty mb-0">Loading…</p>';
+          if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+          }
+          if (!cachedImpactRows) {
+            try {
+              await refreshImpactMetrics(true);
+            } catch (e) {
+              if (body) body.innerHTML = '<p class="peer-articles-empty mb-0">Could not load articles: ' + escapeHtml(e.message) + '</p>';
+              return;
+            }
+          }
+          renderPeerArticlesModal();
         }
 
         async function loadImpactsFromFirestore() {
@@ -673,6 +822,15 @@
         }
 
         populateYearSelect();
+        document.getElementById('metricPeerArticlesCard')?.addEventListener('click', function () {
+          openPeerArticlesModal();
+        });
+        document.getElementById('metricPeerArticlesCard')?.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openPeerArticlesModal();
+          }
+        });
         document.getElementById('btnPopulationPrev')?.addEventListener('click', function () { shiftPopulationSeries(-1); });
         document.getElementById('btnPopulationNext')?.addEventListener('click', function () { shiftPopulationSeries(1); });
         document.getElementById('metricYear')?.addEventListener('change', onYearChange);
