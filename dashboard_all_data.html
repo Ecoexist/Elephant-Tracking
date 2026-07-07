@@ -718,7 +718,6 @@
             wireMapLabelsToggle();
             initWaterExtentControl();
             loadGeoJsonLayers();
-            loadOkavangoWaterLayer(null);
 
         }
 
@@ -731,9 +730,9 @@
 
         function formatDateForWaterApi(timestampSec) {
             const d = new Date(timestampSec * 1000);
-            const y = d.getUTCFullYear();
-            const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(d.getUTCDate()).padStart(2, '0');
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
             return `${y}${m}${day}`;
         }
 
@@ -847,8 +846,9 @@
         function updateOkavangoWaterLayer() {
             if (!map || !waterLayerEnabled) return;
             const sliderEndTs = getWaterSliderEndTimestamp();
+            if (sliderEndTs == null) return;
             if (sliderEndTs === lastWaterSliderEndTs && okavangoWaterLayer) return;
-            const dateStr = sliderEndTs ? formatDateForWaterApi(sliderEndTs) : null;
+            const dateStr = formatDateForWaterApi(sliderEndTs);
             loadOkavangoWaterLayer(dateStr, sliderEndTs);
         }
 
@@ -1603,7 +1603,8 @@
             updateMap();
         }
 
-        function updateMap() {
+        function updateMap(options) {
+            const skipFitBounds = !!(options && options.skipFitBounds);
             // Update legend FIRST so tagColors is populated before we draw polylines
             updateTagLegend();
 
@@ -1629,8 +1630,8 @@
             // Update slider date range display
             updateAnimationDateRange();
 
-            // Only auto-fit map bounds when NOT animating (manual zoom control during playback)
-            if (mapLayers.length > 0 && !isAnimating) {
+            // Only auto-fit on filter/view changes — not when the date slider moves
+            if (mapLayers.length > 0 && !isAnimating && !skipFitBounds) {
                 const group = new L.featureGroup(mapLayers);
                 map.fitBounds(group.getBounds().pad(0.02));
             }
@@ -2083,7 +2084,7 @@
                 return item.timestamp >= currentAnimationStart && item.timestamp <= currentAnimationEnd;
             });
 
-            updateMap();
+            updateMap({ skipFitBounds: true });
             updateOkavangoWaterLayer();
         }
 
