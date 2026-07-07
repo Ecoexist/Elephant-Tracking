@@ -590,6 +590,7 @@
         let lastWaterDateRequested = null;
         let waterExtentToggleButton = null;
 
+        const ECOEXIST_API_BASE = 'https://ecoexist-api.vercel.app';
         const OKAVANGO_WATER_STYLE = {
             color: '#0077b6',
             weight: 1.5,
@@ -736,7 +737,9 @@
         }
 
         function getWaterLayerDateTimestamp() {
-            return currentAnimationEnd || maxTimestamp || Math.floor(Date.now() / 1000);
+            const ts = currentAnimationEnd || maxTimestamp || Math.floor(Date.now() / 1000);
+            const now = Math.floor(Date.now() / 1000);
+            return Math.min(ts, now);
         }
 
         function updateWaterExtentToggleLabel() {
@@ -761,6 +764,44 @@
             okavangoWaterLayer = null;
         }
 
+        async function fetchOkavangoWaterGeoJson(dateStr) {
+            const datedQuery = `date=${encodeURIComponent(dateStr)}`;
+            const candidateUrls = [
+                `${ECOEXIST_API_BASE}/api/okavango-water?${datedQuery}`,
+                `${ECOEXIST_API_BASE}/api/health?service=okavango-water&${datedQuery}`
+            ];
+
+            let lastError = null;
+
+            for (let i = 0; i < candidateUrls.length; i++) {
+                const response = await fetch(candidateUrls[i]);
+
+                if (response.status === 404 && i < candidateUrls.length - 1) {
+                    lastError = new Error('Water API route not deployed yet');
+                    continue;
+                }
+
+                if (!response.ok) {
+                    let message = `Water layer unavailable (${response.status})`;
+                    const contentType = response.headers.get('content-type') || '';
+                    try {
+                        if (contentType.includes('application/json')) {
+                            const errBody = await response.json();
+                            if (errBody && errBody.error) message = errBody.error;
+                            if (errBody && errBody.details) message += `: ${errBody.details}`;
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                    lastError = new Error(message);
+                    if (response.status === 404 && i < candidateUrls.length - 1) continue;
+                    throw lastError;
+                }
+
+                return response.json();
+            }
+
+            throw lastError || new Error('Water layer unavailable');
+        }
+
         async function loadOkavangoWaterLayer(dateStr) {
             if (!waterLayerEnabled || !map) return;
 
@@ -769,24 +810,12 @@
             updateWaterExtentToggleLabel();
 
             try {
-                const url = `/api/okavango-water?date=${encodeURIComponent(dateStr)}`;
-                const response = await fetch(url);
-
-                if (fetchId !== waterFetchId) return;
-
-                if (!response.ok) {
-                    let message = `Water layer unavailable (${response.status})`;
-                    try {
-                        const errBody = await response.json();
-                        if (errBody && errBody.error) message = errBody.error;
-                    } catch (e) { /* ignore */ }
-                    console.warn('Okavango water layer:', message);
-                    removeOkavangoWaterLayer();
-                    return;
-                }
-
-                const geojson = await response.json();
+                const geojson = await fetchOkavangoWaterGeoJson(dateStr);
                 if (fetchId !== waterFetchId || !waterLayerEnabled) return;
+
+                if (!geojson || !geojson.type) {
+                    throw new Error('Invalid GeoJSON received from water API');
+                }
 
                 removeOkavangoWaterLayer();
                 ensureOkavangoWaterPane();
@@ -801,7 +830,7 @@
                 lastWaterDateRequested = dateStr;
             } catch (e) {
                 if (fetchId !== waterFetchId) return;
-                console.warn('Okavango water layer fetch failed:', e);
+                console.warn('Okavango water layer:', e.message || e);
                 removeOkavangoWaterLayer();
             } finally {
                 if (fetchId === waterFetchId) {
