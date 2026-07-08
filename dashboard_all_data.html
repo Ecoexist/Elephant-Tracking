@@ -762,6 +762,19 @@
             return sliderEndTs ? formatDateForWaterApi(sliderEndTs) : null;
         }
 
+        function normalizeWaterDateId(raw) {
+            const value = String(raw || '').trim();
+            if (/^\d{8}$/.test(value)) return value;
+            const dash = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (dash) return `${dash[1]}${dash[2]}${dash[3]}`;
+            return null;
+        }
+
+        function imageDateFromWaterGeoJson(geojson) {
+            if (!geojson?.features?.length) return null;
+            return normalizeWaterDateId(geojson.features[0]?.properties?.image_date);
+        }
+
         function resolveWaterDateForSlider(requestedDateStr) {
             const dates = okavangoWaterAvailableDates;
             if (!requestedDateStr) return null;
@@ -796,16 +809,15 @@
                 }
                 const payload = await response.json();
                 okavangoWaterAvailableDates = Array.isArray(payload.dates)
-                    ? payload.dates.filter((d) => /^\d{8}$/.test(String(d))).sort()
+                    ? payload.dates.map((d) => normalizeWaterDateId(d)).filter(Boolean).sort()
                     : [];
-                okavangoWaterLatestDate = (payload.latest || payload.newest) && /^\d{8}$/.test(String(payload.latest || payload.newest))
-                    ? String(payload.latest || payload.newest)
-                    : (okavangoWaterAvailableDates.length ? okavangoWaterAvailableDates[okavangoWaterAvailableDates.length - 1] : null);
+                okavangoWaterLatestDate = normalizeWaterDateId(payload.latest || payload.newest)
+                    || (okavangoWaterAvailableDates.length ? okavangoWaterAvailableDates[okavangoWaterAvailableDates.length - 1] : null);
                 okavangoWaterDatesReady = true;
                 if (payload.warning) {
                     console.info('Okavango water dates:', payload.warning);
                 }
-                console.info(`Okavango water: ${okavangoWaterAvailableDates.length} dates, latest ${okavangoWaterLatestDate || 'n/a'}`);
+                console.info(`Okavango water: ${okavangoWaterAvailableDates.length} dates, latest ${okavangoWaterLatestDate || 'n/a'}${payload.source ? ` (${payload.source})` : ''}`);
                 updateOkavangoWaterLayer();
             } catch (e) {
                 console.warn('Okavango water dates:', e.message || e);
@@ -858,9 +870,12 @@
                 throw new Error(message);
             }
 
-            const dateUsed = response.headers.get('X-Okavango-Water-Date-Used') || resolvedDateStr;
+            const geojson = await response.json();
+            const dateUsed = imageDateFromWaterGeoJson(geojson)
+                || normalizeWaterDateId(response.headers.get('X-Okavango-Water-Date-Used'))
+                || resolvedDateStr;
             return {
-                geojson: await response.json(),
+                geojson,
                 dateUsed
             };
         }
@@ -906,7 +921,7 @@
                 lastWaterDateStr = dateUsed || resolvedDateStr;
                 lastWaterRequestedDateStr = requestedDateStr || resolvedDateStr;
                 updateWaterExtentToggleLabel();
-                console.log(`Okavango water layer added for ${lastWaterDateStr} (${featureCount} features)`);
+                console.log(`Okavango water layer added for ${lastWaterDateStr} (${featureCount} features, image_date confirmed)`);
             } catch (e) {
                 if (fetchId !== waterFetchId) return;
                 console.warn('Okavango water layer:', e.message || e);
@@ -926,7 +941,11 @@
 
             const resolvedDateStr = resolveWaterDateForSlider(requestedDateStr);
             if (!resolvedDateStr) return;
-            if (resolvedDateStr === lastWaterDateStr && okavangoWaterLayer) return;
+            if (
+                resolvedDateStr === lastWaterDateStr &&
+                requestedDateStr === lastWaterRequestedDateStr &&
+                okavangoWaterLayer
+            ) return;
 
             loadOkavangoWaterLayer(resolvedDateStr, requestedDateStr);
         }
