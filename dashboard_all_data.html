@@ -592,6 +592,7 @@
         let okavangoWaterAvailableDates = [];
         let okavangoWaterDatesReady = false;
         let okavangoWaterDatesLoading = false;
+        let okavangoWaterLatestDate = null;
         let waterExtentToggleButton = null;
 
         const ECOEXIST_API_BASE = 'https://ecoexist-api.vercel.app';
@@ -764,7 +765,7 @@
         function resolveWaterDateForSlider(requestedDateStr) {
             const dates = okavangoWaterAvailableDates;
             if (!requestedDateStr) return null;
-            if (!dates.length) return requestedDateStr;
+            if (!dates.length) return okavangoWaterLatestDate || null;
 
             if (requestedDateStr <= dates[0]) return dates[0];
             if (requestedDateStr >= dates[dates.length - 1]) return dates[dates.length - 1];
@@ -785,23 +786,29 @@
             try {
                 const response = await fetch(`${ECOEXIST_API_BASE}/api/okavango-water?action=dates`, { cache: 'no-store' });
                 if (!response.ok) {
-                    throw new Error(`Dates list unavailable (${response.status})`);
+                    let message = `Dates list unavailable (${response.status})`;
+                    try {
+                        const errBody = await response.json();
+                        if (errBody?.error) message = errBody.error;
+                        if (errBody?.details) message += `: ${typeof errBody.details === 'string' ? errBody.details : JSON.stringify(errBody.details)}`;
+                    } catch (e) { /* ignore */ }
+                    throw new Error(message);
                 }
                 const payload = await response.json();
                 okavangoWaterAvailableDates = Array.isArray(payload.dates)
                     ? payload.dates.filter((d) => /^\d{8}$/.test(String(d))).sort()
                     : [];
+                okavangoWaterLatestDate = (payload.latest || payload.newest) && /^\d{8}$/.test(String(payload.latest || payload.newest))
+                    ? String(payload.latest || payload.newest)
+                    : (okavangoWaterAvailableDates.length ? okavangoWaterAvailableDates[okavangoWaterAvailableDates.length - 1] : null);
                 okavangoWaterDatesReady = true;
-                if (payload.warning) {
-                    console.info('Okavango water dates:', payload.warning);
-                }
-                console.info(`Okavango water: ${okavangoWaterAvailableDates.length} available dates (${payload.source || 'unknown'})`);
+                console.info(`Okavango water: ${okavangoWaterAvailableDates.length} dates, latest ${okavangoWaterLatestDate || 'n/a'}`);
                 updateOkavangoWaterLayer();
             } catch (e) {
                 console.warn('Okavango water dates:', e.message || e);
                 okavangoWaterDatesReady = true;
                 okavangoWaterAvailableDates = [];
-                updateOkavangoWaterLayer();
+                okavangoWaterLatestDate = null;
             } finally {
                 okavangoWaterDatesLoading = false;
                 updateWaterExtentToggleLabel();
@@ -909,57 +916,10 @@
             }
         }
 
-        async function fetchOkavangoWaterLatestGeoJson() {
-            const response = await fetch(`${ECOEXIST_API_BASE}/api/okavango-water`, { cache: 'no-store' });
-            if (!response.ok) {
-                throw new Error(`Water layer unavailable (${response.status})`);
-            }
-            return {
-                geojson: await response.json(),
-                dateUsed: response.headers.get('X-Okavango-Water-Date-Used') || '__latest__'
-            };
-        }
-
-        async function loadOkavangoWaterLatest() {
-            if (!waterLayerEnabled || !map) return;
-            const fetchId = ++waterFetchId;
-            waterLayerLoading = true;
-            updateWaterExtentToggleLabel();
-            try {
-                const { geojson, dateUsed } = await fetchOkavangoWaterLatestGeoJson();
-                if (fetchId !== waterFetchId || !waterLayerEnabled) return;
-                if (!geojson?.type || !geojson.features?.length) return;
-                removeOkavangoWaterLayer();
-                ensureOkavangoWaterPane();
-                okavangoWaterLayer = L.geoJSON(geojson, {
-                    pane: 'okavangoWaterPane',
-                    style: OKAVANGO_WATER_STYLE,
-                    interactive: false
-                }).addTo(map);
-                lastWaterDateStr = dateUsed;
-                lastWaterRequestedDateStr = getWaterSliderEndDateStr();
-                console.log('Okavango water: loaded latest extent');
-            } catch (e) {
-                console.warn('Okavango water latest:', e.message || e);
-                removeOkavangoWaterLayer();
-            } finally {
-                if (fetchId === waterFetchId) {
-                    waterLayerLoading = false;
-                    updateWaterExtentToggleLabel();
-                }
-            }
-        }
-
         function updateOkavangoWaterLayer() {
             if (!map || !waterLayerEnabled || !okavangoWaterDatesReady) return;
             const requestedDateStr = getWaterSliderEndDateStr();
             if (!requestedDateStr) return;
-
-            if (!okavangoWaterAvailableDates.length) {
-                if (lastWaterDateStr === '__latest__' && okavangoWaterLayer) return;
-                loadOkavangoWaterLatest();
-                return;
-            }
 
             const resolvedDateStr = resolveWaterDateForSlider(requestedDateStr);
             if (!resolvedDateStr) return;
