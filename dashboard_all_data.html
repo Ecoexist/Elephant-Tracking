@@ -870,7 +870,9 @@
                     if (contentType.includes('application/json')) {
                         const errBody = await response.json();
                         if (errBody && errBody.error) message = errBody.error;
-                        if (errBody && errBody.details) message += `: ${errBody.details}`;
+                        if (errBody && errBody.details) {
+                            message += `: ${typeof errBody.details === 'string' ? errBody.details : JSON.stringify(errBody.details)}`;
+                        }
                     }
                 } catch (e) { /* ignore parse errors */ }
                 throw new Error(message);
