@@ -765,7 +765,7 @@
         function resolveWaterDateForSlider(requestedDateStr) {
             const dates = okavangoWaterAvailableDates;
             if (!requestedDateStr) return null;
-            if (!dates.length) return okavangoWaterLatestDate || null;
+            if (!dates.length) return okavangoWaterLatestDate || requestedDateStr;
 
             if (requestedDateStr <= dates[0]) return dates[0];
             if (requestedDateStr >= dates[dates.length - 1]) return dates[dates.length - 1];
@@ -802,6 +802,9 @@
                     ? String(payload.latest || payload.newest)
                     : (okavangoWaterAvailableDates.length ? okavangoWaterAvailableDates[okavangoWaterAvailableDates.length - 1] : null);
                 okavangoWaterDatesReady = true;
+                if (payload.warning) {
+                    console.info('Okavango water dates:', payload.warning);
+                }
                 console.info(`Okavango water: ${okavangoWaterAvailableDates.length} dates, latest ${okavangoWaterLatestDate || 'n/a'}`);
                 updateOkavangoWaterLayer();
             } catch (e) {
