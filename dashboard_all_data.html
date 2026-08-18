@@ -1,0 +1,2509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elephant Movement | Ecoexist</title>
+    <link rel="icon" type="image/svg+xml" href="data/icons/Ecoexist.svg">
+    <link rel="icon" type="image/png" href="data/icons/Ecoexist_icon.png">
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/auth-portal.js"></script>
+    <script>
+      (async function() {
+        try {
+          const result = await window.AuthPortal.checkAuthAndRedirect(false, 'dashboard_all_data.html');
+          if (!result || !window.AuthPortal.canAccessAdminToolPage(result.role, result.allowedPages, 'dashboard_all_data.html')) {
+            window.location.replace('login.html?return=dashboard_all_data.html');
+            return;
+          }
+        } catch (e) {
+          window.location.replace('login.html?return=dashboard_all_data.html');
+          return;
+        }
+        function doInit() {
+          var overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.remove();
+          window.dispatchEvent(new CustomEvent('authReady'));
+          if (typeof window.runAfterAuth === 'function') window.runAfterAuth();
+          if (window.AuthPortal && window.AuthPortal.applySidebarNavForUser) {
+            window.AuthPortal.applySidebarNavForUser({ currentPage: 'dashboard_all_data.html' }).catch(function (e) {
+              console.warn(e);
+            });
+          }
+          if (typeof window.wirePortalShellUi === 'function') window.wirePortalShellUi();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', doInit);
+        } else {
+          doInit();
+        }
+      })();
+    </script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Bootstrap CSS for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Chart.js for additional visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- noUiSlider CSS and JS for range slider -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            border-bottom: 3px solid #1a4a2e;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+        }
+
+        #map {
+            height: 600px;
+            border-radius: 0 0 10px 10px;
+            position: relative;
+        }
+
+
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border-left: 4px solid #2c5530;
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, #2c5530, #4a7c59);
+            border: none;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #1a4a2e, #2c5530);
+            color: white;
+        }
+
+        .filter-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .animal-marker {
+            background-color: #2c5530;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .latest-marker {
+            background-color: #ff6b35;
+            border: 3px solid white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            flex-direction: column;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2c5530;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .data-loading-badge {
+            background: #e8efe4;
+            color: #2c5530;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .data-loading-badge::before {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(44,85,48,0.35);
+            border-top-color: #2c5530;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .water-extent-control {
+            clear: both;
+        }
+
+        .water-extent-control .water-extent-toggle {
+            width: auto;
+            min-width: 120px;
+            padding: 0 8px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 26px;
+            text-align: center;
+            white-space: nowrap;
+            color: #0077b6;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .water-extent-control .water-extent-toggle.water-extent-on {
+            color: #0077b6;
+            background: rgba(230, 245, 255, 0.98);
+        }
+
+        .water-extent-control .water-extent-toggle.water-extent-off {
+            color: #6c757d;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .water-extent-control .water-extent-toggle.water-extent-loading {
+            opacity: 0.75;
+            cursor: wait;
+        }
+
+        .tag-legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .tag-color {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 2.5px;
+            flex-shrink: 0;
+        }
+
+        .view-mode-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .view-mode-buttons button {
+            flex: 1;
+        }
+
+        .btn-view-mode {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .btn-view-mode.active {
+            background: linear-gradient(135deg, #1a4a2e, #2c5530);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Place label styling */
+        .place-label {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #333;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            padding: 2px 4px;
+            white-space: nowrap;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+
+        /* Legend styling - vertical layout */
+        #tagLegend {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        #tagLegend .tag-legend {
+            margin: 0;
+            padding: 4px 6px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-size: 0.8em;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2.5px;
+            min-height: 20px;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #map, #map * {
+                visibility: visible;
+            }
+
+            #map {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .card {
+                box-shadow: none;
+                border: none;
+            }
+
+            .card-header {
+                background: white !important;
+                color: black !important;
+                display: block !important;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 1000;
+                padding: 5px 10px;
+                border-radius: 3px;
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body class="app-layout-corridor">
+    <div id="auth-overlay" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:#333;">Checking authentication...</div>
+
+    <div class="dropdown user-avatar-float">
+        <button type="button" class="user-avatar-btn" id="userAvatarMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu" aria-haspopup="true">
+            <span id="userAvatarInitials">··</span>
+            <span class="user-status-dot" aria-hidden="true"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userAvatarMenuBtn">
+            <li><a class="dropdown-item" href="#" id="userAvatarSignOut">Log out</a></li>
+        </ul>
+    </div>
+
+    <aside class="app-sidebar" aria-label="Main navigation">
+        <div class="app-sidebar-inner">
+            <a href="dashboard_all_data.html" class="app-sidebar-logo" title="Ecoexist home">
+                <img src="data/icons/Ecoexist.svg" alt="Ecoexist">
+            </a>
+            <nav class="app-sidebar-nav"></nav>
+        </div>
+    </aside>
+
+    <div class="app-main-wrap">
+        <header class="corridor-page-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h1 class="corridor-page-heading mb-0">Elephant Movement</h1>
+            <span id="dataLoadingBadge" class="data-loading-badge" style="display: none;">Loading data...</span>
+        </header>
+
+    <div class="main-content" style="overflow-y: auto; flex-direction: column;">
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Main Map Column -->
+            <div class="col-lg-9">
+                <div class="card" id="map-container">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            📍 Animal Movement Map
+                        </h5>
+                        <button type="button" id="loadRetryBtn" class="btn btn-sm btn-warning" style="display:none;" onclick="document.getElementById('loadRetryBtn').style.display='none'; loadData();">Retry load</button>
+                        <div class="d-flex align-items-center gap-3">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="toggleMapLabels" checked>
+                            <label class="form-check-label small text-nowrap" for="toggleMapLabels">Place labels</label>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="toggleBaseMap" checked>
+                            <label class="form-check-label small text-nowrap" for="toggleBaseMap">Satellite</label>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printMap()">
+                                🖨️ Export Map
+                        </button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); printMap();">📸 Auto Screenshot</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); alert('Use your browser screenshot:\n\n• Windows: Press Windows+Shift+S\n• Mac: Press Cmd+Shift+4\n• Chrome: Right-click → Save image as');">ℹ️ Manual Screenshot Help</a></li>
+                            </ul>
+                        </div>
+                        </div>
+                    </div>
+                    <!-- Map and Legend Container -->
+                    <div class="d-flex flex-column" id="map-and-legend-container">
+                        <!-- Map Title (hidden by default, shown only during export) -->
+                        <div id="map-export-title" style="display: none; padding: 15px; background: white; border-bottom: 2px solid #2d5f3f;">
+                            <h4 id="map-title-text" style="margin: 0; font-weight: bold; color: #2d5f3f;"></h4>
+                        </div>
+                        <!-- Map and Legend Row -->
+                    <div class="d-flex">
+                        <div id="map" style="flex: 1;"></div>
+                        <!-- Map Legend (right side of map) -->
+                        <div class="bg-white border-start" style="width: 120px; padding: 10px;">
+                            <h6 class="mb-2" style="font-size: 0.9em;">Map Legend</h6>
+                            <div id="tagLegend"></div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Animation Slider (embedded in map) -->
+                    <div class="card-body border-top">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <label class="form-label mb-1">⏱️ Date Range: <span id="animationDateRange">Loading...</span></label>
+                                <div id="dateSliderContainer" style="padding: 10px 5px;">
+                                    <!-- noUiSlider will be inserted here -->
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex gap-1 align-items-center justify-content-end">
+                                    <button class="btn btn-sm btn-custom" id="playButton" onclick="toggleAnimation()">
+                                        ▶️ Play
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resetAnimation()">
+                                        ⏮️
+                                    </button>
+                                    <select class="form-select form-select-sm" id="animationSpeed" style="width: auto; font-size: 0.8em;">
+                                        <option value="2000">Slow</option>
+                                        <option value="1000" selected>Normal</option>
+                                        <option value="500">Fast</option>
+                                        <option value="200">Very Fast</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-3">
+                <!-- Statistics Cards -->
+                <div class="row">
+                    <div class="col-md-6 col-lg-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Animals</h6>
+                                <h3 class="text-success mb-0" id="totalAnimals">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Number of Fixes</h6>
+                                <h3 class="text-primary mb-0" id="totalLocations">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-12">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Date Range</h6>
+                                <p class="mb-0" id="dateRange">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Mode Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">📊 View Mode</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="view-mode-buttons">
+                            <button class="btn btn-custom btn-view-mode active" onclick="setViewMode('standard')" id="btnStandard">
+                                Standard
+                            </button>
+                            <button class="btn btn-custom btn-view-mode" onclick="setViewMode('current-historic')" id="btnCurrentHistoric">
+                                Current vs Historic
+                            </button>
+                        </div>
+                        <div class="view-mode-buttons">
+                            <button class="btn btn-custom btn-view-mode" onclick="setViewMode('day-night')" id="btnDayNight">
+                                Day vs Night
+                            </button>
+                            <button class="btn btn-custom btn-view-mode" onclick="setViewMode('home-range')" id="btnHomeRange">
+                                Home Ranges
+                            </button>
+                            <button class="btn btn-custom btn-view-mode" onclick="setViewMode('speed-map')" id="btnSpeedMap">
+                                Speed Map
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters (same width as View Mode) -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">🔍 Filters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="tagFilter" class="form-label">Elephants</label>
+                            <select class="form-select" id="tagFilter" multiple size="7" aria-label="Select one or more elephants">
+                            </select>
+                            <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple elephants.</small>
+                        </div>
+
+                        <div class="mb-3" id="monthFilterContainer">
+                            <label for="monthFilter" class="form-label">Month/Year</label>
+                            <select class="form-select" id="monthFilter" onchange="handleMonthFilterChange()">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dateFrom" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="dateFrom">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dateTo" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="dateTo">
+                        </div>
+
+                        <button class="btn btn-custom w-100" onclick="applyFilters()">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        </div>
+
+        <!-- Data Download -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">📊 Download Latest Movement Data</h6>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportData()">
+                            Download CSV
+                        </button>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-0">Click the download button to export all filtered movement data as a CSV file.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p class="mt-3">Loading wildlife data...</p>
+        </div>
+    </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/portal-app-shell.js"></script>
+
+    <!-- Turf.js for convex hull calculations -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <!-- html2canvas for map screenshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- modern-screenshot for better capture -->
+    <script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
+
+    <!-- noUiSlider JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+
+    <script>
+        async function getAuthToken(forceRefresh) {
+            const user = window.firebasePortal?.auth?.currentUser;
+            if (!user) return null;
+            try {
+                return await user.getIdToken(!!forceRefresh);
+            } catch (e) {
+                console.warn('Failed to get auth token:', e);
+                return null;
+            }
+        }
+
+        let map;
+        let allData = [];
+        let filteredData = [];
+        let mapLayers = [];
+        let tagColors = {};
+        let colorIndex = 0;
+        let currentViewMode = 'standard';
+        let geoJsonLayers = [];
+        let showMapLabels = true;
+        let okavangoWaterLayer = null;
+        let waterLayerEnabled = false;
+        let waterLayerLoading = false;
+        let waterFetchId = 0;
+        let lastWaterDateStr = null;
+        let lastWaterRequestedDateStr = null;
+        let waterExtentToggleButton = null;
+        let satelliteBaseLayer = null;
+        let osmBaseLayer = null;
+        let satelliteBaseEnabled = true;
+
+        const ECOEXIST_API_BASE = 'https://ecoexist-api.vercel.app';
+        const OKAVANGO_WATER_STYLE = {
+            color: '#0077b6',
+            weight: 1.5,
+            opacity: 0.9,
+            fillColor: '#48cae4',
+            fillOpacity: 0.35
+        };
+
+        // Normalize tagId to string for deduplication (handles mix of number/string from different data sources)
+        function normalizeTagId(id) {
+            return id != null && id !== '' ? String(id).trim() : '';
+        }
+
+        // Get display name from tagId string - ensures correct lookup for 1, 2, 5592 etc
+        const elephantSex = {
+            "3839": "F", // Shorobe
+            "5588": "M", // Larry
+            "5589": "M", // Mokolwane
+            "5591": "M", // Grand Grey
+            "8540": "M", // Art
+            "8542": "F", // Dream
+            "8543": "F"  // Queenie
+        };
+
+        function getDisplayNameFromTagId(tagId) {
+            const key = normalizeTagId(tagId);
+            if (!key) return 'Unknown';
+            const name = elephantNames[key] ?? elephantNames[parseInt(key, 10)] ?? `Tag ${key}`;
+            const sex = elephantSex[key];
+            return sex ? `${name} (${sex})` : name;
+        }
+
+        // Extract tagId from record - handles multiple API field names (tagId, tag_id, animalId)
+        function getTagId(record) {
+            return normalizeTagId(record?.tagId ?? record?.tag_id ?? record?.animalId);
+        }
+
+        function normalizeRecord(r) {
+            if (!r) return r;
+            const lat = r.latitude ?? r.lat ?? r.Latitude;
+            const lng = r.longitude ?? r.lng ?? r.Longitude;
+            if (lat != null && lng != null && (r.latitude === undefined || r.longitude === undefined)) {
+                return { ...r, latitude: Number(lat), longitude: Number(lng) };
+            }
+            return r;
+        }
+
+        // Elephant name mapping
+        const elephantNames = {
+            "1": "Snorten",
+            "2": "Molapo",
+            "3839": "Shorobe",
+            "5588": "Larry",
+            "5589": "Mokolwane",
+            "5590": "Ebanaria",
+            "5591": "Grand Grey",
+            "5592": "snortitusk",
+            "8537": "Brother",
+            "8538": "Bruce",
+            "8539": "Raintree",
+            "8540": "Art",
+            "8542": "Dream",
+            "8543": "Queenie"
+        };
+
+        // Animation variables
+        let dateSlider = null;
+        let animationInterval = null;
+        let isAnimating = false;
+        let minTimestamp = 0;
+        let maxTimestamp = 0;
+        let currentAnimationStart = 0;
+        let currentAnimationEnd = 0;
+        const colors = [
+            '#2c5530', '#4a7c59', '#6a9d7a', '#8cbe9c',
+            '#ff6b35', '#f7931e', '#ffb627', '#ffea00',
+            '#0077b6', '#0096c7', '#00b4d8', '#48cae4'
+        ];
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: true,
+                zoomDelta: 0.1,  // Very fine zoom increments (1/10 zoom level)
+                zoomSnap: 0.1,   // Snap to 1/10 zoom levels for 100m precision
+                wheelPxPerZoomLevel: 60  // More sensitive mouse wheel (half the default)
+            }).setView([-25.0, 28.0], 6); // Centered on Southern Africa
+
+            // Explicitly position zoom controls to ensure they're visible
+            map.zoomControl.setPosition('topleft');
+
+            // Base maps: current satellite imagery + standard OpenStreetMap.
+            // The satellite layer retains the existing 0.6 opacity / wash effect.
+            satelliteBaseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri',
+                maxZoom: 18,
+                opacity: 0.6
+            });
+
+            osmBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            });
+
+            // Keep the existing satellite map as the default.
+            satelliteBaseLayer.addTo(map);
+            satelliteBaseEnabled = true;
+
+            // Add scale bar with more precise measurements
+            L.control.scale({
+                position: 'bottomleft',
+                metric: true,
+                imperial: false,
+                maxWidth: 200,
+                updateWhenIdle: false
+            }).addTo(map);
+
+            // Add custom scale ratio display (1:xxx)
+            const scaleRatioControl = L.control({ position: 'bottomleft' });
+            scaleRatioControl.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'scale-ratio-control');
+                div.style.background = 'rgba(255, 255, 255, 0.9)';
+                div.style.padding = '5px 8px';
+                div.style.margin = '0 0 5px 0';
+                div.style.border = '2px solid rgba(0,0,0,0.2)';
+                div.style.borderRadius = '4px';
+                div.style.fontSize = '12px';
+                div.style.fontWeight = 'bold';
+                div.style.lineHeight = '1.2';
+                div.innerHTML = 'Scale: 1:1,000,000';
+                
+                // Update scale ratio on zoom with forced 100m increments
+                map.on('zoomend moveend', function() {
+                    const zoom = map.getZoom();
+                    const metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * Math.PI / 180)) / Math.pow(2, zoom + 8);
+                    const exactScale = metersPerPixel * 96 / 0.0254;
+
+                    // Force scale to be in exact 100m increments (100, 200, 300, etc.)
+                    const baseScale = Math.round(exactScale / 100) * 100;
+                    div.innerHTML = 'Scale: 1:' + baseScale.toLocaleString();
+                });
+                
+                return div;
+            };
+            scaleRatioControl.addTo(map);
+
+            wireMapLabelsToggle();
+            wireBaseMapToggle();
+            initWaterExtentControl();
+            loadGeoJsonLayers();
+
+        }
+
+        function ensureOkavangoWaterPane() {
+            if (!map.getPane('okavangoWaterPane')) {
+                map.createPane('okavangoWaterPane');
+                map.getPane('okavangoWaterPane').style.zIndex = 350;
+            }
+        }
+
+        function formatDateForWaterApi(timestampSec) {
+            const d = new Date(timestampSec * 1000);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}${m}${day}`;
+        }
+
+        function formatWaterDateLabel(dateStr) {
+            if (!dateStr || dateStr.length !== 8) return 'Water Extent';
+            const y = dateStr.slice(0, 4);
+            const m = dateStr.slice(4, 6);
+            const d = dateStr.slice(6, 8);
+            const dt = new Date(Number(y), Number(m) - 1, Number(d));
+            return dt.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
+        }
+
+        function getWaterSliderEndTimestamp() {
+            if (currentAnimationEnd > 0) return currentAnimationEnd;
+            if (maxTimestamp > 0) return maxTimestamp;
+            return null;
+        }
+
+        function getWaterSliderEndDateStr() {
+            const sliderEndTs = getWaterSliderEndTimestamp();
+            return sliderEndTs ? formatDateForWaterApi(sliderEndTs) : null;
+        }
+
+        function normalizeWaterDateId(raw) {
+            const value = String(raw || '').trim();
+            if (/^\d{8}$/.test(value)) return value;
+            const dash = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (dash) return `${dash[1]}${dash[2]}${dash[3]}`;
+            return null;
+        }
+
+        function imageDateFromWaterGeoJson(geojson) {
+            if (!geojson?.features?.length) return null;
+            return normalizeWaterDateId(geojson.features[0]?.properties?.image_date);
+        }
+
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    throw new Error(`Request timed out after ${timeoutMs / 1000}s`);
+                }
+                throw e;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        function updateWaterExtentToggleLabel() {
+            if (!waterExtentToggleButton) return;
+            waterExtentToggleButton.classList.remove('water-extent-on', 'water-extent-off', 'water-extent-loading');
+            if (waterLayerLoading) {
+                waterExtentToggleButton.classList.add('water-extent-loading');
+                waterExtentToggleButton.textContent = 'Water …';
+            } else if (waterLayerEnabled && okavangoWaterLayer) {
+                waterExtentToggleButton.classList.add('water-extent-on');
+                const label = lastWaterDateStr ? formatWaterDateLabel(lastWaterDateStr) : 'Water';
+                waterExtentToggleButton.textContent = `${label} ✓`;
+            } else {
+                waterExtentToggleButton.classList.add('water-extent-off');
+                waterExtentToggleButton.textContent = 'Load Water';
+            }
+        }
+
+        function removeOkavangoWaterLayer() {
+            if (okavangoWaterLayer && map.hasLayer(okavangoWaterLayer)) {
+                map.removeLayer(okavangoWaterLayer);
+            }
+            okavangoWaterLayer = null;
+        }
+
+        async function fetchOkavangoWaterGeoJson(requestedDateStr) {
+            const url = `${ECOEXIST_API_BASE}/api/okavango-water?date=${encodeURIComponent(requestedDateStr)}`;
+            const response = await fetchWithTimeout(url, { cache: 'no-store' }, 25000);
+
+            if (!response.ok) {
+                let message = `Water layer unavailable (${response.status})`;
+                const contentType = response.headers.get('content-type') || '';
+                try {
+                    if (contentType.includes('application/json')) {
+                        const errBody = await response.json();
+                        if (errBody && errBody.error) message = errBody.error;
+                        if (errBody && errBody.details) {
+                            message += `: ${typeof errBody.details === 'string' ? errBody.details : JSON.stringify(errBody.details)}`;
+                        }
+                    }
+                } catch (e) { /* ignore parse errors */ }
+                throw new Error(message);
+            }
+
+            const geojson = await response.json();
+            const dateUsed = imageDateFromWaterGeoJson(geojson)
+                || normalizeWaterDateId(response.headers.get('X-Okavango-Water-Date-Used'))
+                || normalizeWaterDateId(response.headers.get('X-Okavango-Water-Date-Resolved'))
+                || requestedDateStr;
+            const resolvedDate = normalizeWaterDateId(response.headers.get('X-Okavango-Water-Date-Resolved')) || dateUsed;
+            return {
+                geojson,
+                dateUsed,
+                resolvedDate
+            };
+        }
+
+        async function loadOkavangoWaterLayer(requestedDateStr) {
+            if (!waterLayerEnabled || !map || !requestedDateStr) return;
+
+            const fetchId = ++waterFetchId;
+            waterLayerLoading = true;
+            updateWaterExtentToggleLabel();
+
+            try {
+                console.info(`Okavango water: requesting slider end date ${requestedDateStr}`);
+                const { geojson, dateUsed, resolvedDate } = await fetchOkavangoWaterGeoJson(requestedDateStr);
+                if (fetchId !== waterFetchId || !waterLayerEnabled) return;
+
+                if (requestedDateStr !== resolvedDate) {
+                    console.info(`Okavango water: ${requestedDateStr} not available → showing ${resolvedDate}`);
+                }
+
+                if (!geojson || !geojson.type) {
+                    throw new Error('Invalid GeoJSON received from water API');
+                }
+
+                const featureCount = geojson.features ? geojson.features.length : 0;
+                if (featureCount === 0) {
+                    console.warn('Okavango water layer: no features for', resolvedDate);
+                    removeOkavangoWaterLayer();
+                    return;
+                }
+
+                removeOkavangoWaterLayer();
+                ensureOkavangoWaterPane();
+
+                okavangoWaterLayer = L.geoJSON(geojson, {
+                    pane: 'okavangoWaterPane',
+                    style: OKAVANGO_WATER_STYLE,
+                    interactive: false
+                });
+
+                okavangoWaterLayer.addTo(map);
+                lastWaterDateStr = dateUsed || resolvedDate;
+                lastWaterRequestedDateStr = requestedDateStr;
+                updateWaterExtentToggleLabel();
+                console.log(`Okavango water layer added for ${lastWaterDateStr} (${featureCount} features)`);
+            } catch (e) {
+                if (fetchId !== waterFetchId) return;
+                console.warn('Okavango water layer:', e.message || e);
+                removeOkavangoWaterLayer();
+            } finally {
+                if (fetchId === waterFetchId) {
+                    waterLayerLoading = false;
+                    updateWaterExtentToggleLabel();
+                }
+            }
+        }
+
+        function toggleWaterExtentLayer() {
+            if (waterLayerLoading) return;
+
+            if (waterLayerEnabled && okavangoWaterLayer) {
+                waterLayerEnabled = false;
+                waterFetchId += 1;
+                waterLayerLoading = false;
+                removeOkavangoWaterLayer();
+                lastWaterDateStr = null;
+                lastWaterRequestedDateStr = null;
+                updateWaterExtentToggleLabel();
+                return;
+            }
+
+            const requestedDateStr = getWaterSliderEndDateStr();
+            if (!requestedDateStr) {
+                console.warn('Okavango water: set a date on the slider first');
+                return;
+            }
+
+            waterLayerEnabled = true;
+            lastWaterDateStr = null;
+            lastWaterRequestedDateStr = null;
+            loadOkavangoWaterLayer(requestedDateStr);
+        }
+
+        function initWaterExtentControl() {
+            const WaterExtentControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function () {
+                    const container = L.DomUtil.create('div', 'leaflet-bar water-extent-control');
+                    const button = L.DomUtil.create('a', 'water-extent-toggle water-extent-off', container);
+                    button.href = '#';
+                    button.title = 'Load water extent for the slider end date';
+                    button.setAttribute('role', 'button');
+                    button.setAttribute('aria-pressed', 'false');
+                    waterExtentToggleButton = button;
+                    updateWaterExtentToggleLabel();
+
+                    L.DomEvent.disableClickPropagation(container);
+                    L.DomEvent.on(button, 'click', function (e) {
+                        L.DomEvent.preventDefault(e);
+                        L.DomEvent.stopPropagation(e);
+                        toggleWaterExtentLayer();
+                        button.setAttribute('aria-pressed', waterLayerEnabled ? 'true' : 'false');
+                    });
+
+                    return container;
+                }
+            });
+            map.addControl(new WaterExtentControl());
+        }
+
+        function wireBaseMapToggle() {
+            const baseMapToggle = document.getElementById('toggleBaseMap');
+            if (!baseMapToggle || !map || !satelliteBaseLayer || !osmBaseLayer) return;
+
+            // Satellite is the default. Checked = Satellite, unchecked = OSM.
+            baseMapToggle.checked = satelliteBaseEnabled;
+            baseMapToggle.addEventListener('change', function () {
+                satelliteBaseEnabled = baseMapToggle.checked;
+
+                if (satelliteBaseEnabled) {
+                    if (map.hasLayer(osmBaseLayer)) map.removeLayer(osmBaseLayer);
+                    if (!map.hasLayer(satelliteBaseLayer)) satelliteBaseLayer.addTo(map);
+                } else {
+                    if (map.hasLayer(satelliteBaseLayer)) map.removeLayer(satelliteBaseLayer);
+                    if (!map.hasLayer(osmBaseLayer)) osmBaseLayer.addTo(map);
+                }
+            });
+        }
+
+        function wireMapLabelsToggle() {
+            const labelsToggle = document.getElementById('toggleMapLabels');
+            if (!labelsToggle) return;
+            try {
+                const saved = localStorage.getItem('dashboardShowMapLabels');
+                if (saved === '0') {
+                    showMapLabels = false;
+                    labelsToggle.checked = false;
+                }
+            } catch (e) { /* ignore */ }
+            labelsToggle.addEventListener('change', function () {
+                showMapLabels = labelsToggle.checked;
+                try {
+                    localStorage.setItem('dashboardShowMapLabels', showMapLabels ? '1' : '0');
+                } catch (e) { /* ignore */ }
+                if (typeof window.renderPlaces === 'function') {
+                    window.renderPlaces();
+                }
+            });
+        }
+
+        // Label positioning constants
+        const LABEL_WIDTH = 80;  // Estimated label width in pixels
+        const LABEL_HEIGHT = 20; // Estimated label height in pixels
+
+        // Track used label positions to prevent overlaps
+        let usedLabelBounds = [];
+
+        // Check if a label position would overlap with existing labels
+        function checkLabelOverlap(bounds) {
+            for (let existing of usedLabelBounds) {
+                // Check bounding box overlap
+                if (!(bounds.right < existing.left || 
+                      bounds.left > existing.right || 
+                      bounds.bottom < existing.top || 
+                      bounds.top > existing.bottom)) {
+                    return true; // Overlap detected
+                }
+            }
+            return false;
+        }
+
+        // Find best tooltip direction to avoid overlaps
+        function findBestTooltipDirection(latlng, name) {
+            const point = map.latLngToContainerPoint(latlng);
+            const labelWidth = name.length * 6 + 10; // Reduced padding for tighter packing
+            const labelHeight = 20;
+            const baseOffset = 10;
+
+            // Try multiple offsets and directions to find best non-overlapping position
+            const offsets = [baseOffset, baseOffset + 10, baseOffset + 20, baseOffset + 30];
+            
+            for (let offset of offsets) {
+                const directions = [
+                    { dir: 'right', bounds: { left: point.x + offset, right: point.x + offset + labelWidth, top: point.y - labelHeight/2, bottom: point.y + labelHeight/2 } },
+                    { dir: 'left', bounds: { left: point.x - offset - labelWidth, right: point.x - offset, top: point.y - labelHeight/2, bottom: point.y + labelHeight/2 } },
+                    { dir: 'top', bounds: { left: point.x - labelWidth/2, right: point.x + labelWidth/2, top: point.y - offset - labelHeight, bottom: point.y - offset } },
+                    { dir: 'bottom', bounds: { left: point.x - labelWidth/2, right: point.x + labelWidth/2, top: point.y + offset, bottom: point.y + offset + labelHeight } },
+                    { dir: 'topright', bounds: { left: point.x + offset, right: point.x + offset + labelWidth, top: point.y - offset - labelHeight, bottom: point.y - offset } },
+                    { dir: 'topleft', bounds: { left: point.x - offset - labelWidth, right: point.x - offset, top: point.y - offset - labelHeight, bottom: point.y - offset } },
+                    { dir: 'bottomright', bounds: { left: point.x + offset, right: point.x + offset + labelWidth, top: point.y + offset, bottom: point.y + offset + labelHeight } },
+                    { dir: 'bottomleft', bounds: { left: point.x - offset - labelWidth, right: point.x - offset, top: point.y + offset, bottom: point.y + offset + labelHeight } }
+                ];
+
+                for (let option of directions) {
+                    if (!checkLabelOverlap(option.bounds)) {
+                        usedLabelBounds.push(option.bounds);
+                        return option.dir;
+                    }
+                }
+            }
+
+            // If all fail, use right with maximum offset and mark it anyway
+            const fallbackBounds = { 
+                left: point.x + baseOffset + 40, 
+                right: point.x + baseOffset + 40 + labelWidth, 
+                top: point.y - labelHeight/2, 
+                bottom: point.y + labelHeight/2 
+            };
+            usedLabelBounds.push(fallbackBounds);
+            return 'right';
+        }
+
+        // Load and display GeoJSON layers (roads and populated places)
+        function loadGeoJsonLayers() {
+            // Clear existing GeoJSON layers
+            geoJsonLayers.forEach(layer => {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            geoJsonLayers = [];
+            usedLabelBounds = [];
+
+            // Load populated places - sort by importance for better label priority
+            fetch('data/populated places.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    // Store the data globally for zoom-based filtering
+                    window.populatedPlacesData = data;
+                    
+                    // Sort features by population/importance (cities first, then villages)
+                    const sortedFeatures = data.features.sort((a, b) => {
+                        const getPriority = (feature) => {
+                            if (feature.properties.place === 'city') return 1;
+                            if (feature.properties.place === 'village') return 2;
+                            if (feature.properties.place === 'village') return 3;
+                            return 4;
+                        };
+                        return getPriority(a) - getPriority(b);
+                    });
+
+                    // Function to get current map scale
+                    function getMapScale() {
+                        const zoom = map.getZoom();
+                        const metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * Math.PI / 180)) / Math.pow(2, zoom + 8);
+                        return Math.round(metersPerPixel * 96 / 0.0254);
+                    }
+
+                    // Function to filter places based on scale
+                    function getVisiblePlaceTypes(scale) {
+                        if (scale > 4300000) {
+                            // Zoomed out: only cities
+                            return ['city'];
+                        } else if (scale > 2000000) {
+                            // Medium zoom: cities and towns
+                            return ['city', 'town'];
+                        } else if (scale > 1000000) {
+                            // Medium-close zoom: cities, towns, and villages
+                            return ['city', 'town', 'village'];
+                        } else {
+                            // Zoomed in: show everything
+                            return ['city', 'town', 'village', 'hamlet'];
+                        }
+                    }
+
+                    // Function to render places with current zoom level filtering
+                    function renderPlaces() {
+                        // Remove existing places layer
+                        geoJsonLayers.forEach((layer, index) => {
+                            if (layer.options && layer.options.layerType === 'places') {
+                                map.removeLayer(layer);
+                                geoJsonLayers.splice(index, 1);
+                            }
+                        });
+                        usedLabelBounds = [];
+
+                        const currentScale = getMapScale();
+                        const visibleTypes = getVisiblePlaceTypes(currentScale);
+                        
+                        // Filter features based on zoom level
+                        const filteredFeatures = sortedFeatures.filter(feature => {
+                            const placeType = feature.properties.place;
+                            return visibleTypes.includes(placeType);
+                        });
+
+                        const populatedPlacesLayer = L.geoJSON({ ...data, features: filteredFeatures }, {
+                            layerType: 'places', // Custom property to identify this layer
+                            pointToLayer: function(feature, latlng) {
+                                const marker = L.circleMarker(latlng, {
+                                    color: 'black',
+                                    fillColor: 'black',
+                                    fillOpacity: 0.7,
+                                    radius: 3
+                                });
+
+                                const name = feature.properties.name || feature.properties.name_en;
+                                if (name && showMapLabels) {
+                                    const direction = findBestTooltipDirection(latlng, name);
+                                    
+                                    // Calculate dynamic offset based on label length to avoid overlaps
+                                    const labelLength = name.length;
+                                    const baseOffset = 10;
+                                    const extraOffset = Math.min(labelLength * 0.5, 15);
+                                    
+                                    let offset;
+                                    switch(direction) {
+                                        case 'right': offset = [baseOffset + extraOffset, 0]; break;
+                                        case 'left': offset = [-(baseOffset + extraOffset), 0]; break;
+                                        case 'top': offset = [0, -(baseOffset + extraOffset)]; break;
+                                        case 'bottom': offset = [0, baseOffset + extraOffset]; break;
+                                        case 'topright': offset = [baseOffset + extraOffset, -(baseOffset + extraOffset)]; break;
+                                        case 'topleft': offset = [-(baseOffset + extraOffset), -(baseOffset + extraOffset)]; break;
+                                        case 'bottomright': offset = [baseOffset + extraOffset, baseOffset + extraOffset]; break;
+                                        case 'bottomleft': offset = [-(baseOffset + extraOffset), baseOffset + extraOffset]; break;
+                                        default: offset = [baseOffset, 0];
+                                    }
+                                    
+                                    marker.bindTooltip(name, {
+                                        permanent: true,
+                                        direction: direction,
+                                        offset: offset,
+                                        className: 'place-label'
+                                    });
+                                }
+
+                                return marker;
+                            }
+                        });
+                        populatedPlacesLayer.addTo(map);
+                        geoJsonLayers.push(populatedPlacesLayer);
+                        console.log(`Loaded ${filteredFeatures.length} places at scale 1:${currentScale.toLocaleString()}`);
+                    }
+
+                    window.renderPlaces = renderPlaces;
+
+                    // Initial render
+                    renderPlaces();
+
+                    // Re-render on zoom
+                    map.on('zoomend', renderPlaces);
+                })
+                .catch(error => console.error('Error loading populated places:', error));
+
+
+            // Load roads
+            fetch('data/Roads.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Raw road data:', data.features[0]);
+                    
+                    // Data is already in EPSG:4326 (CRS84) format, no conversion needed
+                    const convertedData = data;
+
+                    console.log('Using road data:', convertedData.features[0]);
+
+                    const roadsLayer = L.geoJSON(convertedData, {
+                        style: {
+                            color: '#000000',
+                            weight: 3,
+                            opacity: 0.9
+                        }
+                    });
+
+                    roadsLayer.addTo(map);
+                    geoJsonLayers.push(roadsLayer);
+                    console.log('Roads layer added to map');
+                })
+                .catch(error => console.error('Error loading roads:', error));
+        }
+
+        // Single source: GCS cumulative JSON via /api/awt-data (all history merged server-side / in bucket).
+        async function loadData() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingBadge = document.getElementById('dataLoadingBadge');
+            loadingOverlay.style.display = 'flex';
+            if (loadingBadge) {
+                loadingBadge.style.display = 'flex';
+                loadingBadge.textContent = 'Loading data…';
+            }
+
+            try {
+                const gcsUrl = 'https://ecoexist-api.vercel.app/api/awt-data';
+                let authToken = await getAuthToken();
+                if (!authToken) {
+                    await new Promise(r => setTimeout(r, 800));
+                    authToken = await getAuthToken();
+                }
+                if (!authToken) {
+                    window.location.replace('login.html?return=dashboard_all_data.html');
+                    return;
+                }
+
+                console.log('📊 Loading primary dataset from Google Cloud Storage (awt_data/awt_tracking_data_cumulative.json)…');
+                let response = await fetch(gcsUrl, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+
+                if (response.status === 401) {
+                    authToken = await getAuthToken(true);
+                    response = await fetch(gcsUrl, {
+                        method: 'GET',
+                        headers: { 'Authorization': 'Bearer ' + authToken }
+                    });
+                }
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        if (loadingBadge) loadingBadge.style.display = 'none';
+                        alert('You do not have access to this dataset. Contact an administrator.');
+                        window.location.replace('login.html?return=dashboard_all_data.html');
+                        return;
+                    }
+                    const errorText = await response.text();
+                    throw new Error(`GCS data: ${response.status} ${response.statusText} — ${errorText}`);
+                }
+
+                const liveData = await response.json();
+                if (!Array.isArray(liveData)) {
+                    throw new Error('Expected JSON array from awt-data');
+                }
+
+                allData = liveData.map(normalizeRecord);
+                console.log(`✅ Loaded ${allData.length.toLocaleString()} records from GCS (primary)`);
+
+                if (loadingBadge) loadingBadge.style.display = 'none';
+                loadingOverlay.style.display = 'none';
+
+                processData();
+
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+                if (loadingBadge) loadingBadge.style.display = 'none';
+                let errorMsg = 'Failed to load wildlife data from Google Cloud: ' + error.message + '\n\n';
+                errorMsg += 'Check Vercel has GCS_BUCKET_NAME and credentials; deploy api/awt-data.js with Bearer support.';
+                alert(errorMsg);
+                allData = [];
+                try {
+                    processData();
+                } catch (e) { /* empty */ }
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Process and display data
+        // Track the initial load state
+        let initialLoad = true;
+
+        function processData() {
+            if (!allData || allData.length === 0) {
+                alert('No data available');
+                return;
+            }
+
+            console.log(`Processing ${allData.length} total records...`);
+
+            // Filter out erroneous data points
+            const originalCount = allData.length;
+            
+            // Filter out points above the equator (Botswana is in Southern Hemisphere)
+            // AND filter out points near 0,0 (invalid GPS readings)
+            allData = allData.filter(point => {
+                // Keep only points below equator
+                if (point.latitude >= 0) return false;
+                
+                // Filter out points within ±5 degrees of 0,0 (invalid GPS or bad data)
+                // This catches 0,0 and any nearby erroneous readings
+                if (Math.abs(point.latitude) < 5 && Math.abs(point.longitude) < 5) return false;
+                
+                return true;
+            });
+            
+            const filteredCount = originalCount - allData.length;
+
+            if (filteredCount > 0) {
+                console.log(`Filtered out ${filteredCount} erroneous data points (above equator or within ±5° of 0,0)`);
+                console.log(`Remaining valid records: ${allData.length}`);
+            }
+
+            // Update statistics
+            updateStatistics();
+
+            // Populate tag filter
+            populateTagFilter();
+
+            // Populate month filter
+            populateMonthFilter();
+
+            // Update tag legend
+            updateTagLegend();
+
+            // Apply initial filters (on first load, only show last 30 days)
+            if (initialLoad) {
+                applyFiltersWithInitialDateRange();
+                initialLoad = false;
+            } else {
+                applyFilters();
+            }
+
+            // Initialize date slider for animation
+            initializeDateSlider();
+
+            // Fit map to data extent initially
+            fitMapToDataExtent();
+        }
+
+        // Apply filters with initial 30-day range
+        function applyFiltersWithInitialDateRange() {
+            const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 86400);
+            
+            // Get all filters
+            const tagFilter = document.getElementById('tagFilter');
+            const selectedTags = Array.from(tagFilter.selectedOptions)
+                .map(option => normalizeTagId(option.value))
+                .filter(Boolean);
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            // Filter data
+            filteredData = allData.filter(item => {
+                // Apply multi-select elephant filter
+                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) return false;
+                
+                // Apply month filter if selected
+                if (monthFilter) {
+                    const itemDate = new Date(item.timestamp * 1000);
+                    const itemMonthYear = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (itemMonthYear !== monthFilter) return false;
+                }
+                
+                // Apply initial 30-day date filter
+                if (item.timestamp < thirtyDaysAgo) return false;
+                
+                return true;
+            });
+            
+            console.log(`📅 Initial view: Showing ${filteredData.length} records from last 30 days`);
+            console.log(`   Full dataset (${allData.length} records) available for slider/filters`);
+            
+            // Update the map
+            updateMap();
+        }
+
+        function updateStatistics() {
+            if (!allData || allData.length === 0) return;
+            
+            // Total Animals = ALL unique tags in entire dataset (not just visible)
+            // Normalize to deduplicate (e.g. 8537 and "8537" from different data sources)
+            const allUniqueTags = new Set(allData.map(d => getTagId(d)).filter(Boolean));
+            document.getElementById('totalAnimals').textContent = allUniqueTags.size;
+            
+            // Total Locations = ALL data points in entire dataset
+            document.getElementById('totalLocations').textContent = allData.length.toLocaleString();
+
+            // Date Range tile = FULL dataset range (earliest to latest ever recorded)
+            // Use loop to avoid stack overflow with large datasets
+            let minTimestampStats = allData[0].timestamp;
+            let maxTimestampStats = allData[0].timestamp;
+            
+            for (let i = 1; i < allData.length; i++) {
+                const ts = allData[i].timestamp;
+                if (ts < minTimestampStats) minTimestampStats = ts;
+                if (ts > maxTimestampStats) maxTimestampStats = ts;
+            }
+            
+            const minDate = new Date(minTimestampStats * 1000);
+            const maxDate = new Date(maxTimestampStats * 1000);
+
+            document.getElementById('dateRange').textContent =
+                `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
+                
+            console.log(`📊 Statistics updated: ${allUniqueTags.size} animals, ${allData.length.toLocaleString()} fixes, ${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`);
+        }
+
+        function populateTagFilter() {
+            const tagFilter = document.getElementById('tagFilter');
+            const uniqueTags = [...new Set(allData.map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+            tagFilter.innerHTML = '';
+
+            uniqueTags.forEach(tagId => {
+                const option = document.createElement('option');
+                option.value = tagId;
+                option.textContent = getDisplayNameFromTagId(tagId);
+                tagFilter.appendChild(option);
+            });
+        }
+
+        function handleMonthFilterChange() {
+            const selectedMonth = document.getElementById('monthFilter').value;
+            
+            if (selectedMonth) {
+                // Get the timestamp range for the selected month
+                const [year, month] = selectedMonth.split('-');
+                const startOfMonth = new Date(year, month - 1, 1).getTime() / 1000;
+                const endOfMonth = new Date(year, month, 0, 23, 59, 59).getTime() / 1000;
+                
+                // Update slider to show the selected month
+                currentAnimationStart = startOfMonth;
+                currentAnimationEnd = endOfMonth;
+                
+                if (dateSlider) {
+                    dateSlider.set([startOfMonth, endOfMonth]);
+                }
+                
+                updateAnimationDateRange();
+                updateMapWithDateRange();
+            } else {
+                // Reset to last 30 days
+                const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 86400);
+                currentAnimationStart = Math.max(thirtyDaysAgo, minTimestamp);
+                currentAnimationEnd = maxTimestamp;
+                
+                if (dateSlider) {
+                    dateSlider.set([currentAnimationStart, currentAnimationEnd]);
+                }
+                
+                updateAnimationDateRange();
+                updateMapWithDateRange();
+            }
+        }
+
+        function populateMonthFilter() {
+            const monthFilter = document.getElementById('monthFilter');
+            const monthsSet = new Set();
+
+            allData.forEach(item => {
+                const date = new Date(item.timestamp * 1000);
+                const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthsSet.add(monthYear);
+            });
+
+            const months = Array.from(monthsSet).sort().reverse();
+
+            monthFilter.innerHTML = '<option value="">All Months</option>';
+
+            months.forEach(monthYear => {
+                const [year, month] = monthYear.split('-');
+                const date = new Date(year, month - 1);
+                const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const option = document.createElement('option');
+                option.value = monthYear;
+                option.textContent = monthName;
+                monthFilter.appendChild(option);
+            });
+        }
+
+        function updateTagLegend() {
+            const legend = document.getElementById('tagLegend');
+            // Use filteredData to show only tags currently displayed on map
+            const displayData = filteredData && filteredData.length > 0 ? filteredData : allData;
+            const uniqueTags = [...new Set(displayData.map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+            // Build STABLE color map from FULL dataset - same tag ALWAYS gets same color (fixes legend/map mismatch)
+            const allTagIds = [...new Set((allData || []).map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            const tagToColorIndex = {};
+            allTagIds.forEach((tagId, idx) => { tagToColorIndex[tagId] = idx; });
+
+            // Assign colors using stable map - tag 1 always gets colors[0], tag 2 gets colors[1], etc
+            uniqueTags.forEach(tagId => {
+                const idx = tagToColorIndex[tagId];
+                tagColors[tagId] = colors[(idx !== undefined ? idx : allTagIds.length) % colors.length];
+            });
+
+            // Deduplicate by display name for legend (same elephant from different sources shows once)
+            const nameToTagIds = {};
+            uniqueTags.forEach(tagId => {
+                const name = getDisplayNameFromTagId(tagId);
+                if (!nameToTagIds[name]) nameToTagIds[name] = [];
+                nameToTagIds[name].push(tagId);
+            });
+
+            legend.innerHTML = '';
+
+            // Add legend entries - same tag-ID order, use pre-assigned colors
+            function addLegendEntries() {
+                const namesAdded = new Set();
+                uniqueTags.forEach(tagId => {
+                    const displayName = getDisplayNameFromTagId(tagId);
+                    if (namesAdded.has(displayName)) return;
+                    namesAdded.add(displayName);
+
+                    const color = tagColors[tagId];
+                    const item = document.createElement('div');
+                    item.className = 'tag-legend';
+                    item.innerHTML = `
+                        <span class="tag-color" style="background-color: ${color}"></span>
+                        ${displayName}
+                    `;
+                    legend.appendChild(item);
+                });
+            }
+
+            // For Historic Map - show normal tags + historic data entry
+            if (currentViewMode === 'current-historic') {
+                addLegendEntries();
+
+                // Add Historic Data entry
+                const historicItem = document.createElement('div');
+                historicItem.className = 'tag-legend';
+                historicItem.innerHTML = `
+                    <span class="tag-color" style="background-color: #888888"></span>
+                    Historic Data
+                `;
+                legend.appendChild(historicItem);
+            }
+            // For Day-Night Map - show normal tags + day/night entries
+            else if (currentViewMode === 'day-night') {
+                addLegendEntries();
+
+                // Add Day/Night entry (combined in one block)
+                const dayNightItem = document.createElement('div');
+                dayNightItem.className = 'tag-legend';
+                dayNightItem.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 3px; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                        <span class="tag-color" style="background-color: #ffea00"></span>
+                            Day
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                        <span class="tag-color" style="background-color: #333333"></span>
+                            Night
+                        </div>
+                    </div>
+                `;
+                legend.appendChild(dayNightItem);
+            }
+            // For Speed Map - show normal tags + slow/fast entries
+            else if (currentViewMode === 'speed-map') {
+                addLegendEntries();
+
+                // Add Slow/Fast entry (combined in one block)
+                const speedItem = document.createElement('div');
+                speedItem.className = 'tag-legend';
+                speedItem.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 3px; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span class="tag-color" style="background-color: #ffea00"></span>
+                            Slow
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span class="tag-color" style="background-color: #ff0000"></span>
+                            Fast
+                        </div>
+                    </div>
+                `;
+                legend.appendChild(speedItem);
+            }
+            // For Standard and Home Range Maps - show normal tags only
+            else {
+                addLegendEntries();
+            }
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            
+            // Update button styles
+            document.querySelectorAll('.btn-view-mode').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (mode === 'standard') {
+                document.getElementById('btnStandard').classList.add('active');
+                document.getElementById('monthFilterContainer').style.display = 'block';
+            } else if (mode === 'current-historic') {
+                document.getElementById('btnCurrentHistoric').classList.add('active');
+                document.getElementById('monthFilterContainer').style.display = 'block';
+            } else if (mode === 'day-night') {
+                document.getElementById('btnDayNight').classList.add('active');
+                document.getElementById('monthFilterContainer').style.display = 'block';
+            } else if (mode === 'home-range') {
+                document.getElementById('btnHomeRange').classList.add('active');
+                document.getElementById('monthFilterContainer').style.display = 'block';
+            } else if (mode === 'speed-map') {
+                document.getElementById('btnSpeedMap').classList.add('active');
+                document.getElementById('monthFilterContainer').style.display = 'block';
+            }
+            
+            updateTagLegend();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            if (!allData || allData.length === 0) {
+                console.log('⚠️  No data available for filtering');
+                return;
+            }
+
+            const tagFilter = document.getElementById('tagFilter');
+            const selectedTags = Array.from(tagFilter.selectedOptions)
+                .map(option => normalizeTagId(option.value))
+                .filter(Boolean);
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            console.log(`🔍 Applying filters: Tags=${selectedTags.length ? selectedTags.join(', ') : 'All'}, From=${dateFrom || 'None'}, To=${dateTo || 'None'}`);
+
+            filteredData = allData.filter(item => {
+                // Multi-select elephant filter
+                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) {
+                    return false;
+                }
+
+                // Date filters
+                if (dateFrom) {
+                    const fromDate = new Date(dateFrom).getTime() / 1000;
+                    if (item.timestamp < fromDate) return false;
+                }
+
+                if (dateTo) {
+                    const toDate = new Date(dateTo).getTime() / 1000;
+                    if (item.timestamp > toDate) return false;
+                }
+
+                return true;
+            });
+
+            console.log(`   Filtered to ${filteredData.length.toLocaleString()} records`);
+
+            // If we have filtered data, adjust the slider to show the actual date range of filtered results
+            if (filteredData.length > 0) {
+                // Use reduce instead of spread operator to avoid stack overflow with large datasets
+                let actualMinTimestamp = filteredData[0].timestamp;
+                let actualMaxTimestamp = filteredData[0].timestamp;
+                
+                for (let i = 1; i < filteredData.length; i++) {
+                    const ts = filteredData[i].timestamp;
+                    if (ts < actualMinTimestamp) actualMinTimestamp = ts;
+                    if (ts > actualMaxTimestamp) actualMaxTimestamp = ts;
+                }
+                
+                currentAnimationStart = actualMinTimestamp;
+                currentAnimationEnd = actualMaxTimestamp;
+                
+                if (dateSlider) {
+                    dateSlider.set([actualMinTimestamp, actualMaxTimestamp]);
+                }
+                
+                console.log(`   Slider adjusted to: ${new Date(actualMinTimestamp * 1000).toLocaleDateString()} - ${new Date(actualMaxTimestamp * 1000).toLocaleDateString()}`);
+            }
+
+            updateMap();
+        }
+
+        function updateMap(options) {
+            const skipFitBounds = !!(options && options.skipFitBounds);
+            // Update legend FIRST so tagColors is populated before we draw polylines
+            updateTagLegend();
+
+            // Clear existing layers
+            mapLayers.forEach(layer => map.removeLayer(layer));
+            mapLayers = [];
+
+            if (currentViewMode === 'standard') {
+                renderStandardView();
+            } else if (currentViewMode === 'current-historic') {
+                renderCurrentHistoricView();
+            } else if (currentViewMode === 'day-night') {
+                renderDayNightView();
+            } else if (currentViewMode === 'home-range') {
+                renderHomeRangeView();
+            } else if (currentViewMode === 'speed-map') {
+                renderSpeedMapView();
+            }
+
+            // Update statistics based on FULL dataset (not filtered)
+            updateStatistics();
+            
+            // Update slider date range display
+            updateAnimationDateRange();
+
+            // Only auto-fit on filter/view changes — not when the date slider moves
+            if (mapLayers.length > 0 && !isAnimating && !skipFitBounds) {
+                const group = new L.featureGroup(mapLayers);
+                map.fitBounds(group.getBounds().pad(0.02));
+            }
+        }
+
+        // Function to fit map to all data extent
+        function fitMapToDataExtent() {
+            if (allData && allData.length > 0) {
+                // Calculate bounds from all data points
+                let minLat = Infinity, maxLat = -Infinity;
+                let minLng = Infinity, maxLng = -Infinity;
+
+                allData.forEach(point => {
+                    minLat = Math.min(minLat, point.latitude);
+                    maxLat = Math.max(maxLat, point.latitude);
+                    minLng = Math.min(minLng, point.longitude);
+                    maxLng = Math.max(maxLng, point.longitude);
+                });
+
+                // Add minimal padding and fit bounds - tight zoom on data
+                const bounds = [[minLat, minLng], [maxLat, maxLng]];
+                map.fitBounds(bounds, { padding: [20, 20] });
+            }
+        }
+
+        function renderStandardView() {
+            // Group data by tag (normalize key to merge 8537 and "8537" from different sources)
+            const dataByTag = {};
+            filteredData.forEach(item => {
+                const key = getTagId(item);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
+                }
+                dataByTag[key].push(item);
+            });
+
+            // For each tag, create a polyline
+            Object.keys(dataByTag).sort((a, b) => parseInt(a, 10) - parseInt(b, 10)).forEach(tagId => {
+                const tagData = dataByTag[tagId].sort((a, b) => a.timestamp - b.timestamp);
+                const coordinates = tagData.map(item => [item.latitude, item.longitude]);
+                const color = tagColors[tagId] || '#2c5530';
+
+                if (coordinates.length > 1) {
+                    const polyline = L.polyline(coordinates, {
+                        color: color,
+                        weight: 3,
+                        opacity: 0.8
+                    });
+
+                    polyline.bindPopup(`
+                        <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
+                        Points: ${coordinates.length}<br>
+                        From: ${new Date(tagData[0].timestamp * 1000).toLocaleDateString()}<br>
+                        To: ${new Date(tagData[tagData.length - 1].timestamp * 1000).toLocaleDateString()}
+                    `);
+
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
+                }
+            });
+        }
+
+        function renderCurrentHistoricView() {
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            // Determine current month
+            let currentMonth, currentYear;
+            if (monthFilter) {
+                const [year, month] = monthFilter.split('-');
+                currentYear = parseInt(year);
+                currentMonth = parseInt(month);
+            } else {
+                const now = new Date();
+                currentYear = now.getFullYear();
+                currentMonth = now.getMonth() + 1;
+            }
+
+            // Group data by tag and time period (normalize key to merge data from different sources)
+            const dataByTag = {};
+            filteredData.forEach(item => {
+                const key = getTagId(item);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = { current: [], historic: [] };
+                }
+                
+                const date = new Date(item.timestamp * 1000);
+                const itemYear = date.getFullYear();
+                const itemMonth = date.getMonth() + 1;
+                
+                if (itemYear === currentYear && itemMonth === currentMonth) {
+                    dataByTag[key].current.push(item);
+                } else {
+                    dataByTag[key].historic.push(item);
+                }
+            });
+
+            // Draw historic tracks first (grey)
+            Object.keys(dataByTag).forEach(tagId => {
+                const historicData = dataByTag[tagId].historic.sort((a, b) => a.timestamp - b.timestamp);
+                
+                if (historicData.length > 1) {
+                    const coordinates = historicData.map(item => [item.latitude, item.longitude]);
+                    const polyline = L.polyline(coordinates, {
+                        color: '#383838',
+                        weight: 2,
+                        opacity: 0.5
+                    });
+
+                    polyline.bindPopup(`
+                        <strong>${getDisplayNameFromTagId(tagId)} - Historic</strong><br>
+                        Points: ${coordinates.length}<br>
+                        From: ${new Date(historicData[0].timestamp * 1000).toLocaleDateString()}<br>
+                        To: ${new Date(historicData[historicData.length - 1].timestamp * 1000).toLocaleDateString()}
+                    `);
+
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
+                }
+            });
+
+            // Draw current tracks on top (colored)
+            Object.keys(dataByTag).forEach(tagId => {
+                const currentData = dataByTag[tagId].current.sort((a, b) => a.timestamp - b.timestamp);
+                const color = tagColors[tagId] || '#2c5530';
+                
+                if (currentData.length > 1) {
+                    const coordinates = currentData.map(item => [item.latitude, item.longitude]);
+                    const polyline = L.polyline(coordinates, {
+                        color: color,
+                        weight: 3,
+                        opacity: 1
+                    });
+
+                    polyline.bindPopup(`
+                        <strong>${getDisplayNameFromTagId(tagId)} - Current Month</strong><br>
+                        Points: ${coordinates.length}<br>
+                        From: ${new Date(currentData[0].timestamp * 1000).toLocaleDateString()}<br>
+                        To: ${new Date(currentData[currentData.length - 1].timestamp * 1000).toLocaleDateString()}
+                    `);
+
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
+                }
+            });
+        }
+
+        function renderDayNightView() {
+            const dataByTag = {};
+            filteredData.forEach(item => {
+                const key = getTagId(item);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
+                }
+                dataByTag[key].push(item);
+            });
+
+            // For each tag, create polylines with time-based coloring
+            Object.keys(dataByTag).forEach(tagId => {
+                const tagData = dataByTag[tagId].sort((a, b) => a.timestamp - b.timestamp);
+
+                if (tagData.length > 1) {
+                    // Create segments with individual colors based on time of day
+                    for (let i = 0; i < tagData.length - 1; i++) {
+                        const point1 = tagData[i];
+                        const point2 = tagData[i + 1];
+
+                        // Determine color based on the time of the second point
+                        const date = new Date(point2.timestamp * 1000);
+                        const hour = date.getHours();
+                        const color = (hour >= 6 && hour < 18) ? '#ffea00' : '#333333'; // Yellow for day, dark grey for night
+
+                        const coordinates = [
+                            [point1.latitude, point1.longitude],
+                            [point2.latitude, point2.longitude]
+                        ];
+
+                        const polyline = L.polyline(coordinates, {
+                            color: color,
+                            weight: 3,
+                            opacity: 0.8
+                        });
+
+                        polyline.bindPopup(`
+                            <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
+                            Time: ${date.toLocaleString()}<br>
+                            Period: ${(hour >= 6 && hour < 18) ? 'Day (6AM-6PM)' : 'Night (6PM-6AM)'}
+                        `);
+
+                        polyline.addTo(map);
+                        mapLayers.push(polyline);
+                    }
+                }
+            });
+        }
+
+        function renderHomeRangeView() {
+            const dataByTag = {};
+            filteredData.forEach(item => {
+                const key = getTagId(item);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
+                }
+                dataByTag[key].push(item);
+            });
+
+            // For each tag, create a convex hull
+            Object.keys(dataByTag).forEach(tagId => {
+                const tagData = dataByTag[tagId];
+                const color = tagColors[tagId] || '#2c5530';
+
+                if (tagData.length >= 3) {
+                    // Create points for turf
+                    const points = turf.featureCollection(
+                        tagData.map(item => turf.point([item.longitude, item.latitude]))
+                    );
+
+                    try {
+                        // Calculate convex hull
+                        const hull = turf.convex(points);
+
+                        if (hull) {
+                            // Convert to Leaflet format
+                            const coords = hull.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+
+                            const polygon = L.polygon(coords, {
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.2,
+                                weight: 2
+                            });
+
+                            polygon.bindPopup(`
+                                <strong>${getDisplayNameFromTagId(tagId)} - Home Range</strong><br>
+                                Points: ${tagData.length}<br>
+                                Area: ~${(turf.area(hull) / 1000000).toFixed(2)} km²
+                            `);
+
+                            polygon.addTo(map);
+                            mapLayers.push(polygon);
+                        }
+                    } catch (error) {
+                        console.error(`Error creating home range for tag ${tagId}:`, error);
+                    }
+                }
+            });
+        }
+
+        function renderSpeedMapView() {
+            const dataByTag = {};
+            filteredData.forEach(item => {
+                const key = getTagId(item);
+                if (!key) return;
+                if (!dataByTag[key]) {
+                    dataByTag[key] = [];
+                }
+                dataByTag[key].push(item);
+            });
+
+            // Speed color mapping function (yellow to dark red gradient)
+            function getSpeedColor(speed) {
+                // Normalize speed from 0-15 km/h to 0-1
+                const normalizedSpeed = Math.min(speed / 15, 1);
+
+                // Interpolate from yellow (255, 255, 0) to dark red (139, 0, 0)
+                const r = Math.round(255 - (255 - 139) * normalizedSpeed);
+                const g = Math.round(255 * (1 - normalizedSpeed));
+                const b = 0;
+
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            // For each tag, create polylines with speed-based coloring
+            Object.keys(dataByTag).forEach(tagId => {
+                const tagData = dataByTag[tagId].sort((a, b) => a.timestamp - b.timestamp);
+
+                if (tagData.length > 1) {
+                    // Create segments with individual colors based on speed
+                    for (let i = 0; i < tagData.length - 1; i++) {
+                        const point1 = tagData[i];
+                        const point2 = tagData[i + 1];
+
+                        // Use the speed of the second point for coloring
+                        const speed = point2.speed || 0;
+                        const color = getSpeedColor(speed);
+
+                        const coordinates = [
+                            [point1.latitude, point1.longitude],
+                            [point2.latitude, point2.longitude]
+                        ];
+
+                        const polyline = L.polyline(coordinates, {
+                            color: color,
+                            weight: 3,
+                            opacity: 0.8
+                        });
+
+                        polyline.bindPopup(`
+                            <strong>${getDisplayNameFromTagId(tagId)}</strong><br>
+                            Speed: ${speed.toFixed(2)} km/h<br>
+                            From: ${new Date(point1.timestamp * 1000).toLocaleString()}<br>
+                            To: ${new Date(point2.timestamp * 1000).toLocaleString()}
+                        `);
+
+                        polyline.addTo(map);
+                        mapLayers.push(polyline);
+                    }
+                }
+            });
+        }
+
+        function updateDataTable() {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+
+            // Sort by timestamp (newest first) and limit to 100 rows
+            const sortedData = filteredData
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 100);
+
+            sortedData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.tagId}</td>
+                    <td>${new Date(item.timestamp * 1000).toLocaleString()}</td>
+                    <td>${item.latitude.toFixed(6)}</td>
+                    <td>${item.longitude.toFixed(6)}</td>
+                    <td>${item.temperature}</td>
+                    <td>${item.voltage}</td>
+                    <td>${item.movement ? '✓' : '✗'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ==================== ANIMATION FUNCTIONS ====================
+
+        function initializeDateSlider() {
+            if (!allData || allData.length === 0) return;
+
+            // Get timestamp range from all data using loop (avoid stack overflow)
+            minTimestamp = allData[0].timestamp;
+            maxTimestamp = allData[0].timestamp;
+            
+            for (let i = 1; i < allData.length; i++) {
+                const ts = allData[i].timestamp;
+                if (ts < minTimestamp) minTimestamp = ts;
+                if (ts > maxTimestamp) maxTimestamp = ts;
+            }
+
+            console.log(`🔍 Slider Initialization Debug:`);
+            console.log(`   Data points: ${allData.length}`);
+            console.log(`   Min timestamp: ${minTimestamp} = ${new Date(minTimestamp * 1000).toISOString()}`);
+            console.log(`   Max timestamp: ${maxTimestamp} = ${new Date(maxTimestamp * 1000).toISOString()}`);
+
+            // Set initial slider position to show last 30 days
+            // Slider range will span full dataset
+            const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 86400);
+            let initialStart = Math.max(thirtyDaysAgo, minTimestamp);
+            let initialEnd = maxTimestamp;
+
+            console.log(`   Initial start: ${initialStart} = ${new Date(initialStart * 1000).toISOString()}`);
+            console.log(`   Initial end: ${initialEnd} = ${new Date(initialEnd * 1000).toISOString()}`);
+
+            // Initialize current animation range
+            currentAnimationStart = initialStart;
+            currentAnimationEnd = initialEnd;
+
+            const sliderContainer = document.getElementById('dateSliderContainer');
+            sliderContainer.innerHTML = ''; // Clear any existing slider
+
+            // Create slider with full range available, but starting position may be last 30 days
+            dateSlider = noUiSlider.create(sliderContainer, {
+                start: [initialStart, initialEnd],
+                connect: true,
+                range: {
+                    'min': minTimestamp,
+                    'max': maxTimestamp
+                },
+                step: 86400, // 1 day in seconds
+                format: {
+                    to: function(value) {
+                        return Math.round(value);
+                    },
+                    from: function(value) {
+                        return Number(value);
+                    }
+                }
+            });
+
+            // Update display when slider is being moved
+            dateSlider.on('update', function(values) {
+                currentAnimationStart = parseInt(values[0]);
+                currentAnimationEnd = parseInt(values[1]);
+                updateAnimationDateRange();
+            });
+
+            // Update map only when slider is released (for performance)
+            dateSlider.on('change', function(values) {
+                currentAnimationStart = parseInt(values[0]);
+                currentAnimationEnd = parseInt(values[1]);
+                updateAnimationDateRange();
+                updateMapWithDateRange();
+            });
+
+            // Set initial display and map to show full range
+            updateAnimationDateRange();
+            updateMapWithDateRange();
+        }
+
+        function updateAnimationDateRange() {
+            // Slider displays the actual date range of data being shown on map
+            if (filteredData && filteredData.length > 0) {
+                // Use loop to avoid stack overflow with large datasets
+                let minTs = filteredData[0].timestamp;
+                let maxTs = filteredData[0].timestamp;
+                
+                for (let i = 1; i < filteredData.length; i++) {
+                    const ts = filteredData[i].timestamp;
+                    if (ts < minTs) minTs = ts;
+                    if (ts > maxTs) maxTs = ts;
+                }
+                
+                const actualMinDate = new Date(minTs * 1000);
+                const actualMaxDate = new Date(maxTs * 1000);
+                document.getElementById('animationDateRange').textContent = 
+                    `${actualMinDate.toLocaleDateString()} - ${actualMaxDate.toLocaleDateString()}`;
+            } else {
+                // Fallback to slider position if no filtered data
+                const startDate = new Date(currentAnimationStart * 1000).toLocaleDateString();
+                const endDate = new Date(currentAnimationEnd * 1000).toLocaleDateString();
+                document.getElementById('animationDateRange').textContent = `${startDate} - ${endDate}`;
+            }
+        }
+
+        function updateMapWithDateRange() {
+            // Filter data by current date range
+            filteredData = allData.filter(item => {
+                const selectedTags = Array.from(document.getElementById('tagFilter').selectedOptions)
+                    .map(option => normalizeTagId(option.value))
+                    .filter(Boolean);
+
+                // Multi-select elephant filter
+                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) {
+                    return false;
+                }
+
+                // Date range filter
+                return item.timestamp >= currentAnimationStart && item.timestamp <= currentAnimationEnd;
+            });
+
+            updateMap({ skipFitBounds: true });
+        }
+
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            document.getElementById('playButton').innerHTML = '⏸️ Pause';
+
+            const speed = parseInt(document.getElementById('animationSpeed').value);
+            const dayStep = 86400; // 1 day in seconds
+            const windowSize = 7 * dayStep; // Show 7 days at a time
+
+            // Always start animation from current slider position with a 7-day window
+            // If the current window is larger than 7 days, center it on the current position
+            const currentCenter = (currentAnimationStart + currentAnimationEnd) / 2;
+            const halfWindow = windowSize / 2;
+
+            currentAnimationStart = Math.max(minTimestamp, currentCenter - halfWindow);
+            currentAnimationEnd = Math.min(maxTimestamp, currentAnimationStart + windowSize);
+
+            // Adjust start if we're too close to the end
+            if (currentAnimationEnd > maxTimestamp) {
+                currentAnimationEnd = maxTimestamp;
+                currentAnimationStart = Math.max(minTimestamp, maxTimestamp - windowSize);
+            }
+
+            // Update slider to match the animation window
+            if (dateSlider) {
+                dateSlider.set([currentAnimationStart, currentAnimationEnd]);
+            }
+
+            animationInterval = setInterval(() => {
+                // Move window forward by 1 day
+                currentAnimationStart += dayStep;
+                currentAnimationEnd += dayStep;
+
+                // Stop if we've reached the end
+                if (currentAnimationEnd > maxTimestamp) {
+                    currentAnimationEnd = maxTimestamp;
+                    stopAnimation();
+                    return;
+                }
+
+                // Update slider
+                if (dateSlider) {
+                    dateSlider.set([currentAnimationStart, currentAnimationEnd]);
+                }
+
+                // Update date range display and map
+                updateAnimationDateRange();
+                updateMapWithDateRange();
+
+            }, speed);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            document.getElementById('playButton').innerHTML = '▶️ Play';
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+        }
+
+        function resetAnimation() {
+            stopAnimation();
+            currentAnimationStart = minTimestamp;
+            currentAnimationEnd = maxTimestamp;
+
+            if (dateSlider) {
+                dateSlider.set([minTimestamp, maxTimestamp]);
+            }
+        }
+
+        function exportData() {
+            if (filteredData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            // Create CSV content
+            const headers = ['Tag ID', 'Timestamp', 'Latitude', 'Longitude', 'Temperature', 'Voltage', 'Movement', 'Speed'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredData.map(item => [
+                    item.tagId,
+                    new Date(item.timestamp * 1000).toISOString(),
+                    item.latitude,
+                    item.longitude,
+                    item.temperature,
+                    item.voltage,
+                    item.movement,
+                    item.speed
+                ].join(','))
+            ].join('\n');
+
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `awt-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function generateMapTitle() {
+            // Get map type
+            let mapType = 'Standard Map';
+            if (currentViewMode === 'current-historic') {
+                mapType = 'Historic Map';
+            } else if (currentViewMode === 'day-night') {
+                mapType = 'Day-Night Map';
+            } else if (currentViewMode === 'home-range') {
+                mapType = 'Home Range Map';
+            } else if (currentViewMode === 'speed-map') {
+                mapType = 'Speed Map';
+            }
+
+            // Get elephant filter
+            const selectedTags = Array.from(document.getElementById('tagFilter').selectedOptions)
+                .map(option => normalizeTagId(option.value))
+                .filter(Boolean);
+            let elephantText = selectedTags.length
+                ? `for ${selectedTags.map(tagId => getDisplayNameFromTagId(tagId)).join(', ')}`
+                : 'for All Elephants';
+
+            // Get date range - check month filter first, then slider
+            let dateText = '';
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            if (monthFilter) {
+                // Month filter is selected (format: "2025-09")
+                const [year, month] = monthFilter.split('-');
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                const monthName = monthNames[parseInt(month) - 1];
+                dateText = ` for month of ${monthName} ${year}`;
+            } else if (currentAnimationStart && currentAnimationEnd) {
+                // Use date range from the animation slider
+                const startDate = new Date(currentAnimationStart * 1000);
+                const endDate = new Date(currentAnimationEnd * 1000);
+                
+                // Check if this is a full month
+                const isFirstDay = startDate.getDate() === 1;
+                const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+                const isLastDay = endDate.getDate() === lastDayOfMonth;
+                const sameMonth = startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear();
+                
+                if (isFirstDay && isLastDay && sameMonth) {
+                    // Display as "for month of September 2025"
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                       'July', 'August', 'September', 'October', 'November', 'December'];
+                    const monthName = monthNames[startDate.getMonth()];
+                    const year = startDate.getFullYear();
+                    dateText = ` for month of ${monthName} ${year}`;
+                } else {
+                    // Display as date range
+                    const formatDate = (date) => {
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const year = date.getFullYear();
+                        return `${month}/${day}/${year}`;
+                    };
+                    
+                    dateText = ` for dates ${formatDate(startDate)} to ${formatDate(endDate)}`;
+                }
+            }
+
+            return `${mapType} ${elephantText}${dateText}`;
+        }
+
+        async function printMap() {
+            // Show loading indicator
+            const button = document.querySelector('button[onclick="printMap()"]');
+            const originalText = button ? button.innerHTML : '';
+            if (button) {
+                button.innerHTML = '⏳ Capturing...';
+                button.disabled = true;
+            }
+
+            try {
+                // Generate and show the title
+                const titleElement = document.getElementById('map-export-title');
+                const titleText = document.getElementById('map-title-text');
+                titleText.textContent = generateMapTitle();
+                titleElement.style.display = 'block';
+
+                // Hide zoom controls
+                const zoomControls = document.querySelector('.leaflet-control-zoom');
+                const originalZoomDisplay = zoomControls ? zoomControls.style.display : '';
+                if (zoomControls) {
+                    zoomControls.style.display = 'none';
+                }
+
+                // Get the map AND legend container together
+                const mapAndLegendElement = document.getElementById('map-and-legend-container');
+                
+                // Wait for tiles to finish loading
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Try modern-screenshot first (better CORS handling)
+                let blob;
+                if (window.modernScreenshot && window.modernScreenshot.domToBlob) {
+                    try {
+                        blob = await window.modernScreenshot.domToBlob(mapAndLegendElement, {
+                scale: 2,
+                            quality: 0.95,
+                            type: 'image/jpeg'
+                        });
+                    } catch (e) {
+                        console.log('modern-screenshot failed, falling back to html2canvas:', e);
+                        blob = null;
+                    }
+                }
+
+                // Fallback to html2canvas if modern-screenshot fails
+                if (!blob) {
+                    const canvas = await html2canvas(mapAndLegendElement, {
+                useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        scale: 2,
+                        logging: true,  // Enable logging to see what's happening
+                        removeContainer: false,
+                        foreignObjectRendering: false,
+                        imageTimeout: 0
+                    });
+
+                    // Convert canvas to blob
+                    blob = await new Promise((resolve) => {
+                        canvas.toBlob(resolve, 'image/jpeg', 0.95);
+                    });
+                }
+
+                // Hide the title and restore zoom controls
+                titleElement.style.display = 'none';
+                if (zoomControls) {
+                    zoomControls.style.display = originalZoomDisplay;
+                }
+
+                if (!blob) {
+                    throw new Error('Failed to create image');
+                }
+
+                // Download the image
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `awt-map-${new Date().toISOString().split('T')[0]}.jpg`;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                console.log('Map exported successfully with legend and title');
+                
+                // Restore button
+                if (button) {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+
+            } catch (error) {
+                console.error('Error capturing map:', error);
+                
+                // Restore UI on error
+                const titleElement = document.getElementById('map-export-title');
+                titleElement.style.display = 'none';
+                const zoomControls = document.querySelector('.leaflet-control-zoom');
+                if (zoomControls) {
+                    zoomControls.style.display = '';
+                }
+                
+                // Provide helpful error message with instructions
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const screenshotInstructions = isMac 
+                    ? 'Press Cmd+Shift+4, then drag to select the map area'
+                    : 'Press Windows+Shift+S, then select the map area';
+                
+                alert(`Automatic screenshot failed due to browser security restrictions.\n\nPlease use your browser's screenshot tool:\n${screenshotInstructions}\n\nOr right-click on the map and select "Save image as..."`);
+                
+                // Restore button
+                if (button) {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+        }
+
+        function runAfterAuth() {
+            if (window._dashboardAllDataInitDone) return;
+            window._dashboardAllDataInitDone = true;
+            requestAnimationFrame(function() {
+                initMap();
+                loadData();
+            });
+        }
+        window.runAfterAuth = runAfterAuth;
+        document.addEventListener('authReady', runAfterAuth, { once: true });
+        if (document.getElementById('auth-overlay') === null) runAfterAuth();
+    </script>
+</body>
+</html>
