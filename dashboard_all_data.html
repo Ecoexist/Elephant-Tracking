@@ -359,10 +359,6 @@
                             <input class="form-check-input" type="checkbox" id="toggleMapLabels" checked>
                             <label class="form-check-label small text-nowrap" for="toggleMapLabels">Place labels</label>
                         </div>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="toggleBaseMap" checked>
-                            <label class="form-check-label small text-nowrap" for="toggleBaseMap">Satellite</label>
-                        </div>
                         <div class="btn-group btn-group-sm">
                         <button class="btn btn-sm btn-outline-secondary" onclick="printMap()">
                                 🖨️ Export Map
@@ -372,13 +368,9 @@
                             </button>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); printMap();">📸 Auto Screenshot</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); exportVisibleShapefiles();">📐 Export Shapefile</a></li>
                                 <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); alert('Use your browser screenshot:\n\n• Windows: Press Windows+Shift+S\n• Mac: Press Cmd+Shift+4\n• Chrome: Right-click → Save image as');">ℹ️ Manual Screenshot Help</a></li>
                             </ul>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportShapefileBtn" onclick="exportVisibleShapefiles()">
-                            📐 Export Shapefile
-                        </button>
                         </div>
                     </div>
                     <!-- Map and Legend Container -->
@@ -493,10 +485,10 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label for="tagFilter" class="form-label">Elephants</label>
-                            <select class="form-select" id="tagFilter" multiple size="7" aria-label="Select one or more elephants">
+                            <label for="tagFilter" class="form-label">Animal Tag ID</label>
+                            <select class="form-select" id="tagFilter">
+                                <option value="">All Animals</option>
                             </select>
-                            <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple elephants.</small>
                         </div>
 
                         <div class="mb-3" id="monthFilterContainer">
@@ -531,19 +523,14 @@
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0">📊 Download Latest Movement Data</h6>
-                        <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-primary" onclick="exportData()">
                             Download CSV
                         </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="exportVisibleShapefiles()">
-                            Export Shapefile
-                        </button>
-                        </div>
                     </div>
                     <div class="card-body text-center">
-                        <p class="text-muted mb-0">CSV exports the GPS fixes currently on the map. Shapefile exports only what is drawn: one line shapefile per elephant, and if Home Ranges is on, one polygon shapefile per elephant.</p>
+                        <p class="text-muted mb-0">Click the download button to export all filtered movement data as a CSV file.</p>
                     </div>
                 </div>
             </div>
@@ -574,8 +561,6 @@
 
     <!-- noUiSlider JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
-    <!-- JSZip for shapefile packages -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         async function getAuthToken(forceRefresh) {
@@ -605,9 +590,6 @@
         let lastWaterDateStr = null;
         let lastWaterRequestedDateStr = null;
         let waterExtentToggleButton = null;
-        let satelliteBaseLayer = null;
-        let osmBaseLayer = null;
-        let satelliteBaseEnabled = true;
 
         const ECOEXIST_API_BASE = 'https://ecoexist-api.vercel.app';
         const OKAVANGO_WATER_STYLE = {
@@ -624,29 +606,10 @@
         }
 
         // Get display name from tagId string - ensures correct lookup for 1, 2, 5592 etc
-        const elephantSex = {
-            "3839": "F", // Shorobe
-            "5588": "M", // Larry
-            "5589": "M", // Mokolwane
-            "5591": "M", // Grand Grey
-            "8540": "M", // Art
-            "8542": "F", // Dream
-            "8543": "F",  // Queenie
-            "5591": "M",  //Snorten
-            "5592": "M", //Molapo/snortitusk
-            "8537": "M", //Brother
-            "8538": "M", // Bruce
-            "8539": "F", // raintree
-            "1": "M",
-            "2": "M"
-        };
-
         function getDisplayNameFromTagId(tagId) {
             const key = normalizeTagId(tagId);
             if (!key) return 'Unknown';
-            const name = elephantNames[key] ?? elephantNames[parseInt(key, 10)] ?? `Tag ${key}`;
-            const sex = elephantSex[key];
-            return sex ? `${name} (${sex})` : name;
+            return elephantNames[key] ?? elephantNames[parseInt(key, 10)] ?? `Tag ${key}`;
         }
 
         // Extract tagId from record - handles multiple API field names (tagId, tag_id, animalId)
@@ -664,7 +627,7 @@
             return r;
         }
 
-        // Elephant name mapping
+        // Elephant name mapping (canonical collar IDs after applyCollarIdentity)
         const elephantNames = {
             "1": "Snorten",
             "2": "Molapo",
@@ -673,14 +636,57 @@
             "5589": "Mokolwane",
             "5590": "Ebanaria",
             "5591": "Grand Grey",
-            "5592": "Snortitusk",
+            "5592": "snortitusk",
             "8537": "Brother",
             "8538": "Bruce",
             "8539": "Raintree",
             "8540": "Art",
             "8542": "Dream",
-            "8543": "Queenie"
+            "8543": "Queenie",
+            "8768": "Zepan",
+            "11612": "Ariba",
+            "11613": "Savannah",
+            "11614": "Delta"
         };
+
+        function parseCatTs(iso) {
+            return Math.floor(new Date(iso).getTime() / 1000);
+        }
+
+        // Collar validity windows (Botswana CAT / UTC+2). Replacement collars remap to the original tagId.
+        const COLLAR_WINDOWS = {
+            '5588':  { from: null, canonical: '5588', to: parseCatTs('2026-09-01T08:57:00+02:00') },
+            '11615': { to: null, canonical: '5588', from: parseCatTs('2026-09-01T08:57:00+02:00') },
+            '5589':  { from: null, canonical: '5589', to: parseCatTs('2026-09-02T08:05:00+02:00') },
+            '11611': { to: null, canonical: '5589', from: parseCatTs('2026-09-02T08:05:00+02:00') },
+            '8768':  { to: null, canonical: '8768', from: parseCatTs('2026-09-01T15:19:00+02:00') },
+            '11612': { to: null, canonical: '11612', from: parseCatTs('2026-09-01T08:12:00+02:00') },
+            '11613': { to: null, canonical: '11613', from: parseCatTs('2026-09-01T11:51:00+02:00') },
+            '11614': { to: null, canonical: '11614', from: parseCatTs('2026-09-02T12:22:00+02:00') }
+        };
+
+        function applyCollarIdentity(records) {
+            if (!Array.isArray(records) || records.length === 0) return records || [];
+            const out = [];
+            for (let i = 0; i < records.length; i++) {
+                const r = records[i];
+                const tag = getTagId(r);
+                const ts = Number(r && r.timestamp) || 0;
+                const rule = COLLAR_WINDOWS[tag];
+                if (!rule) {
+                    out.push(r);
+                    continue;
+                }
+                if (rule.from != null && ts < rule.from) continue;
+                if (rule.to != null && ts >= rule.to) continue;
+                if (tag !== rule.canonical) {
+                    out.push(Object.assign({}, r, { tagId: rule.canonical }));
+                } else {
+                    out.push(r);
+                }
+            }
+            return out;
+        }
 
         // Animation variables
         let dateSlider = null;
@@ -708,22 +714,12 @@
             // Explicitly position zoom controls to ensure they're visible
             map.zoomControl.setPosition('topleft');
 
-            // Base maps: current satellite imagery + standard OpenStreetMap.
-            // The satellite layer retains the existing 0.6 opacity / wash effect.
-            satelliteBaseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            // Satellite imagery background
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '© Esri',
                 maxZoom: 18,
-                opacity: 0.6
-            });
-
-            osmBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 19
-            });
-
-            // Keep the existing satellite map as the default.
-            satelliteBaseLayer.addTo(map);
-            satelliteBaseEnabled = true;
+                opacity: 0.6  // Apply white overlay directly to satellite layer
+            }).addTo(map);
 
             // Add scale bar with more precise measurements
             L.control.scale({
@@ -764,7 +760,6 @@
             scaleRatioControl.addTo(map);
 
             wireMapLabelsToggle();
-            wireBaseMapToggle();
             initWaterExtentControl();
             loadGeoJsonLayers();
 
@@ -992,25 +987,6 @@
                 }
             });
             map.addControl(new WaterExtentControl());
-        }
-
-        function wireBaseMapToggle() {
-            const baseMapToggle = document.getElementById('toggleBaseMap');
-            if (!baseMapToggle || !map || !satelliteBaseLayer || !osmBaseLayer) return;
-
-            // Satellite is the default. Checked = Satellite, unchecked = OSM.
-            baseMapToggle.checked = satelliteBaseEnabled;
-            baseMapToggle.addEventListener('change', function () {
-                satelliteBaseEnabled = baseMapToggle.checked;
-
-                if (satelliteBaseEnabled) {
-                    if (map.hasLayer(osmBaseLayer)) map.removeLayer(osmBaseLayer);
-                    if (!map.hasLayer(satelliteBaseLayer)) satelliteBaseLayer.addTo(map);
-                } else {
-                    if (map.hasLayer(satelliteBaseLayer)) map.removeLayer(satelliteBaseLayer);
-                    if (!map.hasLayer(osmBaseLayer)) osmBaseLayer.addTo(map);
-                }
-            });
         }
 
         function wireMapLabelsToggle() {
@@ -1364,6 +1340,12 @@
                 console.log(`Remaining valid records: ${allData.length}`);
             }
 
+            const beforeCollar = allData.length;
+            allData = applyCollarIdentity(allData);
+            if (allData.length !== beforeCollar) {
+                console.log(`Collar identity: dropped ${beforeCollar - allData.length} out-of-window points; ${allData.length} remain`);
+            }
+
             // Update statistics
             updateStatistics();
 
@@ -1396,16 +1378,13 @@
             const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 86400);
             
             // Get all filters
-            const tagFilter = document.getElementById('tagFilter');
-            const selectedTags = Array.from(tagFilter.selectedOptions)
-                .map(option => normalizeTagId(option.value))
-                .filter(Boolean);
+            const tagFilter = document.getElementById('tagFilter').value;
             const monthFilter = document.getElementById('monthFilter').value;
             
             // Filter data
             filteredData = allData.filter(item => {
-                // Apply multi-select elephant filter
-                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) return false;
+                // Apply tag filter (normalize for comparison - handles number vs string)
+                if (tagFilter && getTagId(item) !== normalizeTagId(tagFilter)) return false;
                 
                 // Apply month filter if selected
                 if (monthFilter) {
@@ -1462,7 +1441,7 @@
             const tagFilter = document.getElementById('tagFilter');
             const uniqueTags = [...new Set(allData.map(d => getTagId(d)))].filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
-            tagFilter.innerHTML = '';
+            tagFilter.innerHTML = '<option value="">All Animals</option>';
 
             uniqueTags.forEach(tagId => {
                 const option = document.createElement('option');
@@ -1673,18 +1652,15 @@
                 return;
             }
 
-            const tagFilter = document.getElementById('tagFilter');
-            const selectedTags = Array.from(tagFilter.selectedOptions)
-                .map(option => normalizeTagId(option.value))
-                .filter(Boolean);
+            const tagFilter = document.getElementById('tagFilter').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
 
-            console.log(`🔍 Applying filters: Tags=${selectedTags.length ? selectedTags.join(', ') : 'All'}, From=${dateFrom || 'None'}, To=${dateTo || 'None'}`);
+            console.log(`🔍 Applying filters: Tag=${tagFilter || 'All'}, From=${dateFrom || 'None'}, To=${dateTo || 'None'}`);
 
             filteredData = allData.filter(item => {
-                // Multi-select elephant filter
-                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) {
+                // Tag filter (normalize for comparison - handles number vs string from different data sources)
+                if (tagFilter && getTagId(item) !== normalizeTagId(tagFilter)) {
                     return false;
                 }
 
@@ -1763,14 +1739,6 @@
             }
         }
 
-        function addExportableLayer(layer, tagId, kind) {
-            layer._exportTagId = normalizeTagId(tagId);
-            layer._exportKind = kind;
-            layer.addTo(map);
-            mapLayers.push(layer);
-            return layer;
-        }
-
         // Function to fit map to all data extent
         function fitMapToDataExtent() {
             if (allData && allData.length > 0) {
@@ -1823,7 +1791,8 @@
                         To: ${new Date(tagData[tagData.length - 1].timestamp * 1000).toLocaleDateString()}
                     `);
 
-                    addExportableLayer(polyline, tagId, 'line');
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
                 }
             });
         }
@@ -1882,7 +1851,8 @@
                         To: ${new Date(historicData[historicData.length - 1].timestamp * 1000).toLocaleDateString()}
                     `);
 
-                    addExportableLayer(polyline, tagId, 'line');
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
                 }
             });
 
@@ -1906,7 +1876,8 @@
                         To: ${new Date(currentData[currentData.length - 1].timestamp * 1000).toLocaleDateString()}
                     `);
 
-                    addExportableLayer(polyline, tagId, 'line');
+                    polyline.addTo(map);
+                    mapLayers.push(polyline);
                 }
             });
         }
@@ -1954,7 +1925,8 @@
                             Period: ${(hour >= 6 && hour < 18) ? 'Day (6AM-6PM)' : 'Night (6PM-6AM)'}
                         `);
 
-                        addExportableLayer(polyline, tagId, 'line');
+                        polyline.addTo(map);
+                        mapLayers.push(polyline);
                     }
                 }
             });
@@ -2003,7 +1975,8 @@
                                 Area: ~${(turf.area(hull) / 1000000).toFixed(2)} km²
                             `);
 
-                            addExportableLayer(polygon, tagId, 'polygon');
+                            polygon.addTo(map);
+                            mapLayers.push(polygon);
                         }
                     } catch (error) {
                         console.error(`Error creating home range for tag ${tagId}:`, error);
@@ -2068,7 +2041,8 @@
                             To: ${new Date(point2.timestamp * 1000).toLocaleString()}
                         `);
 
-                        addExportableLayer(polyline, tagId, 'line');
+                        polyline.addTo(map);
+                        mapLayers.push(polyline);
                     }
                 }
             });
@@ -2201,12 +2175,10 @@
         function updateMapWithDateRange() {
             // Filter data by current date range
             filteredData = allData.filter(item => {
-                const selectedTags = Array.from(document.getElementById('tagFilter').selectedOptions)
-                    .map(option => normalizeTagId(option.value))
-                    .filter(Boolean);
+                const tagFilterValue = document.getElementById('tagFilter').value;
 
-                // Multi-select elephant filter
-                if (selectedTags.length > 0 && !selectedTags.includes(getTagId(item))) {
+                // Tag filter (normalize for comparison)
+                if (tagFilterValue && getTagId(item) !== normalizeTagId(tagFilterValue)) {
                     return false;
                 }
 
@@ -2329,404 +2301,6 @@
             window.URL.revokeObjectURL(url);
         }
 
-        const WGS84_PRJ = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
-
-        function bytesConcat(parts) {
-            const total = parts.reduce((n, p) => n + p.length, 0);
-            const out = new Uint8Array(total);
-            let offset = 0;
-            parts.forEach(part => {
-                out.set(part, offset);
-                offset += part.length;
-            });
-            return out;
-        }
-
-        function int32BE(value) {
-            const buf = new Uint8Array(4);
-            new DataView(buf.buffer).setInt32(0, value | 0, false);
-            return buf;
-        }
-
-        function int32LE(value) {
-            const buf = new Uint8Array(4);
-            new DataView(buf.buffer).setInt32(0, value | 0, true);
-            return buf;
-        }
-
-        function uint16LE(value) {
-            const buf = new Uint8Array(2);
-            new DataView(buf.buffer).setUint16(0, value, true);
-            return buf;
-        }
-
-        function uint32LE(value) {
-            const buf = new Uint8Array(4);
-            new DataView(buf.buffer).setUint32(0, value, true);
-            return buf;
-        }
-
-        function doubleLE(value) {
-            const buf = new Uint8Array(8);
-            new DataView(buf.buffer).setFloat64(0, value, true);
-            return buf;
-        }
-
-        function downloadBlob(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function sanitizeShapefileName(value) {
-            return String(value || 'elephant')
-                .replace(/\s*\([MF]\)\s*/gi, '')
-                .replace(/[^A-Za-z0-9]+/g, '_')
-                .replace(/^_+|_+$/g, '')
-                .slice(0, 60) || 'elephant';
-        }
-
-        function elephantShapefileBase(tagId, kind) {
-            const name = sanitizeShapefileName(elephantNames[tagId] || `Tag_${tagId}`);
-            const suffix = kind === 'polygon' ? 'home_range' : 'line';
-            return `${name}_${tagId}_${suffix}`;
-        }
-
-        function isValidXY(pt) {
-            return Number.isFinite(pt[0]) && Number.isFinite(pt[1])
-                && pt[1] >= -90 && pt[1] <= 90
-                && pt[0] >= -180 && pt[0] <= 180;
-        }
-
-        function closeRing(points) {
-            if (!points.length) return points;
-            const first = points[0];
-            const last = points[points.length - 1];
-            if (first[0] === last[0] && first[1] === last[1]) return points.slice();
-            return points.concat([[first[0], first[1]]]);
-        }
-
-        function ringArea(points) {
-            let area = 0;
-            for (let i = 0; i < points.length - 1; i++) {
-                area += points[i][0] * points[i + 1][1] - points[i + 1][0] * points[i][1];
-            }
-            return area / 2;
-        }
-
-        function ensureClockwiseRing(points) {
-            const ring = closeRing(points);
-            if (ring.length < 4) return ring;
-            if (ringArea(ring) > 0) {
-                return closeRing(ring.slice(0, -1).reverse());
-            }
-            return ring;
-        }
-
-        function flattenPolylineParts(latlngs) {
-            if (!latlngs || !latlngs.length) return [];
-            const first = latlngs[0];
-            if (first && (first.lat != null || first instanceof L.LatLng)) {
-                const part = latlngs.map(ll => {
-                    const p = L.latLng(ll);
-                    return [p.lng, p.lat];
-                }).filter(isValidXY);
-                return part.length >= 2 ? [part] : [];
-            }
-            return latlngs.flatMap(inner => flattenPolylineParts(inner));
-        }
-
-        function flattenPolygonRings(latlngs) {
-            if (!latlngs || !latlngs.length) return [];
-            const first = latlngs[0];
-            if (first && (first.lat != null || first instanceof L.LatLng)) {
-                const ring = ensureClockwiseRing(
-                    latlngs.map(ll => {
-                        const p = L.latLng(ll);
-                        return [p.lng, p.lat];
-                    }).filter(isValidXY)
-                );
-                return ring.length >= 4 ? [ring] : [];
-            }
-            return latlngs.flatMap(inner => flattenPolygonRings(inner));
-        }
-
-        function stitchConnectedLineParts(parts) {
-            if (parts.length <= 1) return parts;
-            const allShort = parts.every(part => part.length <= 2);
-            if (!allShort) return parts;
-            const stitched = [];
-            parts.forEach(part => {
-                part.forEach(pt => {
-                    const prev = stitched[stitched.length - 1];
-                    if (!prev || prev[0] !== pt[0] || prev[1] !== pt[1]) {
-                        stitched.push(pt);
-                    }
-                });
-            });
-            return stitched.length >= 2 ? [stitched] : [];
-        }
-
-        function getTagDateRange(tagId) {
-            const points = filteredData.filter(item => getTagId(item) === tagId);
-            if (!points.length) return { from: '', to: '' };
-            let minTs = points[0].timestamp;
-            let maxTs = points[0].timestamp;
-            points.forEach(item => {
-                if (item.timestamp < minTs) minTs = item.timestamp;
-                if (item.timestamp > maxTs) maxTs = item.timestamp;
-            });
-            const fmt = ts => new Date(ts * 1000).toISOString().slice(0, 10);
-            return { from: fmt(minTs), to: fmt(maxTs) };
-        }
-
-        function encodePolyRecord(shapeType, parts) {
-            let xmin = Infinity;
-            let ymin = Infinity;
-            let xmax = -Infinity;
-            let ymax = -Infinity;
-            const allPoints = [];
-            const partIndices = [];
-            parts.forEach(part => {
-                if (!part.length) return;
-                partIndices.push(allPoints.length);
-                part.forEach(pt => {
-                    allPoints.push(pt);
-                    xmin = Math.min(xmin, pt[0]);
-                    ymin = Math.min(ymin, pt[1]);
-                    xmax = Math.max(xmax, pt[0]);
-                    ymax = Math.max(ymax, pt[1]);
-                });
-            });
-            const body = bytesConcat([
-                int32LE(shapeType),
-                doubleLE(xmin), doubleLE(ymin), doubleLE(xmax), doubleLE(ymax),
-                int32LE(partIndices.length),
-                int32LE(allPoints.length),
-                ...partIndices.map(int32LE),
-                ...allPoints.flatMap(pt => [doubleLE(pt[0]), doubleLE(pt[1])])
-            ]);
-            return { body, bbox: { xmin, ymin, xmax, ymax } };
-        }
-
-        function buildDbf(records, fields) {
-            const now = new Date();
-            const recordLength = 1 + fields.reduce((n, field) => n + field.len, 0);
-            const headerLength = 32 + (fields.length * 32) + 1;
-            const header = new Uint8Array(headerLength);
-            header[0] = 0x03;
-            header[1] = now.getFullYear() - 1900;
-            header[2] = now.getMonth() + 1;
-            header[3] = now.getDate();
-            header.set(uint32LE(records.length), 4);
-            header.set(uint16LE(headerLength), 8);
-            header.set(uint16LE(recordLength), 10);
-
-            fields.forEach((field, index) => {
-                const offset = 32 + index * 32;
-                const nameBytes = new TextEncoder().encode(field.name.slice(0, 10));
-                header.set(nameBytes, offset);
-                header[offset + 11] = field.type.charCodeAt(0);
-                header[offset + 16] = field.len;
-                header[offset + 17] = field.dec || 0;
-            });
-            header[headerLength - 1] = 0x0D;
-
-            const rows = records.map(record => {
-                const row = new Uint8Array(recordLength);
-                row[0] = 0x20;
-                let cursor = 1;
-                fields.forEach(field => {
-                    const raw = String(record[field.key] ?? '').replace(/[^\x20-\x7E]/g, ' ').slice(0, field.len);
-                    const padded = raw.padEnd(field.len, ' ');
-                    for (let i = 0; i < field.len; i++) {
-                        row[cursor + i] = padded.charCodeAt(i);
-                    }
-                    cursor += field.len;
-                });
-                return row;
-            });
-
-            return bytesConcat([header, ...rows, new Uint8Array([0x1A])]);
-        }
-
-        function buildShapefileSet(features, shapeType) {
-            const encoded = features.map(feature => encodePolyRecord(shapeType, feature.parts));
-            let xmin = Infinity;
-            let ymin = Infinity;
-            let xmax = -Infinity;
-            let ymax = -Infinity;
-            encoded.forEach(item => {
-                xmin = Math.min(xmin, item.bbox.xmin);
-                ymin = Math.min(ymin, item.bbox.ymin);
-                xmax = Math.max(xmax, item.bbox.xmax);
-                ymax = Math.max(ymax, item.bbox.ymax);
-            });
-
-            const shpChunks = [];
-            const shxChunks = [];
-            let offsetWords = 50;
-            encoded.forEach((item, index) => {
-                const contentLengthWords = item.body.length / 2;
-                shpChunks.push(int32BE(index + 1), int32BE(contentLengthWords), item.body);
-                shxChunks.push(int32BE(offsetWords), int32BE(contentLengthWords));
-                offsetWords += 4 + contentLengthWords;
-            });
-
-            const shpBody = bytesConcat(shpChunks);
-            const shxBody = bytesConcat(shxChunks);
-            const bbox = { xmin, ymin, xmax, ymax };
-            const emptyHeaderTail = [
-                doubleLE(bbox.xmin), doubleLE(bbox.ymin), doubleLE(bbox.xmax), doubleLE(bbox.ymax),
-                doubleLE(0), doubleLE(0), doubleLE(0), doubleLE(0)
-            ];
-            const shpHeader = bytesConcat([
-                int32BE(9994), new Uint8Array(20), int32BE((100 + shpBody.length) / 2),
-                int32LE(1000), int32LE(shapeType), ...emptyHeaderTail
-            ]);
-            const shxHeader = bytesConcat([
-                int32BE(9994), new Uint8Array(20), int32BE((100 + shxBody.length) / 2),
-                int32LE(1000), int32LE(shapeType), ...emptyHeaderTail
-            ]);
-
-            const dbfFields = [
-                { name: 'TAG_ID', type: 'C', len: 16, key: 'tagId' },
-                { name: 'NAME', type: 'C', len: 40, key: 'name' },
-                { name: 'TYPE', type: 'C', len: 12, key: 'type' },
-                { name: 'DATE_FROM', type: 'C', len: 10, key: 'dateFrom' },
-                { name: 'DATE_TO', type: 'C', len: 10, key: 'dateTo' },
-                { name: 'NPOINTS', type: 'C', len: 10, key: 'nPoints' }
-            ];
-
-            return {
-                shp: bytesConcat([shpHeader, shpBody]),
-                shx: bytesConcat([shxHeader, shxBody]),
-                dbf: buildDbf(features.map(feature => feature.attrs), dbfFields),
-                prj: WGS84_PRJ,
-                cpg: 'UTF-8'
-            };
-        }
-
-        function collectVisibleShapefileJobs() {
-            const byTag = {};
-            mapLayers.forEach(layer => {
-                const tagId = layer._exportTagId;
-                const kind = layer._exportKind;
-                if (!tagId || !kind || typeof layer.getLatLngs !== 'function') return;
-                if (!byTag[tagId]) byTag[tagId] = { line: [], polygon: [] };
-                if (kind === 'polygon') byTag[tagId].polygon.push(layer);
-                else byTag[tagId].line.push(layer);
-            });
-
-            const jobs = [];
-            Object.keys(byTag).sort((a, b) => parseInt(a, 10) - parseInt(b, 10)).forEach(tagId => {
-                const group = byTag[tagId];
-                const dateRange = getTagDateRange(tagId);
-                const name = elephantNames[tagId] || `Tag ${tagId}`;
-
-                if (group.line.length) {
-                    const parts = stitchConnectedLineParts(
-                        group.line.flatMap(layer => flattenPolylineParts(layer.getLatLngs()))
-                    );
-                    if (parts.length) {
-                        const nPoints = parts.reduce((n, part) => n + part.length, 0);
-                        jobs.push({
-                            baseName: elephantShapefileBase(tagId, 'line'),
-                            shapeType: 3,
-                            features: [{
-                                parts,
-                                attrs: {
-                                    tagId,
-                                    name,
-                                    type: 'line',
-                                    dateFrom: dateRange.from,
-                                    dateTo: dateRange.to,
-                                    nPoints
-                                }
-                            }]
-                        });
-                    }
-                }
-
-                if (group.polygon.length) {
-                    const parts = group.polygon.flatMap(layer => flattenPolygonRings(layer.getLatLngs()));
-                    if (parts.length) {
-                        const nPoints = parts.reduce((n, part) => n + part.length, 0);
-                        jobs.push({
-                            baseName: elephantShapefileBase(tagId, 'polygon'),
-                            shapeType: 5,
-                            features: [{
-                                parts,
-                                attrs: {
-                                    tagId,
-                                    name,
-                                    type: 'home_range',
-                                    dateFrom: dateRange.from,
-                                    dateTo: dateRange.to,
-                                    nPoints
-                                }
-                            }]
-                        });
-                    }
-                }
-            });
-            return jobs;
-        }
-
-        async function exportVisibleShapefiles() {
-            if (typeof JSZip === 'undefined') {
-                alert('Shapefile export is unavailable (JSZip failed to load). Please refresh the page and try again.');
-                return;
-            }
-
-            const jobs = collectVisibleShapefileJobs();
-            if (!jobs.length) {
-                alert('Nothing to export. Draw tracks or home ranges on the map first.');
-                return;
-            }
-
-            const button = document.getElementById('exportShapefileBtn');
-            const originalLabel = button ? button.innerHTML : '';
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = '⏳ Exporting...';
-            }
-
-            try {
-                const dateStamp = new Date().toISOString().split('T')[0];
-                const parentZip = new JSZip();
-
-                jobs.forEach(job => {
-                    const files = buildShapefileSet(job.features, job.shapeType);
-                    const folder = jobs.length === 1 ? parentZip : parentZip.folder(job.baseName);
-                    folder.file(`${job.baseName}.shp`, files.shp);
-                    folder.file(`${job.baseName}.shx`, files.shx);
-                    folder.file(`${job.baseName}.dbf`, files.dbf);
-                    folder.file(`${job.baseName}.prj`, files.prj);
-                    folder.file(`${job.baseName}.cpg`, files.cpg);
-                });
-
-                const blob = await parentZip.generateAsync({ type: 'blob' });
-                const filename = jobs.length === 1
-                    ? `${jobs[0].baseName}_${dateStamp}.zip`
-                    : `visible_shapefiles_${dateStamp}.zip`;
-                downloadBlob(blob, filename);
-            } catch (error) {
-                console.error('Shapefile export failed:', error);
-                alert('Shapefile export failed. Please try again.');
-            } finally {
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalLabel;
-                }
-            }
-        }
-
         function generateMapTitle() {
             // Get map type
             let mapType = 'Standard Map';
@@ -2741,12 +2315,8 @@
             }
 
             // Get elephant filter
-            const selectedTags = Array.from(document.getElementById('tagFilter').selectedOptions)
-                .map(option => normalizeTagId(option.value))
-                .filter(Boolean);
-            let elephantText = selectedTags.length
-                ? `for ${selectedTags.map(tagId => getDisplayNameFromTagId(tagId)).join(', ')}`
-                : 'for All Elephants';
+            const tagFilter = document.getElementById('tagFilter').value;
+            let elephantText = tagFilter ? `for ${getDisplayNameFromTagId(tagFilter)}` : 'for All Elephants';
 
             // Get date range - check month filter first, then slider
             let dateText = '';
