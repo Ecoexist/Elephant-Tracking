@@ -1029,7 +1029,7 @@
             '#0077b6', '#0096c7', '#00b4d8', '#48cae4'
         ];
 
-        // Elephant name mapping
+        // Elephant name mapping (canonical collar IDs after applyCollarIdentity)
         const elephantNames = {
             "3839": "Shorobe",
             "5588": "Larry",
@@ -1041,7 +1041,11 @@
             "8539": "Raintree",
             "8540": "Art",
             "8542": "Dream",
-            "8543": "Queenie"
+            "8543": "Queenie",
+            "8768": "Zepan",
+            "11612": "Ariba",
+            "11613": "Savannah",
+            "11614": "Delta"
         };
 
         // Elephant bio information
@@ -1111,6 +1115,30 @@
                 origin: "Queenie earned her regal name due to her confident, commanding presence within the herd. When first observed, she was clearly a matriarch-in-training, showing leadership qualities from a young age.",
                 description: "As one of the few females in our tracking program, Queenie provides invaluable data on female elephant movement and herd dynamics. She is often seen leading a family group through the landscape.",
                 facts: "Queenie's data has been instrumental in understanding how female elephants choose routes for their families, prioritizing safety and resources."
+            },
+            "8768": {
+                name: "Zepan",
+                origin: "Zepan joined the tracking programme in September 2026.",
+                description: "Zepan is a male elephant collared on 1 September 2026 (collar 8768).",
+                facts: "Male. Collared 1 September 2026 at 15:19."
+            },
+            "11612": {
+                name: "Ariba",
+                origin: "Ariba joined the tracking programme in September 2026.",
+                description: "Ariba is a female elephant collared on 1 September 2026 (collar 11612).",
+                facts: "Female. Collared 1 September 2026 at 08:12."
+            },
+            "11613": {
+                name: "Savannah",
+                origin: "Savannah joined the tracking programme in September 2026.",
+                description: "Savannah is a female elephant collared on 1 September 2026 (collar 11613).",
+                facts: "Female. Collared 1 September 2026 at 11:51."
+            },
+            "11614": {
+                name: "Delta",
+                origin: "Delta joined the tracking programme in September 2026.",
+                description: "Delta is a female elephant collared on 2 September 2026 (collar 11614).",
+                facts: "Female. Collared 2 September 2026 at 12:22."
             }
         };
 
@@ -1140,6 +1168,44 @@
         function normalizeTagId(id) {
             if (id == null || id === '') return '';
             return String(id).trim();
+        }
+
+        function parseCatTs(iso) {
+            return Math.floor(new Date(iso).getTime() / 1000);
+        }
+
+        const COLLAR_WINDOWS = {
+            '5588':  { from: null, canonical: '5588', to: parseCatTs('2026-09-01T08:57:00+02:00') },
+            '11615': { to: null, canonical: '5588', from: parseCatTs('2026-09-01T08:57:00+02:00') },
+            '5589':  { from: null, canonical: '5589', to: parseCatTs('2026-09-02T08:05:00+02:00') },
+            '11611': { to: null, canonical: '5589', from: parseCatTs('2026-09-02T08:05:00+02:00') },
+            '8768':  { to: null, canonical: '8768', from: parseCatTs('2026-09-01T15:19:00+02:00') },
+            '11612': { to: null, canonical: '11612', from: parseCatTs('2026-09-01T08:12:00+02:00') },
+            '11613': { to: null, canonical: '11613', from: parseCatTs('2026-09-01T11:51:00+02:00') },
+            '11614': { to: null, canonical: '11614', from: parseCatTs('2026-09-02T12:22:00+02:00') }
+        };
+
+        function applyCollarIdentity(records) {
+            if (!Array.isArray(records) || records.length === 0) return records || [];
+            const out = [];
+            for (let i = 0; i < records.length; i++) {
+                const r = records[i];
+                const tag = normalizeTagId(r && (r.tagId ?? r.tag_id ?? r.animalId));
+                const ts = Number(r && r.timestamp) || 0;
+                const rule = COLLAR_WINDOWS[tag];
+                if (!rule) {
+                    out.push(r);
+                    continue;
+                }
+                if (rule.from != null && ts < rule.from) continue;
+                if (rule.to != null && ts >= rule.to) continue;
+                if (tag !== rule.canonical) {
+                    out.push(Object.assign({}, r, { tagId: rule.canonical }));
+                } else {
+                    out.push(r);
+                }
+            }
+            return out;
         }
 
         // Initialize map
@@ -1462,6 +1528,12 @@
 
             for (let i = 0; i < allData.length; i++) {
                 allData[i].tagId = normalizeTagId(allData[i].tagId);
+            }
+
+            const beforeCollar = allData.length;
+            allData = applyCollarIdentity(allData);
+            if (allData.length !== beforeCollar) {
+                console.log(`Collar identity: dropped ${beforeCollar - allData.length} out-of-window points; ${allData.length} remain`);
             }
 
             // Update statistics
