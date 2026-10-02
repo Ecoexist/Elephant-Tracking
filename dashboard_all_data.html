@@ -2326,8 +2326,31 @@
             'Mortality Status',
             'Temp [°C]',
             'Main [V]',
-            'Backup [V]'
+            'Backup [V]',
+            'Accel X',
+            'Accel Y',
+            'Accel Z'
         ];
+
+        /** GCS/AWT rows may use nested accelerometer: { x, y, z }. */
+        function getAccelerometerValues(item) {
+            if (!item || typeof item !== 'object') {
+                return { x: '', y: '', z: '' };
+            }
+            const acc = item.accelerometer;
+            if (acc && typeof acc === 'object' && !Array.isArray(acc)) {
+                return {
+                    x: acc.x != null && acc.x !== '' ? acc.x : '',
+                    y: acc.y != null && acc.y !== '' ? acc.y : '',
+                    z: acc.z != null && acc.z !== '' ? acc.z : ''
+                };
+            }
+            return {
+                x: item.accel_x ?? item.accelerometer_x ?? item.accelX ?? '',
+                y: item.accel_y ?? item.accelerometer_y ?? item.accelY ?? '',
+                z: item.accel_z ?? item.accelerometer_z ?? item.accelZ ?? ''
+            };
+        }
 
         function csvEscapeCell(val) {
             if (val == null || val === '') return '';
@@ -2387,6 +2410,7 @@
             const mortality = item.mortality ?? item.mortalityStatus ?? item.mortality_status ?? '';
             const mainV = item.voltage ?? item.mainVoltage ?? item.main_voltage ?? item.main ?? '';
             const backupV = item.backupVoltage ?? item.backup_voltage ?? item.backup ?? item.backupV ?? '';
+            const accel = getAccelerometerValues(item);
             return [
                 getTagId(item),
                 acq,
@@ -2400,7 +2424,10 @@
                 mortality,
                 item.temperature != null ? item.temperature : '',
                 mainV,
-                backupV
+                backupV,
+                accel.x,
+                accel.y,
+                accel.z
             ].map(csvEscapeCell);
         }
 
